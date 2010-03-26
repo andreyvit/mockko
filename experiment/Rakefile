@@ -1,0 +1,19 @@
+def rebuild_site(relative)
+  puts ">>> Change Detected to: #{relative} <<<"
+  output=File.basename(relative, '.haml') + ".html"
+  IO.popen("haml #{relative} #{output}") do |io|
+    print(io.readpartial(512)) until io.eof?
+  end
+  puts '>>> Update Complete <<<'
+end
+
+desc "Watch the site and regenerate when it changes"
+task :watch do
+  require 'fssm'
+  puts ">>> Watching for Changes <<<"
+  FSSM.monitor("#{File.dirname(__FILE__)}", '**/*.haml') do
+    update {|base, relative| rebuild_site(relative)}
+    delete {|base, relative| rebuild_site(relative)}
+    create {|base, relative| rebuild_site(relative)}
+  end
+end
