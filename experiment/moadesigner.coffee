@@ -1,4 +1,37 @@
 
+jQuery.fn.runWebKitAnimation: (animationClass, classesToAdd, classesToRemove) ->
+    this.one 'webkitAnimationEnd', => this.removeClass("${animationClass} ${classesToRemove || ''}")
+    this.addClass "${animationClass} ${classesToAdd || ''}"
+        
+jQuery.fn.showPopOver: (tipControl) ->
+    return if this.is(':visible')
+    
+    tipControl: jQuery(tipControl)
+    tip: this.find('.tip')
+    offset: tipControl.offset()
+    center: offset.left + tipControl.outerWidth() / 2
+    bottom: offset.top + tipControl.outerHeight()
+    
+    tipSize: { width: 32, height: 16 }
+    
+    popoverWidth: this.outerWidth()
+    
+    popoverOffset: { left: center - popoverWidth/2, top: bottom + tipSize.height }
+    popoverOffset.left = Math.min(popoverOffset.left, jQuery(window).width() - popoverWidth - 5)
+    parentOffset: jQuery(this.parent()).offset()
+    
+    this.css({ top: popoverOffset.top - parentOffset.top, left: popoverOffset.left - parentOffset.left })
+    tip.css('left', center - popoverOffset.left - tipSize.width / 2)
+    this.one 'webkitAnimationEnd', => this.removeClass('popin')
+    this.runWebKitAnimation 'popin', 'visible', ''
+    
+jQuery.fn.hidePopOver: ->
+    return unless this.is(':visible')
+    this.runWebKitAnimation 'fadeout', '', 'visible'
+
+jQuery.fn.togglePopOver: (tipControl) ->
+    if this.is(':visible') then this.hidePopOver() else this.showPopOver tipControl
+
 # sample data
 
 myApplication: {
@@ -17,9 +50,14 @@ myApplication: {
 
 componentTypes: {
     button: {
+        label: "button"
+        image: "button"
         initialSize: { height: 30 }
     }
 }
+
+for typeName, type of componentTypes
+    type.typeName = typeName
             
 # model
 
@@ -100,6 +138,8 @@ class ScreenDesigner
     constructor: (screen) ->
         @hoveredComponent: Mo.newValue null
         @renderedElements: Mo.newComputedMapping screen.components, renderComponent
+        @paletteVisible: Mo.newValue false
+        @paletteTemporarilyHidden: Mo.newValue false
         
         Mo.sub screen.components, {
             removed: (e) =>
@@ -146,11 +186,14 @@ class HoverView
             else
                 repositionHoverForComponent hoveredComponent
                 $.data($hoverPanel[0], 'hovered-component', hoveredComponent)
+                
+newComponentOfType: (type) ->
+    new Component { type: type.typeName }
         
-
 class DesignPane
 
-    constructor: (screenDesignerV, $designPane) ->
+    constructor: (screenDesignerV) ->
+        $designPane: $('#design-pane')
         renderedElements: Mo.newDelegatedMap screenDesignerV, 'renderedElements'
         
         Mo.sub renderedElements, {
@@ -162,8 +205,8 @@ class DesignPane
         
         new HoverView screenDesignerV, $designPane
         
-        mode: null
-        setMode: (m) -> mode: m
+        mode: Mo.newValue null
+        setMode: (m) -> mode.set m
         
         newNormalMode: ->
             {
@@ -195,17 +238,30 @@ class DesignPane
                     setMode(newNormalMode())
             }
             
+        newNewComponentDragMode: (component, componentElement, e) ->
+            dragOrigin: { x: e.pageX, y: e.pageY }
+            # dragOriginalLocation: { x: parseInt($(componentElement).css('left')), y: parseInt($(componentElement).css('top')) }
+            
+            {
+                mousemove: (e) ->
+                    pt: { x: e.pageX, y: e.pageY }
+                    $(componentElement).offset({ left: pt.x, top: pt.y })
+                    
+                mouseup: (e) ->
+                    setMode(newNormalMode())
+            }
+            
         setMode newNormalMode()
         
         $designPane.mousedown (e) ->
             componentElement: $(e.target).closest('.component')[0]
             component: $.data(componentElement, 'component') if componentElement
-            mode.mousedown e, component, componentElement
+            mode.get().mousedown e, component, componentElement
 
         $designPane.mousemove (e) ->
             componentElement: $(e.target).closest('.component')[0]
             component: $.data(componentElement, 'component') if componentElement
-            mode.mousemove e, component, componentElement
+            mode.get().mousemove e, component, componentElement
             
             # if !isDragging && component && isMouseDown && (Math.abs(pt.x - dragOrigin.x) > 2 || Math.abs(pt.y - dragOrigin.y) > 2)
             #     isDragging: true
@@ -215,11 +271,44 @@ class DesignPane
         $designPane.mouseup (e) ->
             componentElement: $(e.target).closest('.component')[0]
             component: $.data(componentElement, 'component') if componentElement
-            mode.mouseup e, component, componentElement
-
+            mode.get().mouseup e, component, componentElement
+            
+        $palette: $('.palette')
+        paletteVisible: Mo.newDelegatedValue screenDesignerV, 'paletteVisible'
+        
+        $content: $palette.find('.content')
+        for i in [1..20]
+            for key, componentType of componentTypes
+                item: $('<div />').addClass('item')
+                $('<img />').attr('src', "images/palette/${componentType.image}.png").appendTo(item)
+                caption: $('<div />').addClass('caption').html(componentType.label).appendTo(item)
+                $content.append item
+                
+                item.mousedown (e) ->
+                    component: newComponentOfType componentType
+                    component.size: { width: 100, height: 50 }
+                    component.location: { x: 0, y: 0 }
+                    el: renderComponent component
+                    $designPane.append(el)
+                    setMode newNewComponentDragMode component, el, e
+                
+        Mo.sub paletteVisible, (e) ->
+            if e.value
+                $('.palette').showPopOver($('#add-button'))
+            else
+                $('.palette').hidePopOver()
+    
+            
 $ ->
     Mo.startDumpingEvents()
     rootDesigner: new RootDesigner()
     currentScreenDesigner: Mo.newDelegatedValue rootDesigner.currentApplicationDesigner, 'currentScreenDesigner'
-    new DesignPane currentScreenDesigner, $('#design-pane')
+    new DesignPane currentScreenDesigner
     rootDesigner.openApplication (new Application myApplication), 'openSampleApplication'
+        
+    $('#add-button').click ->
+        d: currentScreenDesigner.get()
+        d.paletteVisible.set !d.paletteVisible.get()
+        
+    currentScreenDesigner.get().paletteVisible.set true
+    

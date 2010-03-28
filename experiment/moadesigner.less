@@ -10,16 +10,103 @@ a { -webkit-tap-highlight-color: rgba(0,0,0,0); }
 	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#858585), color-stop(3%, #636363), color-stop(50%, #202020), color-stop(51%, black), color-stop(97%, black), to(#262626));
 }
 .translucent-bar-background {
-	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(133,133,133,0.7)), color-stop(3%, rgba(99,99,99,0.7)), color-stop(50%, rgba(32,32,32,0.7)), color-stop(51%, rgba(0,0,0,0.7)), color-stop(97%, rgba(0,0,0,0.7)), to(rgba(38,38,38,0.7)));
+	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(133,133,133,0.7)), color-stop(3%, rgba(99,99,99,0.7)), color-stop(50%, rgba(32,32,32,0.7)), color-stop(51%, rgba(0,0,0,0.7)), color-stop(99.9%, rgba(0,0,0,0.7)), to(rgba(38,38,38,0.7)));
 }
 .normal-bar-background {
-	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#cdd5df), color-stop(3%, #b0bccd), color-stop(50%, #889bb3), color-stop(51%, #8195af), color-stop(97%, #6d84a2), to(#2d3642));
+	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#b0bccd), color-stop(50%, #899cb4), color-stop(50%, #8094ae), color-stop(51%, #8195af), to(#6d84a2));
+	border-top: 1px solid #cdd5df;
+	border-bottom: 1px solid #2d3642;
 }
 .striped-background {
     background: -webkit-gradient(linear,left top,right top,from(#c5ccd4), color-stop(71%, #c5ccd4), color-stop(72%, #cbd2d8), to(#cbd2d8));
 }
 
+.normal-bar-button {
+	/*background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#6d7174), color-stop(50%, #353d3d), to(#272c2c));*/
+	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#6d7174), color-stop(50%, #353d3d), to(#272c2c));
+	-webkit-border-radius: 5px;
+	border: 1px solid #383838;
+}
+
+.popover {
+    position: absolute;
+    
+    .tip {
+        position: absolute;
+        background: url(img-ipad/popover-tip-top.png) no-repeat;
+        background-position: 0% 0%;
+        width: 32px;
+        height: 16px;
+        top: -16px;
+    }
+    
+    .top {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        right: 0px;
+        height: 44px;
+        background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(95, 102, 112, 0.9)), color-stop(50%, rgb(13, 21, 36)), to(rgb(11, 18, 32)));
+        -webkit-border-top-left-radius: 7px;
+        -webkit-border-top-right-radius: 7px;
+        -moz-border-radius-topleft: 7px;
+        -moz-border-radius-topright: 7px;
+        border-top-left-radius: 7px;
+        border-top-right-radius: 7px;
+            
+        h1 {
+            position: absolute;
+            overflow: hidden;
+            
+            left: 0%;
+            right: 0%;
+            text-align: center;
+
+            font-size: 20px;
+            line-height: 44px;
+            height: 44px;
+
+            font-weight: bold;
+        	text-shadow: rgba(0,0,0,0.6) 0 -1px 0;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #fff;
+        }
+    }
+    
+    .content {
+        position: absolute;
+        top: 44px;
+        left: 0px;
+        right: 0px;
+        bottom: 44px;
+        background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgb(11, 18, 32)), to(rgba(17, 24, 39, 1)));
+    }
+    
+    .bottom {
+        position: absolute;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+        height: 44px;
+        background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgb(17, 24, 39)), to(rgb(14, 14, 15)));
+        -webkit-border-bottom-right-radius: 7px;
+        -webkit-border-bottom-left-radius: 7px;
+        -moz-border-radius-bottomright: 7px;
+        -moz-border-radius-bottomleft: 7px;
+        border-bottom-right-radius: 7px;
+        border-bottom-left-radius: 7px;
+    }
+}
+
+
+
 /* SPECIFIC */
+
+* {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
 
 html, body {
     height: 100%;
@@ -38,7 +125,6 @@ body {
 
 .screen {
     -webkit-backface-visibility: hidden;
-    -webkit-box-sizing: border-box;
     position: absolute;
     top: 0px;
     left: 0px;
@@ -52,33 +138,52 @@ body {
     -webkit-box-sizing: border-box;
     border-bottom: 1px solid #2d3642;
     padding: 10px;
-    height: 45px;
+    height: 44px;
     position: relative;
     
-    .translucent-bar-background;
+    .normal-bar-background;
     
-    >.left {
+    .left, .right {
     	line-height: 30px;
     	height: 30px;
     	top: 4px;
     	position: absolute;
     	font-size: 12px;
-    	left: 9px;
     	font-weight: bold;
-    	
+
     	a {
         	display: block;
-        	float: left;
         	color: #fff;
         	text-shadow: rgba(0,0,0,0.6) 0 -1px 0;
         	text-decoration: none;
+        	text-align: center;
         	
-        	-webkit-border-image: url("images/navbuttonblack.png") 0 5 0 5;
+        	.normal-bar-button;
         	
+/*          
+            -webkit-border-image: url("images/navbuttonblack.png") 0 5 0 5;
+*/        	
         	width: auto;
         	padding-left: 7px;
         	padding-right: 7px;
+	    }
+	}
+    
+    >.left {
+    	left: 9px;
+    	
+    	a {
+        	float: left;
         	margin-right: 10px;
+	    }
+    }
+    
+    >.right {
+    	right: 9px;
+    	
+    	a {
+        	float: right;
+        	margin-left: 10px;
 	    }
     }
     
@@ -104,10 +209,13 @@ body {
 .left-pane {
     position: absolute;
     width: 100px;
-    top: 45px;
+    top: 44px;
     bottom: 0px;
 	background: rgba(38,38,38,0.7);
 }
+
+
+/* DESIGN SCREEN */
 
 #design-screen {
     .left-pane {
@@ -116,10 +224,14 @@ body {
         background: green;
         position: absolute;
         left: 100px;
-        top: 45px;
+        top: 44px;
         right: 0px;
         bottom: 0px;
     }
+}
+
+#add-button {
+    min-width: 50px;
 }
 
 .component {
@@ -179,4 +291,66 @@ body {
 	padding-right: 7px;
 	font-size: 12px;
 	font-weight: bold;
+}
+
+.palette {
+    .popover;
+    
+    width: 330px;
+    height: 400px;
+    top: 55px;
+    
+    display: none;
+    
+    .content {
+        padding: 5px 5px;
+    }
+    
+    .item {
+        width: 70px;
+        height: 50px;
+        
+        position: relative;
+        float: left;
+        margin-left: 5px;
+        margin-right: 5px;
+        margin-bottom: 10px;
+        
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        
+        cursor: move;
+        
+        img {
+            display: block;
+            margin: 5px auto;
+            line-height: 28px;
+        }
+        
+        .caption {
+            position: absolute;
+            font-size: 10px;
+            text-align: center;
+            left: 0px;
+            right: 0px;
+            bottom: 0px;
+            height: 12px;
+            line-height: 12px;
+            display: none;
+        }
+        
+        :hover {
+            background: rgba(100, 100, 100, 0.5);
+            border: none;
+            
+            .caption {
+                display: block;
+            }
+        }
+    }
+}
+
+.palette.visible {
+    display: block;
 }
