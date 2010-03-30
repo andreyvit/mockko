@@ -97,9 +97,8 @@ a { -webkit-tap-highlight-color: rgba(0,0,0,0); }
         border-bottom-right-radius: 7px;
         border-bottom-left-radius: 7px;
     }
+
 }
-
-
 
 /* SPECIFIC */
 
@@ -272,6 +271,25 @@ body {
     .duplicate-handle:before {
         content: "c";
     }
+}
+
+#share-popover {
+    .popover;
+    width: 330px;
+    height: 400px;
+    display: none;
+    
+    .content {
+        padding: 10px 10px;
+        textarea {
+            width: 100%;
+            height: 100%;
+        }
+    }
+}
+
+#share-popover.visible {
+    display: block;
 }
 
 .palette {

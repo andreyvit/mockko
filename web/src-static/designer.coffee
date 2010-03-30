@@ -35,21 +35,6 @@ jQuery.fn.togglePopOver: (tipControl) ->
 jQuery.fn.setdata: (id, newData) -> $.data(this[0], id, newData); this
 jQuery.fn.getdata: (id) -> $.data(this[0], id)
 
-# sample data
-
-myApplication: {
-    screens: [{
-        components: [
-            {
-                type: 'barButton',
-                text: 'Back',
-                location: { x: 50, y: 100 }
-                size: {}
-            }
-        ]
-    }]
-}
-
 # definitions
 
 ctgroups: [
@@ -66,19 +51,19 @@ ctgroups: [
                 type: 'tabBar'
                 label: 'Tab Bar'
                 widthPolicy: { autoSize: 'fill' }
-                heightPolicy: { fixedSize: 45 }
+                heightPolicy: { fixedSize: 49 }
             }
             {
                 type: 'navBar'
                 label: 'Navigation Bar'
                 widthPolicy: { autoSize: 'fill' }
-                heightPolicy: { autoSize: true }
+                heightPolicy: { fixedSize: { portrait: 44, landscape: 44 } }
             }
             {
-                type: 'toolBar'
+                type: 'toolbar'
                 label: 'Tool Bar'
                 widthPolicy: { autoSize: 'fill' }
-                heightPolicy: { fixedSize: { portrait: 45, landscape: 45 } }
+                heightPolicy: { fixedSize: { portrait: 44, landscape: 44 } }
             }
         ]
     }
@@ -110,8 +95,8 @@ ctgroups: [
                 type: 'buyButton'
                 label: 'Buy Button'
                 defaultText: "Buy"
-                widthPolicy: { userSize: true, autoSize: 'browser' }
-                heightPolicy: { userSize: true, fixedSize: 20 }
+                widthPolicy: { userSize: true, fixedSize: 80 } #autoSize: 'browser'
+                heightPolicy: { userSize: true, fixedSize: 25 }
             }
         ]
     }
@@ -119,7 +104,7 @@ ctgroups: [
         name: "Input Controls"
         ctypes: [
             {
-                type: 'onOffSwitch'
+                type: 'switch'
                 label: 'On/Off Switch'
                 widthPolicy: { fixedSize: 94 }
                 heightPolicy: { fixedSize: 27 }
@@ -208,19 +193,27 @@ jQuery ($) ->
 
     ##########################################################################################################
     
+    componentsChanged: ->
+        activeScreen.components = (c for cid, c of components)
+        
+        if $('#share-popover').is(':visible')
+            updateSharePopover()
+
+    ##########################################################################################################
+    
     createNodeForControl: (c) -> $("<div />").addClass("component c-${c.type}")[0]
     findControlIdOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-cid')
     
-    computeComponentSize: (c) ->
+    computeComponentSize: (c, cn) ->
         ct: ctypes[c.type]
         {
-            width: c.size.width || ct.widthPolicy?.fixedSize?.width || null
-            height: c.size.height || ct.heightPolicy?.fixedSize?.height || null
+            width: c.size.width || ct.widthPolicy?.fixedSize?.width || cn?.offsetWidth || null
+            height: c.size.height || ct.heightPolicy?.fixedSize?.height || cn?.offsetHeight || null
         }
     
     updateComponentPosition: (c, cn) ->
         ct: ctypes[c.type]
-        size: computeComponentSize(c)
+        size: computeComponentSize(c, null)
         location: c.location
         
         $(cn).css({
@@ -233,7 +226,6 @@ jQuery ($) ->
     updateComponentText: (c, cn) -> $(cn).html(c.text) if c.text?
     
     updateComponentProperties: (c, cn) -> updateComponentPosition(c, cn); updateComponentText(c, cn)
-        
     
     ##########################################################################################################
     
@@ -276,7 +268,7 @@ jQuery ($) ->
         window.status = "Hover a component for options. Click to edit. Drag to move."
         activateMode {
             mousedown: (e, cid) ->
-                activateExistingComponentDragging cid, e if cid
+                activateExistingComponentDragging cid, { x: e.pageX, y: e.pageY } if cid
 
             mousemove: (e, cid) ->
                 if cid
@@ -291,20 +283,37 @@ jQuery ($) ->
             hidesPalette: no
         }
         
-    activateExistingComponentDragging: (cid, e) ->
+    activateExistingComponentDragging: (cid, dragOrigin) ->
+        c: components[cid]
         cn: cnodes[cid]
         window.status = "Dragging a component."
         
-        dragOrigin: { x: e.pageX, y: e.pageY }
+        designAreaOrigin: $('#design-pane').offset()
+        dragOrigin = { x: dragOrigin.x - designAreaOrigin.left, y: dragOrigin.y - designAreaOrigin.top }
+        size: computeComponentSize(c, cn)
         dragOriginalLocation: { x: parseInt($(cn).css('left')), y: parseInt($(cn).css('top')) }
+        hotSpot = {
+            x: (dragOrigin.x - dragOriginalLocation.x) / size.width
+            y: (dragOrigin.y - dragOriginalLocation.y) / size.height
+        }
+        console.log(hotSpot)
         
         activateMode {
             mousemove: (e) ->
                 pt: { x: e.pageX, y: e.pageY }
-                $(cn).css({ left: dragOriginalLocation.x + (pt.x - dragOrigin.x), top: dragOriginalLocation.y + (pt.y - dragOrigin.y) })
+                
+                size: computeComponentSize(c, cn)
+                c.location = {
+                    x: pt.x - designAreaOrigin.left - (size.width || 0)  * hotSpot.x
+                    y: pt.y - designAreaOrigin.top  - (size.height || 0) * hotSpot.y
+                }
+                updateComponentPosition c, cn
                 updateHoverPanelPosition()
                 
+                # $(cn).css({ left: dragOriginalLocation.x + (pt.x - dragOrigin.x), top: dragOriginalLocation.y + (pt.y - dragOrigin.y) })
+                
             mouseup: (e) ->
+                componentsChanged()
                 activatePointingMode()
                 
             hidesPalette: yes
@@ -317,8 +326,7 @@ jQuery ($) ->
         hotSpot = { x: 0.5, y: 0.5 }
         designAreaOrigin: $('#design-pane').offset()
         moveTo: (pt) ->
-            size: computeComponentSize(c)
-            size.width ||= cn.offsetWidth
+            size: computeComponentSize(c, cn)
             c.location = {
                 x: pt.x - designAreaOrigin.left - (size.width || 0)  * hotSpot.x
                 y: pt.y - designAreaOrigin.top  - (size.height || 0) * hotSpot.y
@@ -338,6 +346,7 @@ jQuery ($) ->
                 addToComponents c
                 storeComponentNode c, cn
                 updateComponentProperties c, cn
+                componentsChanged()
                 activatePointingMode()
             
             hidesPalette: yes
@@ -409,8 +418,11 @@ jQuery ($) ->
             $(cn).remove()
             delete cnodes[cid]
             delete components[cid]
+            componentsChanged()
     
     switchToScreen: (screen) ->
+        $(cn).remove() for cid, cn of cnodes
+            
         activeScreen = screen
         activeScreen.nextId ||= 1
         components = {}
@@ -422,10 +434,45 @@ jQuery ($) ->
         
         updateComponentProperties(c, cnodes[cid]) for cid, c of components
         
+        componentsChanged()
+        
     
     loadApplication: (app) ->
         application = app
         switchToScreen application.screens[0]
+        
+    ##########################################################################################################
+
+    updateSharePopover: ->
+        s: JSON.stringify(application)
+        $('#share-popover textarea').val(s)
+        
+    $('#share-button').click ->
+        if paletteWanted
+            paletteWanted = no
+            updatePaletteVisibility 'wanted'
+        
+        if $('#share-popover').is(':visible')
+            $('#share-popover').hidePopOver()
+        else
+            $('#share-popover').showPopOverPointingTo $('#share-button')
+            updateSharePopover()
+    
+    checkApplicationLoading: ->
+        v: $('#share-popover textarea').val()
+        s: JSON.stringify(application)
+        
+        good: yes
+        if v != s && v != ''
+            try
+                app: JSON.parse(v)
+            catch e
+                good: no
+            loadApplication app if app
+        $('#share-popover textarea').css('background-color', if good then 'white' else '#ffeeee')
+    
+    for event in ['change', 'blur', 'keydown', 'keyup', 'keypress', 'focus', 'mouseover', 'mouseout', 'paste', 'input']
+        $('#share-popover textarea').bind event, checkApplicationLoading
         
     ##########################################################################################################
     
@@ -438,5 +485,19 @@ jQuery ($) ->
     fillPalette()
     activatePointingMode()
     
-    loadApplication(myApplication)
+    sample0: {
+        screens: [{
+            components: [
+                {
+                    type: 'barButton',
+                    text: 'Back',
+                    location: { x: 50, y: 100 }
+                    size: {}
+                }
+            ]
+        }]
+    }
     
+    sample1: {"screens":[{"components":[{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":58,"y":58},"id":"c2"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":58,"y":78},"id":"c3"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":54,"y":412},"id":"c5"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":85,"y":291},"text":"Call","id":"c7"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":210,"y":294},"text":"Delete Contact","id":"c8"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":283,"y":149.5},"id":"c10"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":63,"y":149},"text":"Back","id":"c11"},{"type":"buyButton","size":{"width":80,"height":25},"location":{"x":170,"y":150.5},"text":"Buy","id":"c12"}],"nextId":13}]}
+    
+    loadApplication sample1
