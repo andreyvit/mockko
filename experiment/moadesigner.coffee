@@ -3,7 +3,7 @@ jQuery.fn.runWebKitAnimation: (animationClass, classesToAdd, classesToRemove) ->
     this.one 'webkitAnimationEnd', => this.removeClass("${animationClass} ${classesToRemove || ''}")
     this.addClass "${animationClass} ${classesToAdd || ''}"
         
-jQuery.fn.showPopOver: (tipControl) ->
+jQuery.fn.showPopOverPointingTo: (tipControl, animation) ->
     return if this.is(':visible')
     
     tipControl: jQuery(tipControl)
@@ -23,14 +23,17 @@ jQuery.fn.showPopOver: (tipControl) ->
     this.css({ top: popoverOffset.top - parentOffset.top, left: popoverOffset.left - parentOffset.left })
     tip.css('left', center - popoverOffset.left - tipSize.width / 2)
     this.one 'webkitAnimationEnd', => this.removeClass('popin')
-    this.runWebKitAnimation 'popin', 'visible', ''
+    this.runWebKitAnimation (animation || 'popin'), 'visible', ''
     
 jQuery.fn.hidePopOver: ->
     return unless this.is(':visible')
     this.runWebKitAnimation 'fadeout', '', 'visible'
 
 jQuery.fn.togglePopOver: (tipControl) ->
-    if this.is(':visible') then this.hidePopOver() else this.showPopOver tipControl
+    if this.is(':visible') then this.hidePopOver() else this.showPopOverPointingTo tipControl
+    
+jQuery.fn.setdata: (id, newData) -> $.data(this[0], id, newData); this
+jQuery.fn.getdata: (id) -> $.data(this[0], id)
 
 # sample data
 
@@ -41,6 +44,7 @@ myApplication: {
                 type: 'button',
                 text: 'Back',
                 location: { x: 50, y: 100 }
+                size: {}
             }
         ]
     }]
@@ -56,259 +60,221 @@ componentTypes: {
     }
 }
 
-for typeName, type of componentTypes
-    type.typeName = typeName
-            
-# model
+jQuery ($) ->
+    application: null
+    activeScreen: null
+    components: {}
+    cnodes: {}
+    mode: null
 
-class Application
+    ##########################################################################################################
     
-    constructor: (jsonApp) ->
-        @screens: Mo.newList()
-        
-        for s in jsonApp.screens
-            @screens.add (new Screen s), 'load'
-        
-        
-class Screen
-    constructor: (jsonScreen) ->
-        @components: Mo.newSet()
-        
-        for c in jsonScreen.components
-            @components.add (new Component c), 'load'
-
-class Component
-    constructor: (jsonComp) ->
-        for k, v of jsonComp
-            this[k] = v
-
+    createNodeForControl: (c) -> $("<div />").addClass("component c-${c.type}")[0]
+    findControlIdOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-cid')
     
-# view model
-        
-renderComponent: (component) ->
-    componentType: componentTypes[component.type]
-    size: {
-        width: component.width || componentType.initialSize.width
-        height: component.height || componentType.initialSize.height
-    }
-    location: component.location
-
-    el: $('<div />').attr({
-        'class': "component c-${component.type}"
-    }).css({
-        'left':   "${location.x}px"
-        'top':    "${location.y}px"
-        'width':  (if size.width then "${size.width}px" else 'auto')
-        'height': "${size.height}px"
-    }).html(component.text || '')[0]
-    
-    $.data(el, 'component', component)
-    return el
-
-
-class RootDesigner
-    
-    constructor: ->
-        @currentApplication: Mo.newValue()
-        @currentApplicationDesigner: Mo.newSingleValueMapping @currentApplication, (a) -> new ApplicationDesigner a
-        
-    openApplication: (application, cause) ->
-        @currentApplication.set application, cause
-
-
-class ApplicationDesigner
-    
-    constructor: (application) ->
-        @currentScreen: Mo.newValue null
-        @screenDesigners: Mo.newComputedMapping application.screens, (screen) -> new ScreenDesigner screen
-        @currentScreenDesigner: Mo.newLookupValue @screenDesigners, @currentScreen
-        
-        Mo.sub application.screens, {
-            added: (e) =>
-                if @currentScreen.get() == null
-                    this.switchScreen e.value
+    computeComponentSize: (c) ->
+        ct: componentTypes[c.type]
+        {
+            width: c.size.width || ct.initialSize.width
+            height: c.size.height || ct.initialSize.height
         }
-        
-    switchScreen: (screen) ->
-        @currentScreen.set screen, 'switchScreen'
-
-
-class ScreenDesigner
     
-    constructor: (screen) ->
-        @hoveredComponent: Mo.newValue null
-        @renderedElements: Mo.newComputedMapping screen.components, renderComponent
-        @paletteVisible: Mo.newValue false
-        @paletteTemporarilyHidden: Mo.newValue false
+    updateComponentPosition: (c, cn) ->
+        cn ||= cnodes[c.id]
+        ct: componentTypes[c.type]
+        size: computeComponentSize(c)
+        location: c.location
         
-        Mo.sub screen.components, {
-            removed: (e) =>
-                if e.value == @hoveredComponent.get()
-                    @hoveredComponent.set null, 'hoveredComponentRemoved'
-        }
-        
-    hoverComponent: (component, cause) ->
-        @hoveredComponent.set component, cause
-        
-    unhoverComponent: (cause) ->
-        @hoveredComponent.set null, cause
+        $(cn).css({
+            'left':   "${location.x}px"
+            'top':    "${location.y}px"
+            'width':  (if size.width then "${size.width}px" else 'auto')
+            'height': "${size.height}px"
+        })
 
-# view
-
-class HoverView
+    updateComponentText: (c) -> $(cnodes[c.id]).html(c.text) if c.text?
     
-    constructor: (screenDesignerV, $designPane) ->
-        hoveredComponentV: Mo.newDelegatedValue screenDesignerV, 'hoveredComponent'
+    updateComponentProperties: (c) -> updateComponentPosition(c); updateComponentText(c)
         
-        createHandle: (kind, handler) ->
-            $('<div />').attr({ 'class': "handle ${kind}-handle" }).click (e) ->
-                component: $.data($hoverPanel[0], 'hovered-component')
-                handler(component)
-                
-        $hoverPanel: $('<div />').attr({ 'class': 'hover-panel' }).
-            hide().append(createHandle('delete', (c) ->)).
-            append(createHandle('duplicate', (c) ->)).
-            appendTo($designPane)
+    
+    ##########################################################################################################
+    
+    hoveredControlId: null
+    
+    updateHoverPanelPosition: ->
+        return if hoveredControlId is null
+        cn: cnodes[hoveredControlId]
+        offset: { left: cn.offsetLeft, top: cn.offsetTop }
+        $('#hover-panel').css({ left: offset.left, top: offset.top })
+    
+    componentHovered: (cid) ->
+        $('#hover-panel').fadeIn(100) if hoveredControlId is null
+        hoveredControlId = cid
+        updateHoverPanelPosition()
+        
+    componentUnhovered: ->
+        return if hoveredControlId is null
+        hoveredControlId = null
+        $('#hover-panel').fadeOut(100)
+        
+    $('#hover-panel').hide()
+    $('#hover-panel .delete-handle').click -> #
+    
+        
+    # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredControlId isnt null
+    # resumeHoverPanel: -> updateHoverPanelPosition $('#hover-panel').fadeIn(100) if hoveredControlId isnt null
+    
+    ##########################################################################################################
+    
+    activateMode: (m) ->
+        mode: m
+        updatePaletteVisibility('mode')
+    
+    activatePointingMode: ->
+        window.status = "Hover a component for options. Click to edit. Drag to move."
+        activateMode {
+            mousedown: (e, cid) ->
+                activateExistingComponentDragging cid, e if cid
 
-        repositionHoverForComponent: (component) ->
-            tag: screenDesignerV.get().renderedElements.at(component)
-            console.log(tag)
-            $tag: $(tag)
-            offset: { left: $tag[0].offsetLeft, top: $tag[0].offsetTop }
-            $hoverPanel.css({ left: offset.left, top: offset.top }).show()
-            
-        Mo.sub hoveredComponentV, (e) ->
-            hoveredComponent: e.value
-            
-            if hoveredComponent == null
-                $.data($hoverPanel[0], 'hovered-component', null)
-                $hoverPanel.hide()
-            else
-                repositionHoverForComponent hoveredComponent
-                $.data($hoverPanel[0], 'hovered-component', hoveredComponent)
-                
-newComponentOfType: (type) ->
-    new Component { type: type.typeName }
-        
-class DesignPane
-
-    constructor: (screenDesignerV) ->
-        $designPane: $('#design-pane')
-        renderedElements: Mo.newDelegatedMap screenDesignerV, 'renderedElements'
-        
-        Mo.sub renderedElements, {
-            added: (e) ->
-                $designPane.append(e.value)
-            removed: (e) ->
-                $(e.value).remove()
-        }
-        
-        new HoverView screenDesignerV, $designPane
-        
-        mode: Mo.newValue null
-        setMode: (m) -> mode.set m
-        
-        newNormalMode: ->
-            {
-                mousedown: (e, component, componentElement) ->
-                    if component
-                        setMode(newExistingComponentDragMode component, componentElement, e)
-
-                mousemove: (e, component, componentElement) ->
-                    if component
-                        screenDesignerV.get().hoverComponent component, 'mousemove'
-                    else if $(e.target).closest('.hover-panel').length
-                        #
-                    else
-                        screenDesignerV.get().unhoverComponent 'mousemove'
-                        
-                mouseup: (e) -> #
-            }
-            
-        newExistingComponentDragMode: (component, componentElement, e) ->
-            dragOrigin: { x: e.pageX, y: e.pageY }
-            dragOriginalLocation: { x: parseInt($(componentElement).css('left')), y: parseInt($(componentElement).css('top')) }
-            
-            {
-                mousemove: (e) ->
-                    pt: { x: e.pageX, y: e.pageY }
-                    $(componentElement).css({ left: dragOriginalLocation.x + (pt.x - dragOrigin.x), top: dragOriginalLocation.y + (pt.y - dragOrigin.y) })
+            mousemove: (e, cid) ->
+                if cid
+                    componentHovered cid
+                else if $(e.target).closest('.hover-panel').length
+                    #
+                else
+                    componentUnhovered()
                     
-                mouseup: (e) ->
-                    setMode(newNormalMode())
-            }
+            mouseup: (e) -> #
             
-        newNewComponentDragMode: (component, componentElement, e) ->
-            dragOrigin: { x: e.pageX, y: e.pageY }
-            # dragOriginalLocation: { x: parseInt($(componentElement).css('left')), y: parseInt($(componentElement).css('top')) }
-            
-            {
-                mousemove: (e) ->
-                    pt: { x: e.pageX, y: e.pageY }
-                    $(componentElement).offset({ left: pt.x, top: pt.y })
-                    
-                mouseup: (e) ->
-                    setMode(newNormalMode())
-            }
-            
-        setMode newNormalMode()
+            hidesPalette: no
+        }
         
-        $designPane.mousedown (e) ->
-            componentElement: $(e.target).closest('.component')[0]
-            component: $.data(componentElement, 'component') if componentElement
-            mode.get().mousedown e, component, componentElement
+    activateExistingComponentDragging: (cid, e) ->
+        cn: cnodes[cid]
+        window.status = "Dragging a component."
+        
+        dragOrigin: { x: e.pageX, y: e.pageY }
+        dragOriginalLocation: { x: parseInt($(cn).css('left')), y: parseInt($(cn).css('top')) }
+        
+        activateMode {
+            mousemove: (e) ->
+                pt: { x: e.pageX, y: e.pageY }
+                $(cn).css({ left: dragOriginalLocation.x + (pt.x - dragOrigin.x), top: dragOriginalLocation.y + (pt.y - dragOrigin.y) })
+                updateHoverPanelPosition()
+                
+            mouseup: (e) ->
+                activatePointingMode()
+                
+            hidesPalette: yes
+        }
+        
+    activateNewComponentDragging: (dragOrigin, c) ->
+        cn: createNodeForControl c
+        $('#design-pane').append cn
+        
+        hotSpot = { x: 0.5, y: 0.5 }
+        designAreaOrigin: $('#design-pane').offset()
+        moveTo: (pt) ->
+            size: computeComponentSize(c)
+            c.location = {
+                x: pt.x - designAreaOrigin.left - size.width  * hotSpot.x
+                y: pt.y - designAreaOrigin.top  - size.height * hotSpot.y
+            }
+            updateComponentPosition c, cn
+        moveTo dragOrigin
+        
+        window.status = "Dragging a new component."
+        
+        activateMode {
+            mousemove: (e) ->
+                moveTo { x: e.pageX, y: e.pageY }
+                
+            mouseup: (e) ->
+                addToComponents c
+                storeComponentNode c, cn
+                updateComponentProperties c
+                activatePointingMode()
+            
+            hidesPalette: yes
+        }
+    
+    $('#design-pane').bind {
+        mousedown: (e) ->
+            mode.mousedown e, findControlIdOfNode(e.target)
 
-        $designPane.mousemove (e) ->
-            componentElement: $(e.target).closest('.component')[0]
-            component: $.data(componentElement, 'component') if componentElement
-            mode.get().mousemove e, component, componentElement
+        mousemove: (e) ->
+            mode.mousemove e, findControlIdOfNode(e.target)
             
             # if !isDragging && component && isMouseDown && (Math.abs(pt.x - dragOrigin.x) > 2 || Math.abs(pt.y - dragOrigin.y) > 2)
             #     isDragging: true
             #     draggedComponent: component
             #     $draggedComponentNode: $target
                 
-        $designPane.mouseup (e) ->
-            componentElement: $(e.target).closest('.component')[0]
-            component: $.data(componentElement, 'component') if componentElement
-            mode.get().mouseup e, component, componentElement
-            
-        $palette: $('.palette')
-        paletteVisible: Mo.newDelegatedValue screenDesignerV, 'paletteVisible'
-        
-        $content: $palette.find('.content')
-        for i in [1..20]
-            for key, componentType of componentTypes
-                item: $('<div />').addClass('item')
-                $('<img />').attr('src', "images/palette/${componentType.image}.png").appendTo(item)
-                caption: $('<div />').addClass('caption').html(componentType.label).appendTo(item)
-                $content.append item
-                
-                item.mousedown (e) ->
-                    component: newComponentOfType componentType
-                    component.size: { width: 100, height: 50 }
-                    component.location: { x: 0, y: 0 }
-                    el: renderComponent component
-                    $designPane.append(el)
-                    setMode newNewComponentDragMode component, el, e
-                
-        Mo.sub paletteVisible, (e) ->
-            if e.value
-                $('.palette').showPopOver($('#add-button'))
-            else
-                $('.palette').hidePopOver()
+        mouseup: (e) ->
+            mode.mouseup e, findControlIdOfNode(e.target)
+    }
+
+    ##########################################################################################################
     
+    paletteWanted: on
+    
+    fillPalette: ->
+        $content: $('.palette .content')
+        for i in [1..20]
+            for key, ct of componentTypes
+                item: $('<div />').addClass('item')
+                $('<img />').attr('src', "images/palette/${ct.image}.png").appendTo(item)
+                caption: $('<div />').addClass('caption').html(ct.label).appendTo(item)
+                $content.append item
             
-$ ->
-    Mo.startDumpingEvents()
-    rootDesigner: new RootDesigner()
-    currentScreenDesigner: Mo.newDelegatedValue rootDesigner.currentApplicationDesigner, 'currentScreenDesigner'
-    new DesignPane currentScreenDesigner
-    rootDesigner.openApplication (new Application myApplication), 'openSampleApplication'
+                item.mousedown (e) ->
+                    c: { type: ct.typeName }
+                    c.size: { width: 100, height: 50 }
+                    c.location: { x: 0, y: 0 }
+                    activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
+                    
+    updatePaletteVisibility: (reason) ->
+        showing: $('.palette').is(':visible')
+        desired: paletteWanted && !mode.hidesPalette
+        if showing and not desired
+            $('.palette').hidePopOver()
+        else if desired and not showing
+            anim: if reason is 'mode' then 'fadein' else 'popin'
+            $('.palette').showPopOverPointingTo $('#add-button'), anim
+            
+    $('#add-button').click -> paletteWanted = !paletteWanted; updatePaletteVisibility('wanted')
+    
+    ##########################################################################################################
+    
+    addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components[c.id] = c
+    storeComponentNode: (c, cn) -> $(cn).setdata('moa-cid', c.id); cnodes[c.id] = cn
+    
+    switchToScreen: (screen) ->
+        activeScreen = screen
+        activeScreen.nextId ||= 1
+        components = {}
+        for c in activeScreen.components
+            addToComponents c
+            
+        for cid, c of components
+            $('#design-pane').append storeComponentNode(c, createNodeForControl(c))
         
-    $('#add-button').click ->
-        d: currentScreenDesigner.get()
-        d.paletteVisible.set !d.paletteVisible.get()
+        updateComponentProperties(c) for cid, c of components
         
-    currentScreenDesigner.get().paletteVisible.set true
+    
+    loadApplication: (app) ->
+        application = app
+        switchToScreen application.screens[0]
+        
+    ##########################################################################################################
+    
+    initComponentTypes: ->
+        for typeName, ct of componentTypes
+            ct.typeName = typeName
+
+    initComponentTypes()
+    fillPalette()
+    activatePointingMode()
+    
+    loadApplication(myApplication)
     
