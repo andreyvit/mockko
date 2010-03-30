@@ -41,7 +41,7 @@ myApplication: {
     screens: [{
         components: [
             {
-                type: 'button',
+                type: 'barButton',
                 text: 'Back',
                 location: { x: 50, y: 100 }
                 size: {}
@@ -210,8 +210,8 @@ jQuery ($) ->
     computeComponentSize: (c) ->
         ct: ctypes[c.type]
         {
-            width: c.size.width || ct.initialSize.width
-            height: c.size.height || ct.initialSize.height
+            width: c.size.width || ct.widthPolicy?.fixedSize?.width
+            height: c.size.height || ct.initialSize?.fixedSize?.height
         }
     
     updateComponentPosition: (c, cn) ->
@@ -357,20 +357,22 @@ jQuery ($) ->
     
     paletteWanted: on
     
+    bindPaletteItem: (item, ct) ->
+        item.mousedown (e) ->
+            c: { type: ct.type }
+            c.size: { width: 100, height: 50 }
+            c.location: { x: 0, y: 0 }
+            activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
+    
     fillPalette: ->
         $content: $('.palette .content')
         for ctg in ctgroups
             for ct in ctg.ctypes
                 item: $('<div />').addClass('item')
-                $('<img />').attr('src', "images/palette/button.png").appendTo(item)
+                $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
                 caption: $('<div />').addClass('caption').html(ct.label).appendTo(item)
                 $content.append item
-            
-                item.mousedown (e) ->
-                    c: { type: ct.type }
-                    c.size: { width: 100, height: 50 }
-                    c.location: { x: 0, y: 0 }
-                    activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
+                bindPaletteItem item, ct
                     
     updatePaletteVisibility: (reason) ->
         showing: $('.palette').is(':visible')

@@ -28,6 +28,7 @@ handlers:
 
 - url: /.*
   script: main.py
+  login: admin
 
 admin_console:
   pages:

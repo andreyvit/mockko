@@ -1,0 +1,35 @@
+!!! 5
+%html
+  %head
+    %script(src="../static/lib/jquery-1.4.2.js" type="text/javascript" charset="utf-8")
+    %script(src="../static/lib/jquery-ui-1.8.custom.min.js" type="text/javascript" charset="utf-8")
+    %script(src="../static/lib/underscore.js" type="text/javascript" charset="utf-8")
+    %script(src="../static/designer.js" type="text/javascript" charset="utf-8")
+    %link(rel="stylesheet" href="../static/lib/animations.css" type="text/css" media="screen" title="no title" charset="utf-8")
+    %link(rel="stylesheet" href="../static/theme/theme.css" type="text/css" media="screen" title="no title" charset="utf-8")
+    %link(rel="stylesheet" href="../static/iphone/iphone.css" type="text/css" media="screen" title="no title" charset="utf-8")
+  %body
+    #design-screen.screen
+      .toolbar
+        .left
+          %a#go-myapps(href="#myapps") My Applications
+          %a#undo(href="#undo") Undo
+        .right
+          %a#add-button(href="#") +
+          %a#cool-button(href="#") Share
+        %h1 Make App
+        
+      .left-pane
+      
+      #design-pane
+        #hover-panel.hover-panel
+          .handle.delete-handle
+          .handle.duplicate-handle
+
+      .palette
+        .tip
+        .top
+          %h1 Drag a component to add
+        .content
+        .bottom
+
