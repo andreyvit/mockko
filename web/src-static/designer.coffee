@@ -88,24 +88,28 @@ ctgroups: [
             {
                 type: 'barButton'
                 label: 'Bar Button'
+                defaultText: "Back"
                 widthPolicy: { userSize: true, autoSize: 'browser' }
                 heightPolicy: { fixedSize: { portrait: 30, landscape: 30 } }
             }
             {
                 type: 'roundedButton'
                 label: 'Rounded Button'
+                defaultText: "Call"
                 widthPolicy: { userSize: true, autoSize: 'browser' }
                 heightPolicy: { userSize: true, fixedSize: 44 }
             }
             {
                 type: 'coloredButton'
                 label: 'Colored Button'
+                defaultText: "Delete Contact"
                 widthPolicy: { userSize: true, autoSize: 'browser' }
                 heightPolicy: { userSize: true, fixedSize: 44 }
             }
             {
                 type: 'buyButton'
                 label: 'Buy Button'
+                defaultText: "Buy"
                 widthPolicy: { userSize: true, autoSize: 'browser' }
                 heightPolicy: { userSize: true, fixedSize: 20 }
             }
@@ -210,12 +214,11 @@ jQuery ($) ->
     computeComponentSize: (c) ->
         ct: ctypes[c.type]
         {
-            width: c.size.width || ct.widthPolicy?.fixedSize?.width
-            height: c.size.height || ct.initialSize?.fixedSize?.height
+            width: c.size.width || ct.widthPolicy?.fixedSize?.width || null
+            height: c.size.height || ct.heightPolicy?.fixedSize?.height || null
         }
     
     updateComponentPosition: (c, cn) ->
-        cn ||= cnodes[c.id]
         ct: ctypes[c.type]
         size: computeComponentSize(c)
         location: c.location
@@ -227,9 +230,9 @@ jQuery ($) ->
             'height': "${size.height}px"
         })
 
-    updateComponentText: (c) -> $(cnodes[c.id]).html(c.text) if c.text?
+    updateComponentText: (c, cn) -> $(cn).html(c.text) if c.text?
     
-    updateComponentProperties: (c) -> updateComponentPosition(c); updateComponentText(c)
+    updateComponentProperties: (c, cn) -> updateComponentPosition(c, cn); updateComponentText(c, cn)
         
     
     ##########################################################################################################
@@ -315,11 +318,14 @@ jQuery ($) ->
         designAreaOrigin: $('#design-pane').offset()
         moveTo: (pt) ->
             size: computeComponentSize(c)
+            size.width ||= cn.offsetWidth
             c.location = {
-                x: pt.x - designAreaOrigin.left - size.width  * hotSpot.x
-                y: pt.y - designAreaOrigin.top  - size.height * hotSpot.y
+                x: pt.x - designAreaOrigin.left - (size.width || 0)  * hotSpot.x
+                y: pt.y - designAreaOrigin.top  - (size.height || 0) * hotSpot.y
             }
             updateComponentPosition c, cn
+            
+        updateComponentProperties c, cn
         moveTo dragOrigin
         
         window.status = "Dragging a new component."
@@ -331,7 +337,7 @@ jQuery ($) ->
             mouseup: (e) ->
                 addToComponents c
                 storeComponentNode c, cn
-                updateComponentProperties c
+                updateComponentProperties c, cn
                 activatePointingMode()
             
             hidesPalette: yes
@@ -357,11 +363,18 @@ jQuery ($) ->
     
     paletteWanted: on
     
+    computeInitialSize: (policy, fullSize) ->
+        policy.fixedSize?.portrait || policy.fixedSize || (if policy.autoSize is 'fill' then fullSize)
+    
     bindPaletteItem: (item, ct) ->
         item.mousedown (e) ->
             c: { type: ct.type }
-            c.size: { width: 100, height: 50 }
+            c.size: {
+                width:  computeInitialSize(ct.widthPolicy, 320)
+                height: computeInitialSize(ct.heightPolicy, 460)
+            }
             c.location: { x: 0, y: 0 }
+            c.text = ct.defaultText if ct.defaultText?
             activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
     
     fillPalette: ->
@@ -407,7 +420,7 @@ jQuery ($) ->
         for cid, c of components
             $('#design-pane').append storeComponentNode(c, createNodeForControl(c))
         
-        updateComponentProperties(c) for cid, c of components
+        updateComponentProperties(c, cnodes[cid]) for cid, c of components
         
     
     loadApplication: (app) ->
