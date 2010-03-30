@@ -52,19 +52,154 @@ myApplication: {
 
 # definitions
 
-componentTypes: {
-    button: {
-        label: "button"
-        image: "button"
-        initialSize: { height: 30 }
+ctgroups: [
+    {
+        name: "Bars"
+        ctypes: [
+            {
+                type: 'statusBar'
+                label: 'Status Bar'
+                widthPolicy: { autoSize: 'fill' }
+                heightPolicy: { fixedSize: 20 }
+            }
+            {
+                type: 'tabBar'
+                label: 'Tab Bar'
+                widthPolicy: { autoSize: 'fill' }
+                heightPolicy: { fixedSize: 45 }
+            }
+            {
+                type: 'navBar'
+                label: 'Navigation Bar'
+                widthPolicy: { autoSize: 'fill' }
+                heightPolicy: { autoSize: true }
+            }
+            {
+                type: 'toolBar'
+                label: 'Tool Bar'
+                widthPolicy: { autoSize: 'fill' }
+                heightPolicy: { fixedSize: { portrait: 45, landscape: 45 } }
+            }
+        ]
     }
-}
+    {
+        name: "Buttons"
+        ctypes: [
+            {
+                type: 'barButton'
+                label: 'Bar Button'
+                widthPolicy: { userSize: true, autoSize: 'browser' }
+                heightPolicy: { fixedSize: { portrait: 30, landscape: 30 } }
+            }
+            {
+                type: 'roundedButton'
+                label: 'Rounded Button'
+                widthPolicy: { userSize: true, autoSize: 'browser' }
+                heightPolicy: { userSize: true, fixedSize: 44 }
+            }
+            {
+                type: 'coloredButton'
+                label: 'Colored Button'
+                widthPolicy: { userSize: true, autoSize: 'browser' }
+                heightPolicy: { userSize: true, fixedSize: 44 }
+            }
+            {
+                type: 'buyButton'
+                label: 'Buy Button'
+                widthPolicy: { userSize: true, autoSize: 'browser' }
+                heightPolicy: { userSize: true, fixedSize: 20 }
+            }
+        ]
+    }
+    {
+        name: "Input Controls"
+        ctypes: [
+            {
+                type: 'onOffSwitch'
+                label: 'On/Off Switch'
+                widthPolicy: { fixedSize: 94 }
+                heightPolicy: { fixedSize: 27 }
+            }
+            {
+                type: 'slider'
+                label: 'Slider'
+                widthPolicy: { userSize: true, fixedSize: 118 }
+                heightPolicy: { fixedSize: 23 }
+            }
+            {
+                type: 'pageControl'
+                label: 'Page Control'
+                widthPolicy: { userSize: true, fixedSize: 38 }
+                heightPolicy: { fixedSize: 36 }
+            }
+            {
+                type: 'segmentedControl'
+                label: 'Segmented Control'
+                widthPolicy: { userSize: true, fixedSize: 207 }
+                heightPolicy: { fixedSize: 44 }
+    
+                styles: {
+                    normal: {
+                    }
+                    bar: {
+                        heightPolicy: { fixedSize: 30 }
+                    }
+                }
+            }
+            {
+                type: 'stars'
+                label: 'Stars'
+                widthPolicy: { fixedSize: 50 }
+                heightPolicy: { fixedSize: 27 }
+            }
+        ]
+    }
+    {
+        name: "Misc"
+        ctypes: [
+            {
+                type: 'progressBar'
+                label: 'Progress Bar'
+                widthPolicy: { userSize: true, fixedSize: 150 }
+                heightPolicy: { fixedSize: 9 }
+            }
+            {
+                type: 'progressBarBarStyle'
+                label: 'Progress Bar 2'
+                widthPolicy: { userSize: true, fixedSize: 150 }
+                heightPolicy: { fixedSize: 11 }
+            }
+            {
+                type: 'progressIndicator'
+                label: 'Progress Indicator'
+                widthPolicy: { userSize: true, fixedSize: 150 }
+                heightPolicy: { fixedSize: 11 }
+    
+                styles: {
+                    largeWhite: {
+                        width: 37
+                        height: 37
+                    }
+                    gray: {
+                        width: 20
+                        height: 20
+                    }
+                    white: {
+                        width: 20
+                        height: 20
+                    }
+                }
+            }
+        ]
+    }
+]
 
 jQuery ($) ->
     application: null
     activeScreen: null
     components: {}
     cnodes: {}
+    ctypes: {}
     mode: null
 
     ##########################################################################################################
@@ -73,7 +208,7 @@ jQuery ($) ->
     findControlIdOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-cid')
     
     computeComponentSize: (c) ->
-        ct: componentTypes[c.type]
+        ct: ctypes[c.type]
         {
             width: c.size.width || ct.initialSize.width
             height: c.size.height || ct.initialSize.height
@@ -81,7 +216,7 @@ jQuery ($) ->
     
     updateComponentPosition: (c, cn) ->
         cn ||= cnodes[c.id]
-        ct: componentTypes[c.type]
+        ct: ctypes[c.type]
         size: computeComponentSize(c)
         location: c.location
         
@@ -224,15 +359,15 @@ jQuery ($) ->
     
     fillPalette: ->
         $content: $('.palette .content')
-        for i in [1..20]
-            for key, ct of componentTypes
+        for ctg in ctgroups
+            for ct in ctg.ctypes
                 item: $('<div />').addClass('item')
-                $('<img />').attr('src', "images/palette/${ct.image}.png").appendTo(item)
+                $('<img />').attr('src', "images/palette/button.png").appendTo(item)
                 caption: $('<div />').addClass('caption').html(ct.label).appendTo(item)
                 $content.append item
             
                 item.mousedown (e) ->
-                    c: { type: ct.typeName }
+                    c: { type: ct.type }
                     c.size: { width: 100, height: 50 }
                     c.location: { x: 0, y: 0 }
                     activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
@@ -280,8 +415,9 @@ jQuery ($) ->
     ##########################################################################################################
     
     initComponentTypes: ->
-        for typeName, ct of componentTypes
-            ct.typeName = typeName
+        for ctg in ctgroups
+            for ct in ctg.ctypes
+                ctypes[ct.type] = ct
 
     initComponentTypes()
     fillPalette()
