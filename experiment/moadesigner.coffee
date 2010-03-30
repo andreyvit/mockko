@@ -115,10 +115,14 @@ jQuery ($) ->
     componentUnhovered: ->
         return if hoveredControlId is null
         hoveredControlId = null
-        $('#hover-panel').fadeOut(100)
+        $('#hover-panel').hide()
         
     $('#hover-panel').hide()
-    $('#hover-panel .delete-handle').click -> #
+    $('#hover-panel .delete-handle').click ->
+        if hoveredControlId isnt null
+            $('#hover-panel').hide()
+            deleteComponent hoveredControlId 
+            hoveredControlId = null
     
         
     # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredControlId isnt null
@@ -248,6 +252,13 @@ jQuery ($) ->
     
     addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components[c.id] = c
     storeComponentNode: (c, cn) -> $(cn).setdata('moa-cid', c.id); cnodes[c.id] = cn
+    
+    deleteComponent: (cid) ->
+        cn: cnodes[cid]
+        $(cn).hide 'drop', { direction: 'down' }, 'normal', ->
+            $(cn).remove()
+            delete cnodes[cid]
+            delete components[cid]
     
     switchToScreen: (screen) ->
         activeScreen = screen
