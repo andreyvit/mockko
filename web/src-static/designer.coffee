@@ -260,6 +260,63 @@ jQuery ($) ->
     
     ##########################################################################################################
     
+    rectOfComponent: (cid) ->
+        cn: cnodes[cid]
+        { x: cn.offsetLeft, y: cn.offsetTop, w: cn.offsetWidth, h: cn.offsetHeight }
+    
+    computeAnchoringPositionsOfComponent: (cid) ->
+        r: rectOfComponent cid
+        [
+            { orient: 'vert', cid: cid, coord: r.x }
+            { orient: 'vert', cid: cid, coord: r.x + r.w }
+            { orient: 'horz',  cid: cid, coord: r.y }
+            { orient: 'horz',  cid: cid, coord: r.y + r.h }
+        ]
+        
+    computeAllAnchoringPositions: ->
+        excluded: mode.componentsExcludedFromAnchoring
+        _.flatten(computeAnchoringPositionsOfComponent cid for cid, c of components when not _(excluded).include(cid))
+        
+    computeAnchorings: (ap, cpos, csize) ->
+        switch ap.orient
+            when 'vert'
+                [
+                    {
+                        atype: 'left'
+                        dist: Math.abs(ap.coord - cpos.x)
+                        coord: ap.coord
+                        orient: ap.orient
+                    }
+                    {
+                        atype: 'right'
+                        dist: Math.abs(ap.coord - (cpos.x + csize.width))
+                        coord: ap.coord
+                        orient: ap.orient
+                    }
+                ]
+            when 'horz'
+                [
+                    {
+                        atype: 'top'
+                        dist: Math.abs(ap.coord - cpos.y)
+                        coord: ap.coord
+                        orient: ap.orient
+                    }
+                    {
+                        atype: 'bottom'
+                        dist: Math.abs(ap.coord - (cpos.y + csize.height))
+                        coord: ap.coord
+                        orient: ap.orient
+                    }
+                ]
+                
+    applyAnchoring: (a, cpos, csize) ->
+        switch a.atype
+            when 'left'   then cpos.x = a.coord
+            when 'right'  then cpos.x = a.coord - csize.width
+            when 'top'    then cpos.y = a.coord
+            when 'bottom' then cpos.y = a.coord - csize.height
+    
     activateMode: (m) ->
         mode: m
         updatePaletteVisibility('mode')
@@ -281,6 +338,7 @@ jQuery ($) ->
             mouseup: (e) -> #
             
             hidesPalette: no
+            componentsExcludedFromAnchoring: []
         }
         
     activateExistingComponentDragging: (cid, dragOrigin) ->
@@ -303,10 +361,29 @@ jQuery ($) ->
                 pt: { x: e.pageX, y: e.pageY }
                 
                 size: computeComponentSize(c, cn)
-                c.location = {
+                pos: {
                     x: pt.x - designAreaOrigin.left - (size.width || 0)  * hotSpot.x
                     y: pt.y - designAreaOrigin.top  - (size.height || 0) * hotSpot.y
                 }
+                
+                aa: _.flatten(computeAnchorings(ap, pos, size) for ap in aps)
+
+                best: {
+                    horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
+                    vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
+                }
+                
+                CONF_ANCHORING_DISTANCE = 10
+                
+                # console.log "pos: (${pos.x}, ${pos.y}), best anchoring horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+                
+                if best.horz.dist > CONF_ANCHORING_DISTANCE then best.horz = null
+                if best.vert.dist > CONF_ANCHORING_DISTANCE then best.vert = null
+                
+                applyAnchoring best.vert, pos, size if best.vert
+                applyAnchoring best.horz, pos, size if best.horz
+                
+                c.location = pos
                 updateComponentPosition c, cn
                 updateHoverPanelPosition()
                 
@@ -317,7 +394,9 @@ jQuery ($) ->
                 activatePointingMode()
                 
             hidesPalette: yes
+            componentsExcludedFromAnchoring: [cid]
         }
+        aps: computeAllAnchoringPositions()  # have to do it here to exclude dragged components
         
     activateNewComponentDragging: (dragOrigin, c) ->
         cn: createNodeForControl c
@@ -350,6 +429,7 @@ jQuery ($) ->
                 activatePointingMode()
             
             hidesPalette: yes
+            componentsExcludedFromAnchoring: []
         }
     
     $('#design-pane').bind {
@@ -498,6 +578,6 @@ jQuery ($) ->
         }]
     }
     
-    sample1: {"screens":[{"components":[{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":58,"y":58},"id":"c2"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":58,"y":78},"id":"c3"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":54,"y":412},"id":"c5"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":85,"y":291},"text":"Call","id":"c7"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":210,"y":294},"text":"Delete Contact","id":"c8"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":283,"y":149.5},"id":"c10"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":63,"y":149},"text":"Back","id":"c11"},{"type":"buyButton","size":{"width":80,"height":25},"location":{"x":170,"y":150.5},"text":"Buy","id":"c12"}],"nextId":13}]}
+    sample1: {"screens":[{"components":[{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":57,"y":58},"id":"c2"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":57,"y":78},"id":"c3"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":57,"y":383},"id":"c5"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":57,"y":261},"text":"Call","id":"c7"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":265,"y":261},"text":"Delete Contact","id":"c8"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":283,"y":149},"id":"c10"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":57,"y":149},"text":"Back","id":"c11"},{"type":"buyButton","size":{"width":80,"height":25},"location":{"x":170,"y":150.5},"text":"Buy","id":"c12"}],"nextId":13}]}
     
     loadApplication sample1
