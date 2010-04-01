@@ -192,7 +192,7 @@ ctgroups: [
 
 jQuery ($) ->
 
-    CONF_ANCHORING_DISTANCE = 5
+    CONF_SNAPPING_DISTANCE = 5
     CONF_DESIGNAREA_PUSHBACK_DISTANCE = 100
 
     ##########################################################################################################
@@ -416,7 +416,7 @@ jQuery ($) ->
         { x: cn.offsetLeft, y: cn.offsetTop, w: cn.offsetWidth, h: cn.offsetHeight }
     rectOfCID: (cid) -> rectOfComponent cnodes[cid]
     
-    computeAnchoringPositionsOfComponent: (cid) ->
+    computeSnappingPositionsOfComponent: (cid) ->
         r: rectOfCID cid
         _.compact [
             { orient: 'vert', type: 'edge', cid: cid, coord: r.x } if r.x > allowedArea.x
@@ -427,14 +427,14 @@ jQuery ($) ->
             { orient: 'horz', type: 'center', cid: cid, coord: r.y + r.h / 2 }
         ]
         
-    computeChildrenSnappingPositionsOfContainer: (cid) -> computeAnchoringPositionsOfComponent cid
+    computeChildrenSnappingPositionsOfContainer: (cid) -> computeSnappingPositionsOfComponent cid
         
-    computeAllAnchoringPositions: (pcid) ->
+    computeAllSnappingPositions: (pcid) ->
         cids: if pcid is null then _.keys(components) else findDescendants(pcid)
-        r: _.flatten(computeAnchoringPositionsOfComponent cid for cid in cids)
+        r: _.flatten(computeSnappingPositionsOfComponent cid for cid in cids)
         if pcid is null then r else r.concat computeChildrenSnappingPositionsOfContainer pcid
         
-    computeAnchorings: (ap, r) ->
+    computeSnappings: (ap, r) ->
         switch ap.type
             when 'edge'
                 switch ap.orient
@@ -484,7 +484,7 @@ jQuery ($) ->
                         orient: ap.orient
                     }]
                 
-    applyAnchoring: (a, r) ->
+    applySnapping: (a, r) ->
         switch a.atype
             when 'left'   then r.x = a.coord
             when 'right'  then r.x = a.coord - r.w
@@ -571,21 +571,21 @@ jQuery ($) ->
 
             if ok
                 targetcid: findIdealContainerForRect(r, allDraggedIds)
-                aps: _(computeAllAnchoringPositions(targetcid)).reject (a) -> _.include(allDraggedIds, a.cid)
-                aa: _.flatten(computeAnchorings(ap, r) for ap in aps)
+                aps: _(computeAllSnappingPositions(targetcid)).reject (a) -> _.include(allDraggedIds, a.cid)
+                aa: _.flatten(computeSnappings(ap, r) for ap in aps)
 
                 best: {
                     horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
                     vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
                 }
                 
-                console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), targetcid ${targetcid}, best anchoring horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+                console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), targetcid ${targetcid}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
 
-                if best.horz and best.horz.dist > CONF_ANCHORING_DISTANCE then best.horz = null
-                if best.vert and best.vert.dist > CONF_ANCHORING_DISTANCE then best.vert = null
+                if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
+                if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
 
-                applyAnchoring best.vert, r if best.vert
-                applyAnchoring best.horz, r if best.horz
+                applySnapping best.vert, r if best.vert
+                applySnapping best.horz, r if best.horz
             
             c.location = { x: r.x, y: r.y }
             
