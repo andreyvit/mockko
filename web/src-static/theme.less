@@ -235,8 +235,12 @@ body {
 
 .component {
     position: absolute;
-    cursor: move;
+    cursor: arrow;
     -webkit-transform: scale(1.0);
+}
+
+.component.leaf {
+    cursor: move;
 }
 
 .hover-panel {
@@ -310,6 +314,7 @@ body {
     .move-handle {
         left: -8px;
         top: 8px;
+        cursor: move;
         
         .tip {
             top: 18px;
@@ -319,6 +324,10 @@ body {
     .move-handle:before {
         content: "M";
     }
+    
+}
+.hover-panel.leaf .move-handle {
+    display: none;
 }
 
 #share-popover {

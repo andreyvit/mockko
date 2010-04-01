@@ -52,18 +52,21 @@ ctgroups: [
                 label: 'Tab Bar'
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { fixedSize: 49 }
+                container: yes
             }
             {
                 type: 'navBar'
                 label: 'Navigation Bar'
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { fixedSize: { portrait: 44, landscape: 44 } }
+                container: yes
             }
             {
                 type: 'toolbar'
                 label: 'Tool Bar'
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { fixedSize: { portrait: 44, landscape: 44 } }
+                container: yes
             }
         ]
     }
@@ -269,7 +272,10 @@ jQuery ($) ->
     ##########################################################################################################
     #  DOM rendering
     
-    createNodeForControl: (c) -> $("<div />").addClass("component c-${c.type}")[0]
+    createNodeForControl: (c) ->
+        ct: ctypes[c.type]
+        $("<div />").addClass("component c-${c.type}").addClass(if ct.container then 'container' else 'leaf')[0]
+    
     findControlIdOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-cid')
     
     computeComponentSize: (c, cn) ->
@@ -317,6 +323,13 @@ jQuery ($) ->
     
     componentHovered: (cid) ->
         return unless cnodes[cid]?  # the component is being deleted right now
+        return if hoveredControlId is cid
+        
+        ct: ctypes[components[cid].type]
+        if ct.container
+            $('#hover-panel').addClass('container').removeClass('leaf')
+        else
+            $('#hover-panel').removeClass('container').addClass('leaf')
         $('#hover-panel').fadeIn(100) if hoveredControlId is null
         hoveredControlId = cid
         updateHoverPanelPosition()
@@ -332,6 +345,11 @@ jQuery ($) ->
             $('#hover-panel').hide()
             deleteComponent hoveredControlId 
             hoveredControlId = null
+            
+    $('#hover-panel .move-handle').mousedown (e) ->
+        e.preventDefault()
+        e.stopPropagation()
+        activateExistingComponentDragging hoveredControlId, { x: e.pageX, y: e.pageY }
     
         
     # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredControlId isnt null
@@ -429,7 +447,8 @@ jQuery ($) ->
         window.status = "Hover a component for options. Click to edit. Drag to move."
         activateMode {
             mousedown: (e, cid) ->
-                activateExistingComponentDragging cid, { x: e.pageX, y: e.pageY } if cid
+                if not ctypes[components[cid].type].container
+                    activateExistingComponentDragging cid, { x: e.pageX, y: e.pageY } if cid
 
             mousemove: (e, cid) ->
                 if cid
