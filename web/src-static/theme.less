@@ -246,31 +246,78 @@ body {
     .handle {
         position: absolute;
         color: white;
-        width: 11px;
-        height: 12px;
-        line-height: 12px;
-        padding: 2px 2px;
+        width: 16px;
+        height: 16px;
+        line-height: 16px;
+        font-size: 12px;
+        text-align: center;
         cursor: pointer;
+        background: rgba(0, 0, 0, 0.5);
+        -webkit-border-radius: 8px;
         
         :hover {
+            background: yellow;
+            color: red;
+            
+            .tip {
+                visibility: visible;
+            }
+        }
+        
+        .tip {
+            position: absolute;
+            visibility: hidden;
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            height: 16px;
+            width: auto;
+            line-height: 16px;
+            -webkit-border-radius: 6px;
+            background: rgba(0, 0, 0, 0.66);
+            padding: 0px 6px;
+            
             color: red;
         }
     }
     
     .delete-handle {
-        left: -5px;
-        top: -12px;
+        left: -8px;
+        top: -8px;
+        
+        .tip {
+            top: -18px;
+            left: -17px;
+        }
     }
     .delete-handle:before {
-        content: "x";
+        content: "X";
     }
-
+    
     .duplicate-handle {
-        left: 10px;
-        top: -12px;
+        left: 8px;
+        top: -8px;
+        
+        .tip {
+            top: -18px;
+            left: -25px;
+        }
     }
     .duplicate-handle:before {
-        content: "c";
+        content: "D";
+    }
+    
+    .move-handle {
+        left: -8px;
+        top: 8px;
+        
+        .tip {
+            top: 18px;
+            left: -16px;
+        }
+    }
+    .move-handle:before {
+        content: "M";
     }
 }
 
