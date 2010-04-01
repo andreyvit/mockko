@@ -13,7 +13,10 @@
       .toolbar
         .left
           %a#go-myapps(href="#myapps") My Applications
-          %a#undo(href="#undo") Undo
+          %a#undo-button(href="#undo")
+            #undo-hint
+              %span Undo something...
+            Undo
         .right
           %a#add-button(href="#") +
           %a#share-button(href="#") Share

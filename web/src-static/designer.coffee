@@ -63,7 +63,7 @@ ctgroups: [
             }
             {
                 type: 'toolbar'
-                label: 'Tool Bar'
+                label: 'Toolbar'
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { fixedSize: { portrait: 44, landscape: 44 } }
                 container: yes
@@ -76,6 +76,7 @@ ctgroups: [
             {
                 type: 'barButton'
                 label: 'Bar Button'
+                genericLabel: 'Button'
                 defaultText: "Back"
                 widthPolicy: { userSize: true, autoSize: 'browser' }
                 heightPolicy: { fixedSize: { portrait: 30, landscape: 30 } }
@@ -83,6 +84,7 @@ ctgroups: [
             {
                 type: 'roundedButton'
                 label: 'Rounded Button'
+                genericLabel: 'Button'
                 defaultText: "Call"
                 widthPolicy: { userSize: true, autoSize: 'browser' }
                 heightPolicy: { userSize: true, fixedSize: 44 }
@@ -90,6 +92,7 @@ ctgroups: [
             {
                 type: 'coloredButton'
                 label: 'Colored Button'
+                genericLabel: 'Button'
                 defaultText: "Delete Contact"
                 widthPolicy: { userSize: true, autoSize: 'browser' }
                 heightPolicy: { userSize: true, fixedSize: 44 }
@@ -97,6 +100,7 @@ ctgroups: [
             {
                 type: 'buyButton'
                 label: 'Buy Button'
+                genericLabel: 'Button'
                 defaultText: "Buy"
                 widthPolicy: { userSize: true, fixedSize: 80 } #autoSize: 'browser'
                 heightPolicy: { userSize: true, fixedSize: 25 }
@@ -203,10 +207,54 @@ jQuery ($) ->
     allowedArea: null
 
     ##########################################################################################################
+    #  undo
+    
+    undoStack: []
+    lastChange: null
+    
+    friendlyComponentName: (c) ->
+        ct: ctypes[c.type]
+        label: (ct.genericLabel || ct.label).toLowerCase()
+        if c.text then "the “${c.text}” ${label}" else "a ${label}"
+    
+    beginUndoTransaction: (changeName) ->
+        if lastChange isnt null
+            console.log "Make-App Internal Warning: implicitly closing an unclosed undo change: ${lastChange.name}"
+        lastChange: { memento: createApplicationMemento(), name: changeName }
+        
+    endUndoTransaction: ->
+        return if lastChange is null
+        if lastChange.memento != createApplicationMemento()
+            console.log "Change: ${lastChange.name}"
+            undoStack.push lastChange
+            undoStackChanged()
+        lastChange = null
+
+    undoStackChanged: ->
+        msg: if undoStack.length == 0 then "Nothing to undo" else "Undo ${undoStack[undoStack.length-1].name}"
+        $('#undo-hint span').html msg
+        
+    undoLastChange: ->
+        return if undoStack.length == 0
+        change: undoStack.pop()
+        console.log "Undoing: ${change.name}"
+        revertToMemento change.memento
+        undoStackChanged()
+        
+    createApplicationMemento: -> JSON.stringify(application)
+    
+    revertToMemento: (memento) -> loadApplication JSON.parse(memento)
+    
+    $('#undo-button').click undoLastChange
+    
+    undoStackChanged()
+    
+    ##########################################################################################################
     #  global events
     
     componentsChanged: ->
         activeScreen.components = (c for cid, c of components)
+        endUndoTransaction()
         
         if $('#share-popover').is(':visible')
             updateSharePopover()
@@ -244,6 +292,7 @@ jQuery ($) ->
     storeComponentNode: (c, cn) -> $(cn).setdata('moa-cid', c.id); cnodes[c.id] = cn
     
     deleteComponent: (rootcid) ->
+        beginUndoTransaction "deletion of ${friendlyComponentName components[rootcid]}"
         cids = findChildren rootcid
         cids.push rootcid
         
@@ -447,8 +496,9 @@ jQuery ($) ->
         window.status = "Hover a component for options. Click to edit. Drag to move."
         activateMode {
             mousedown: (e, cid) ->
-                if not ctypes[components[cid].type].container
-                    activateExistingComponentDragging cid, { x: e.pageX, y: e.pageY } if cid
+                if cid
+                    if not ctypes[components[cid].type].container
+                        activateExistingComponentDragging cid, { x: e.pageX, y: e.pageY }
 
             mousemove: (e, cid) ->
                 if cid
@@ -538,6 +588,7 @@ jQuery ($) ->
         { moveTo: moveTo, dropAt: dropAt }
         
     activateExistingComponentDragging: (cid, startPt) ->
+        beginUndoTransaction "movement of ${friendlyComponentName components[cid]}"
         c: components[cid]
         cn: cnodes[cid]
         
@@ -566,6 +617,7 @@ jQuery ($) ->
         }
         
     activateNewComponentDragging: (startPt, c) ->
+        beginUndoTransaction "creation of ${friendlyComponentName c}"
         cn: createNodeForControl c
         $('#design-pane').append cn
         

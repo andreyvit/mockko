@@ -418,3 +418,38 @@ body {
     opacity: 0.75;
     -webkit-transform: scale(0.75);
 }
+
+#undo-button {
+    cursor: pointer;
+    width: 65px;
+    
+    #undo-hint {
+        z-index: 10000;
+        visibility: hidden;
+        
+        position: absolute;
+        top: 30px;
+        width: 400px;
+        margin-left: -200px + 55px / 2;
+        height: 16px;
+        display: block;
+        height: 16px;
+        text-align: center;
+        
+        span {
+            display: span;
+            padding: 2px 10px;
+            
+            line-height: 16px;
+            font-size: 12px;
+            font-weight: bold;
+            color: red;
+            
+            -webkit-border-radius: 6px;
+            background: rgba(0, 0, 0, 0.66);
+        }
+    }
+    :hover #undo-hint {
+        visibility: visible;
+    }
+}
