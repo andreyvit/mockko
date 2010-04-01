@@ -189,6 +189,7 @@ jQuery ($) ->
     CONF_DESIGNAREA_PUSHBACK_DISTANCE = 100
 
     ##########################################################################################################
+    #  constants
     
     application: null
     activeScreen: null
@@ -199,14 +200,30 @@ jQuery ($) ->
     allowedArea: null
 
     ##########################################################################################################
+    #  global events
     
     componentsChanged: ->
         activeScreen.components = (c for cid, c of components)
         
         if $('#share-popover').is(':visible')
             updateSharePopover()
+    
+    ##########################################################################################################
+    #  component management
+    
+    addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components[c.id] = c
+    storeComponentNode: (c, cn) -> $(cn).setdata('moa-cid', c.id); cnodes[c.id] = cn
+    
+    deleteComponent: (cid) ->
+        cn: cnodes[cid]
+        $(cn).hide 'drop', { direction: 'down' }, 'normal', ->
+            $(cn).remove()
+            delete cnodes[cid]
+            delete components[cid]
+            componentsChanged()
 
     ##########################################################################################################
+    #  DOM rendering
     
     createNodeForControl: (c) -> $("<div />").addClass("component c-${c.type}")[0]
     findControlIdOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-cid')
@@ -237,6 +254,7 @@ jQuery ($) ->
     setTransitions: (cn, trans) -> $(cn).css('-webkit-transition', trans)
 
     ##########################################################################################################
+    #  hover panel
     
     hoveredControlId: null
     
@@ -268,6 +286,7 @@ jQuery ($) ->
     # resumeHoverPanel: -> updateHoverPanelPosition $('#hover-panel').fadeIn(100) if hoveredControlId isnt null
     
     ##########################################################################################################
+    #  dragging
     
     rectOfComponent: (cn) ->
         { x: cn.offsetLeft, y: cn.offsetTop, w: cn.offsetWidth, h: cn.offsetHeight }
@@ -493,6 +512,7 @@ jQuery ($) ->
     }
 
     ##########################################################################################################
+    #  palette
     
     paletteWanted: on
     
@@ -533,17 +553,7 @@ jQuery ($) ->
     $('#add-button').click -> paletteWanted = !paletteWanted; updatePaletteVisibility('wanted')
     
     ##########################################################################################################
-    
-    addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components[c.id] = c
-    storeComponentNode: (c, cn) -> $(cn).setdata('moa-cid', c.id); cnodes[c.id] = cn
-    
-    deleteComponent: (cid) ->
-        cn: cnodes[cid]
-        $(cn).hide 'drop', { direction: 'down' }, 'normal', ->
-            $(cn).remove()
-            delete cnodes[cid]
-            delete components[cid]
-            componentsChanged()
+    #  screens/applications
     
     switchToScreen: (screen) ->
         $(cn).remove() for cid, cn of cnodes
