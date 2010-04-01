@@ -214,13 +214,23 @@ jQuery ($) ->
     addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components[c.id] = c
     storeComponentNode: (c, cn) -> $(cn).setdata('moa-cid', c.id); cnodes[c.id] = cn
     
-    deleteComponent: (cid) ->
-        cn: cnodes[cid]
-        $(cn).hide 'drop', { direction: 'down' }, 'normal', ->
-            $(cn).remove()
+    deleteComponent: (rootcid) ->
+        cids = findChildren rootcid
+        cids.push rootcid
+        
+        for cid in cids
+            cn: cnodes[cid]
             delete cnodes[cid]
             delete components[cid]
-            componentsChanged()
+            $(cn).hide 'drop', { direction: 'down' }, 'normal', -> $(cn).remove()
+        componentsChanged()
+            
+    isRectInsideRect: (i, o) -> i.x >= o.x and i.x+i.w <= o.x+o.w and i.y >= o.y and i.y+i.h <= o.y+o.h
+            
+    findChildren: (contid) ->
+        contr: rectOfComponent cnodes[contid]
+        cid for cid, c of components when cid != contid && isRectInsideRect(rectOfComponent(cnodes[cid]), contr)
+            
 
     ##########################################################################################################
     #  DOM rendering
