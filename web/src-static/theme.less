@@ -1,3 +1,14 @@
+
+.clearfix:after {
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+}
+.clearfix { zoom: 1; }
+
+
 /* GENERIC */
 
 * { margin: 0; padding: 0; }
@@ -352,14 +363,26 @@ body {
 .palette {
     .popover;
     
-    width: 330px;
-    height: 400px;
+    width: 10px + 80px * 5;
+    height: 550px;
     top: 55px;
     
     display: none;
     
     .content {
         padding: 5px 5px;
+    }
+    
+    .group {
+        .clearfix;
+        
+        .header {
+            margin: 8px 10px 4px 10px;
+            font-size: 12px;
+            line-height: 16px;
+            color: white;
+            border-bottom: 1px solid white;
+        }
     }
     
     .item {

@@ -722,11 +722,13 @@ jQuery ($) ->
     fillPalette: ->
         $content: $('.palette .content')
         for ctg in ctgroups
+            group: $('<div />').addClass('group').appendTo($content)
+            $('<div />').addClass('header').html(ctg.name).appendTo(group)
             for ct in ctg.ctypes
                 item: $('<div />').addClass('item')
                 $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
                 caption: $('<div />').addClass('caption').html(ct.label).appendTo(item)
-                $content.append item
+                group.append item
                 bindPaletteItem item, ct
                     
     updatePaletteVisibility: (reason) ->
