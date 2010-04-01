@@ -424,9 +424,11 @@ jQuery ($) ->
     
     $('#design-pane').bind {
         mousedown: (e) ->
+            e.preventDefault()
             mode.mousedown e, findControlIdOfNode(e.target)
 
         mousemove: (e) ->
+            e.preventDefault()
             mode.mousemove e, findControlIdOfNode(e.target)
             
             # if !isDragging && component && isMouseDown && (Math.abs(pt.x - dragOrigin.x) > 2 || Math.abs(pt.y - dragOrigin.y) > 2)
@@ -435,6 +437,7 @@ jQuery ($) ->
             #     $draggedComponentNode: $target
                 
         mouseup: (e) ->
+            e.preventDefault()
             mode.mouseup e, findControlIdOfNode(e.target)
     }
 
@@ -447,6 +450,7 @@ jQuery ($) ->
     
     bindPaletteItem: (item, ct) ->
         item.mousedown (e) ->
+            e.preventDefault()
             c: { type: ct.type }
             c.size: {
                 width:  computeInitialSize(ct.widthPolicy, 320)
