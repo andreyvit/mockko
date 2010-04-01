@@ -299,7 +299,7 @@ jQuery ($) ->
     
     deleteComponent: (rootcid) ->
         beginUndoTransaction "deletion of ${friendlyComponentName components[rootcid]}"
-        cids = findChildren rootcid
+        cids = findDescendants rootcid
         cids.push rootcid
         
         for cid in cids
@@ -309,7 +309,7 @@ jQuery ($) ->
             $(cn).hide 'drop', { direction: 'down' }, 'normal', -> $(cn).remove()
         componentsChanged()
             
-    findChildren: (contid) ->
+    findDescendants: (contid) ->
         contr: rectOfCID contid
         cid for cid, c of components when cid != contid && isRectInsideRect(rectOfCID(cid), contr)
         
@@ -430,7 +430,7 @@ jQuery ($) ->
     computeChildrenSnappingPositionsOfContainer: (cid) -> computeAnchoringPositionsOfComponent cid
         
     computeAllAnchoringPositions: (pcid) ->
-        cids: if pcid is null then _.keys(components) else findChildren(pcid)
+        cids: if pcid is null then _.keys(components) else findDescendants(pcid)
         r: _.flatten(computeAnchoringPositionsOfComponent cid for cid in cids)
         if pcid is null then r else r.concat computeChildrenSnappingPositionsOfContainer pcid
         
@@ -522,7 +522,7 @@ jQuery ($) ->
         origin: $('#design-pane').offset()
         
         if c.id
-            descendantIds: findChildren c.id
+            descendantIds: findDescendants c.id
             console.log descendantIds
             originalR: rectOfComponent cn
             originalDescendantsRs: {}
