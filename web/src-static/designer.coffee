@@ -207,6 +207,8 @@ jQuery ($) ->
         
         if $('#share-popover').is(':visible')
             updateSharePopover()
+            
+        updateZIndexes()
     
     ##########################################################################################################
     #  component management
@@ -256,6 +258,13 @@ jQuery ($) ->
             'width':  (if size.width then "${size.width}px" else 'auto')
             'height': "${size.height}px"
         })
+        
+        r: rectOfComponent cn
+        $(cn).css('z-index', r.w * r.h)
+        
+    updateZIndexes: ->
+        ordered: _(_.keys components).sortBy (cid) -> r: rectOfComponent cnodes[cid]; -r.w * r.h
+        _.each ordered, (cid, i) -> $(cnodes[cid]).css('z-index', i)
 
     updateComponentText: (c, cn) -> $(cn).html(c.text) if c.text?
     
