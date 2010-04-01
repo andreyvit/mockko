@@ -39,6 +39,18 @@ jQuery.fn.getdata: (id) -> $.data(this[0], id)
 
 ctgroups: [
     {
+        name: "Text"
+        ctypes: [
+            {
+                type: 'text'
+                label: 'Text'
+                defaultText: "Some text"
+                widthPolicy: { autoSize: 'browser' }
+                heightPolicy: { fixedSize: 20 }
+            }
+        ]
+    }
+    {
         name: "Bars"
         ctypes: [
             {
@@ -817,6 +829,6 @@ jQuery ($) ->
         }]
     }
     
-    sample1: {"screens":[{"components":[{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":47,"y":139},"id":"c13"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":47,"y":159},"id":"c14"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":47,"y":570},"id":"c15"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":268},"text":"Back","id":"c16"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":97,"y":493},"text":"Call","id":"c17"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":268},"id":"c18"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":312},"text":"Back","id":"c21"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":362},"text":"Back","id":"c22"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":412},"text":"Back","id":"c23"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":315},"id":"c24"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":212,"y":493},"text":"Delete Contact","id":"c25"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":365},"id":"c26"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":415},"id":"c27"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":54,"y":166},"text":"Back","id":"c28"}],"nextId":29}]}
+    sample1: {"screens":[{"components":[{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":47,"y":139},"id":"c13"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":47,"y":159},"id":"c14"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":47,"y":570},"id":"c15"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":268},"text":"Back","id":"c16"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":97,"y":493},"text":"Call","id":"c17"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":268},"id":"c18"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":312},"text":"Back","id":"c21"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":362},"text":"Back","id":"c22"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":412},"text":"Back","id":"c23"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":315},"id":"c24"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":212,"y":493},"text":"Delete Contact","id":"c25"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":365},"id":"c26"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":415},"id":"c27"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":54,"y":166},"text":"Back","id":"c28"},{"type":"text","size":{"width":null,"height":20},"location":{"x":178,"y":166},"text":"Some text","id":"c32"}],"nextId":33}]}
     
     loadApplication sample1
