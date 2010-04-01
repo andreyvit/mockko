@@ -185,7 +185,7 @@ ctgroups: [
 
 jQuery ($) ->
 
-    CONF_ANCHORING_DISTANCE = 10
+    CONF_ANCHORING_DISTANCE = 5
     CONF_DESIGNAREA_PUSHBACK_DISTANCE = 100
 
     ##########################################################################################################
@@ -313,47 +313,66 @@ jQuery ($) ->
     computeAnchoringPositionsOfComponent: (cid) ->
         r: rectOfComponent cnodes[cid]
         _.compact [
-            { orient: 'vert', cid: cid, coord: r.x } if r.x > allowedArea.x
-            { orient: 'vert', cid: cid, coord: r.x + r.w } if r.x+r.w < allowedArea.x+allowedArea.w
-            { orient: 'horz',  cid: cid, coord: r.y } if r.y > allowedArea.y
-            { orient: 'horz',  cid: cid, coord: r.y + r.h } if r.y+r.h < allowedArea.y+allowedArea.h
+            { orient: 'vert', type: 'edge', cid: cid, coord: r.x } if r.x > allowedArea.x
+            { orient: 'vert', type: 'edge', cid: cid, coord: r.x + r.w } if r.x+r.w < allowedArea.x+allowedArea.w
+            { orient: 'vert', type: 'center', cid: cid, coord: r.x + r.w / 2 }
+            { orient: 'horz', type: 'edge', cid: cid, coord: r.y } if r.y > allowedArea.y
+            { orient: 'horz', type: 'edge', cid: cid, coord: r.y + r.h } if r.y+r.h < allowedArea.y+allowedArea.h
+            { orient: 'horz', type: 'center', cid: cid, coord: r.y + r.h / 2 }
         ]
         
     computeAllAnchoringPositions: ->
         _.flatten(computeAnchoringPositionsOfComponent cid for cid, c of components)
         
     computeAnchorings: (ap, r) ->
-        switch ap.orient
-            when 'vert'
-                [
-                    {
-                        atype: 'left'
-                        dist: Math.abs(ap.coord - r.x)
+        switch ap.type
+            when 'edge'
+                switch ap.orient
+                    when 'vert'
+                        [
+                            {
+                                atype: 'left'
+                                dist: Math.abs(ap.coord - r.x)
+                                coord: ap.coord
+                                orient: ap.orient
+                            }
+                            {
+                                atype: 'right'
+                                dist: Math.abs(ap.coord - (r.x + r.w))
+                                coord: ap.coord
+                                orient: ap.orient
+                            }
+                        ]
+                    when 'horz'
+                        [
+                            {
+                                atype: 'top'
+                                dist: Math.abs(ap.coord - r.y)
+                                coord: ap.coord
+                                orient: ap.orient
+                            }
+                            {
+                                atype: 'bottom'
+                                dist: Math.abs(ap.coord - (r.y + r.h))
+                                coord: ap.coord
+                                orient: ap.orient
+                            }
+                        ]
+            when 'center'
+                if ap.orient == 'vert'
+                    [{
+                        atype: 'xcenter'
+                        dist: Math.abs(ap.coord - (r.x + r.w/2))
                         coord: ap.coord
                         orient: ap.orient
-                    }
-                    {
-                        atype: 'right'
-                        dist: Math.abs(ap.coord - (r.x + r.w))
+                    }]
+                else
+                    [{
+                        atype: 'ycenter'
+                        dist: Math.abs(ap.coord - (r.y + r.h/2))
                         coord: ap.coord
                         orient: ap.orient
-                    }
-                ]
-            when 'horz'
-                [
-                    {
-                        atype: 'top'
-                        dist: Math.abs(ap.coord - r.y)
-                        coord: ap.coord
-                        orient: ap.orient
-                    }
-                    {
-                        atype: 'bottom'
-                        dist: Math.abs(ap.coord - (r.y + r.h))
-                        coord: ap.coord
-                        orient: ap.orient
-                    }
-                ]
+                    }]
                 
     applyAnchoring: (a, r) ->
         switch a.atype
@@ -361,6 +380,8 @@ jQuery ($) ->
             when 'right'  then r.x = a.coord - r.w
             when 'top'    then r.y = a.coord
             when 'bottom' then r.y = a.coord - r.h
+            when 'xcenter' then r.x = a.coord - r.w/2
+            when 'ycenter' then r.y = a.coord - r.h/2
     
     activateMode: (m) ->
         mode: m
