@@ -364,13 +364,24 @@ jQuery ($) ->
             r.x: pt.x - origin.left - r.w * hotspot.x
             r.y: pt.y - origin.top  - r.h * hotspot.y
 
-            if allowedArea.x - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.x < allowedArea.x then r.x = allowedArea.x
-            if allowedArea.y - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.y < allowedArea.y then r.y = allowedArea.y
-            if allowedArea.x+allowedArea.w-r.w < r.x <= allowedArea.x+allowedArea.w-r.w + CONF_DESIGNAREA_PUSHBACK_DISTANCE then r.x = allowedArea.x+allowedArea.w - r.w
-            if allowedArea.y+allowedArea.h-r.h < r.y <= allowedArea.y+allowedArea.h-r.h + CONF_DESIGNAREA_PUSHBACK_DISTANCE then r.y = allowedArea.y+allowedArea.h - r.h
+            insideArea: {
+                x: (allowedArea.x <= r.x <= allowedArea.x+allowedArea.w-r.w)
+                y: allowedArea.y <= r.y <= allowedArea.y+allowedArea.h-r.h
+            }
+            snapToArea: {
+                left:   (allowedArea.x - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.x < allowedArea.x)
+                top:    (allowedArea.y - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.y < allowedArea.y)
+                right:  (allowedArea.x+allowedArea.w-r.w < r.x <= allowedArea.x+allowedArea.w-r.w + CONF_DESIGNAREA_PUSHBACK_DISTANCE)
+                bottom: (allowedArea.y+allowedArea.h-r.h < r.y <= allowedArea.y+allowedArea.h-r.h + CONF_DESIGNAREA_PUSHBACK_DISTANCE)
+            }
+            if (insideArea.x or snapToArea.left or snapToArea.right) and (insideArea.y or snapToArea.top or snapToArea.bottom)
+                if snapToArea.left then r.x = allowedArea.x
+                if snapToArea.top  then r.y = allowedArea.y
+                if snapToArea.right then r.x = allowedArea.x+allowedArea.w - r.w
+                if snapToArea.bottom then r.y = allowedArea.y+allowedArea.h - r.h
+                insideArea.x = insideArea.y = yes
             
-            ok: (allowedArea.x <= r.x <= allowedArea.x+allowedArea.w-r.w and allowedArea.y <= r.y <= allowedArea.y+allowedArea.h-r.h)
-            [r, ok]
+            [r, insideArea.x && insideArea.y]
         
         moveTo: (pt) ->
             setTransitions cn, "-webkit-transform 0.25s linear"
