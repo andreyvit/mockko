@@ -353,7 +353,6 @@ jQuery ($) ->
         })
         
         r: rectOfComponent cn
-        $(cn).css('z-index', r.w * r.h)
         
     updateZIndexes: ->
         ordered: _(_.keys components).sortBy (cid) -> r: rectOfComponent cnodes[cid]; -r.w * r.h
@@ -522,10 +521,17 @@ jQuery ($) ->
     startDragging: (c, cn, options) ->
         origin: $('#design-pane').offset()
         
-        apsPCID: null
-        apsCache: null
+        if c.id
+            descendantIds: findChildren c.id
+            console.log descendantIds
+            originalR: rectOfComponent cn
+            originalDescendantsRs: {}
+            for dcid in descendantIds
+                originalDescendantsRs[dcid] = rectOfComponent cnodes[dcid]
+            allDraggedIds: [c.id].concat(descendantIds)
+        else
+            allDraggedIds: []
         
-
         computeHotSpot: (pt) ->
             r: rectOfComponent cn
             {
@@ -564,8 +570,8 @@ jQuery ($) ->
             $(cn)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
-                targetcid: findIdealContainerForRect(r, [c.id])
-                aps: _(computeAllAnchoringPositions(targetcid)).select((a) -> c.id isnt a.cid)
+                targetcid: findIdealContainerForRect(r, allDraggedIds)
+                aps: _(computeAllAnchoringPositions(targetcid)).reject (a) -> _.include(allDraggedIds, a.cid)
                 aa: _.flatten(computeAnchorings(ap, r) for ap in aps)
 
                 best: {
@@ -582,6 +588,16 @@ jQuery ($) ->
                 applyAnchoring best.horz, r if best.horz
             
             c.location = { x: r.x, y: r.y }
+            
+            if descendantIds
+                for dcid in descendantIds
+                    delta: { x: r.x - originalR.x, y: r.y - originalR.y }
+                    components[dcid].location = {
+                        x: originalDescendantsRs[dcid].x + delta.x
+                        y: originalDescendantsRs[dcid].y + delta.y
+                    }
+                    console.log "moved ${c.id}, updated descendant ${dcid} delta x ${delta.x}, y ${delta.y}"
+                    updateComponentPosition components[dcid], cnodes[dcid]
             
             updateComponentPosition c, cn
             updateHoverPanelPosition()
@@ -801,6 +817,6 @@ jQuery ($) ->
         }]
     }
     
-    sample1: {"screens":[{"components":[{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":47,"y":139},"id":"c13"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":47,"y":159},"id":"c14"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":47,"y":570},"id":"c15"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":268},"text":"Back","id":"c16"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":97,"y":493},"text":"Call","id":"c17"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":268},"id":"c18"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":312},"text":"Back","id":"c21"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":362},"text":"Back","id":"c22"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":412},"text":"Back","id":"c23"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":315},"id":"c24"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":212,"y":493},"text":"Delete Contact","id":"c25"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":365},"id":"c26"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":415},"id":"c27"}],"nextId":28}]}
+    sample1: {"screens":[{"components":[{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":47,"y":139},"id":"c13"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":47,"y":159},"id":"c14"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":47,"y":570},"id":"c15"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":268},"text":"Back","id":"c16"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":97,"y":493},"text":"Call","id":"c17"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":268},"id":"c18"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":312},"text":"Back","id":"c21"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":362},"text":"Back","id":"c22"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":412},"text":"Back","id":"c23"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":315},"id":"c24"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":212,"y":493},"text":"Delete Contact","id":"c25"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":365},"id":"c26"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":415},"id":"c27"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":54,"y":166},"text":"Back","id":"c28"}],"nextId":29}]}
     
     loadApplication sample1
