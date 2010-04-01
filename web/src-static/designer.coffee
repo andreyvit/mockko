@@ -190,6 +190,7 @@ jQuery ($) ->
     cnodes: {}
     ctypes: {}
     mode: null
+    allowedArea: null
 
     ##########################################################################################################
     
@@ -363,18 +364,28 @@ jQuery ($) ->
             }
 
             CONF_ANCHORING_DISTANCE = 10
+            CONF_DESIGNAREA_PUSHBACK_DISTANCE = 100
 
             # console.log "pos: (${pos.x}, ${pos.y}), best anchoring horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
 
-            if best.horz.dist > CONF_ANCHORING_DISTANCE then best.horz = null
-            if best.vert.dist > CONF_ANCHORING_DISTANCE then best.vert = null
+            if best.horz and best.horz.dist > CONF_ANCHORING_DISTANCE then best.horz = null
+            if best.vert and best.vert.dist > CONF_ANCHORING_DISTANCE then best.vert = null
 
             applyAnchoring best.vert, r if best.vert
             applyAnchoring best.horz, r if best.horz
-
+            
+            if allowedArea.x - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.x < allowedArea.x then r.x = allowedArea.x
+            if allowedArea.y - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.y < allowedArea.y then r.y = allowedArea.y
+            if allowedArea.x+allowedArea.w-r.w < r.x <= allowedArea.x+allowedArea.w-r.w + CONF_DESIGNAREA_PUSHBACK_DISTANCE then r.x = allowedArea.x+allowedArea.w - r.w
+            if allowedArea.y+allowedArea.h-r.h < r.y <= allowedArea.y+allowedArea.h-r.h + CONF_DESIGNAREA_PUSHBACK_DISTANCE then r.y = allowedArea.y+allowedArea.h - r.h
+            
+            ok: (allowedArea.x <= r.x <= allowedArea.x+allowedArea.w-r.w and allowedArea.y <= r.y <= allowedArea.y+allowedArea.h-r.h)
+            $(cn)[if ok then 'removeClass' else 'addClass']('cannot-drop')
+            
             c.location = { x: r.x, y: r.y }
             updateComponentPosition c, cn
             updateHoverPanelPosition()
+            
             
         moveTo(options.startPt)
             
@@ -508,6 +519,14 @@ jQuery ($) ->
         
         updateComponentProperties(c, cnodes[cid]) for cid, c of components
         
+        devicePanel: $('#device-panel')[0]
+        allowedArea: {
+            x: 47
+            y: 139
+            w: 320
+            h: 480
+        }
+        
         componentsChanged()
         
     
@@ -572,6 +591,6 @@ jQuery ($) ->
         }]
     }
     
-    sample1: {"screens":[{"components":[{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":57,"y":58},"id":"c2"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":57,"y":78},"id":"c3"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":57,"y":383},"id":"c5"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":57,"y":261},"text":"Call","id":"c7"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":265,"y":261},"text":"Delete Contact","id":"c8"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":283,"y":149},"id":"c10"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":57,"y":149},"text":"Back","id":"c11"},{"type":"buyButton","size":{"width":80,"height":25},"location":{"x":170,"y":150.5},"text":"Buy","id":"c12"}],"nextId":13}]}
+    sample1: {"screens":[{"components":[{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":47,"y":139},"id":"c13"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":47,"y":159},"id":"c14"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":47,"y":570},"id":"c15"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":268},"text":"Back","id":"c16"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":97,"y":493},"text":"Call","id":"c17"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":268},"id":"c18"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":312},"text":"Back","id":"c21"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":362},"text":"Back","id":"c22"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":412},"text":"Back","id":"c23"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":315},"id":"c24"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":212,"y":493},"text":"Delete Contact","id":"c25"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":365},"id":"c26"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":415},"id":"c27"}],"nextId":28}]}
     
     loadApplication sample1
