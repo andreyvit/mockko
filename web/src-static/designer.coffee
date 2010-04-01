@@ -207,6 +207,12 @@ jQuery ($) ->
     allowedArea: null
 
     ##########################################################################################################
+    #  utilities
+    
+    aOrAn: (s) ->
+        if s[0] in {a: yes, e: yes, i: yes, o: yes, u: yes} then "an ${s}" else "a ${s}"
+
+    ##########################################################################################################
     #  undo
     
     undoStack: []
@@ -215,7 +221,7 @@ jQuery ($) ->
     friendlyComponentName: (c) ->
         ct: ctypes[c.type]
         label: (ct.genericLabel || ct.label).toLowerCase()
-        if c.text then "the “${c.text}” ${label}" else "a ${label}"
+        if c.text then "the “${c.text}” ${label}" else aOrAn label
     
     beginUndoTransaction: (changeName) ->
         if lastChange isnt null
