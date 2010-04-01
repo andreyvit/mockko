@@ -316,6 +316,7 @@ jQuery ($) ->
         $('#hover-panel').css({ left: offset.left, top: offset.top })
     
     componentHovered: (cid) ->
+        return unless cnodes[cid]?  # the component is being deleted right now
         $('#hover-panel').fadeIn(100) if hoveredControlId is null
         hoveredControlId = cid
         updateHoverPanelPosition()
