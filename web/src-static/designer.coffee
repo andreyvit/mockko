@@ -211,6 +211,30 @@ jQuery ($) ->
         updateZIndexes()
     
     ##########################################################################################################
+    #  geometry
+
+    isRectInsideRect: (i, o) -> i.x >= o.x and i.x+i.w <= o.x+o.w and i.y >= o.y and i.y+i.h <= o.y+o.h
+    
+    doesRectIntersectRect: (a, b) ->
+        (b.x <= a.x+a.w) and (b.x+b.w >= a.x) and (b.y <= a.y+a.h) and (b.y+b.h >= a.y)
+        
+    rectIntersection: (a, b) ->
+        x: Math.max(a.x, b.x)
+        y: Math.max(a.y, b.y)
+        x2: Math.min(a.x+a.w, b.x+b.w)
+        y2: Math.min(a.y+a.h, b.y+b.h)
+        if x2 < x then t = x2; x2 = x; x = t
+        if y2 < y then t = y2; y2 = y; y = t
+        { x: x, y: y, w: x2-x, h: y2-y }
+        
+    areaOfIntersection: (a, b) ->
+        if doesRectIntersectRect(a, b)
+            r: rectIntersection(a, b)
+            r.w * r.h
+        else
+            0
+    
+    ##########################################################################################################
     #  component management
     
     addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components[c.id] = c
@@ -227,12 +251,20 @@ jQuery ($) ->
             $(cn).hide 'drop', { direction: 'down' }, 'normal', -> $(cn).remove()
         componentsChanged()
             
-    isRectInsideRect: (i, o) -> i.x >= o.x and i.x+i.w <= o.x+o.w and i.y >= o.y and i.y+i.h <= o.y+o.h
-            
     findChildren: (contid) ->
-        contr: rectOfComponent cnodes[contid]
-        cid for cid, c of components when cid != contid && isRectInsideRect(rectOfComponent(cnodes[cid]), contr)
-            
+        contr: rectOfCID contid
+        cid for cid, c of components when cid != contid && isRectInsideRect(rectOfCID(cid), contr)
+        
+    findParent: (cid) ->
+        # a parent is a covering component of minimal area
+        r: rectOfCID cid
+        _(pcid for pcid in components when pcid != cid && isRectInsideRect(r, rectOfCID(pcid))).min (pcid) -> r: rectOfCID(pcid); r.w*r.h
+        
+    findIdealContainerForRect: (r, excluded) ->
+        cids: _.reject _.keys(components), (cid) -> _.include(excluded, cid)
+        # find container with maximum area of overlap
+        bestcid: _(cids).max (cid) -> areaOfIntersection(r, rectOfCID(cid))
+        if bestcid and areaOfIntersection(r, rectOfCID(bestcid)) > 0 then bestcid else null
 
     ##########################################################################################################
     #  DOM rendering
@@ -309,9 +341,10 @@ jQuery ($) ->
     
     rectOfComponent: (cn) ->
         { x: cn.offsetLeft, y: cn.offsetTop, w: cn.offsetWidth, h: cn.offsetHeight }
+    rectOfCID: (cid) -> rectOfComponent cnodes[cid]
     
     computeAnchoringPositionsOfComponent: (cid) ->
-        r: rectOfComponent cnodes[cid]
+        r: rectOfCID cid
         _.compact [
             { orient: 'vert', type: 'edge', cid: cid, coord: r.x } if r.x > allowedArea.x
             { orient: 'vert', type: 'edge', cid: cid, coord: r.x + r.w } if r.x+r.w < allowedArea.x+allowedArea.w
@@ -321,8 +354,12 @@ jQuery ($) ->
             { orient: 'horz', type: 'center', cid: cid, coord: r.y + r.h / 2 }
         ]
         
-    computeAllAnchoringPositions: ->
-        _.flatten(computeAnchoringPositionsOfComponent cid for cid, c of components)
+    computeChildrenSnappingPositionsOfContainer: (cid) -> computeAnchoringPositionsOfComponent cid
+        
+    computeAllAnchoringPositions: (pcid) ->
+        cids: if pcid is null then _.keys(components) else findChildren(pcid)
+        r: _.flatten(computeAnchoringPositionsOfComponent cid for cid in cids)
+        if pcid is null then r else r.concat computeChildrenSnappingPositionsOfContainer pcid
         
     computeAnchorings: (ap, r) ->
         switch ap.type
@@ -408,7 +445,10 @@ jQuery ($) ->
     
     startDragging: (c, cn, options) ->
         origin: $('#design-pane').offset()
-        aps: _(computeAllAnchoringPositions()).select((a) -> c.id isnt a.cid)
+        
+        apsPCID: null
+        apsCache: null
+        
 
         computeHotSpot: (pt) ->
             r: rectOfComponent cn
@@ -443,19 +483,21 @@ jQuery ($) ->
             [r, insideArea.x && insideArea.y]
         
         moveTo: (pt) ->
-            setTransitions cn, "-webkit-transform 0.25s linear"
             [r, ok] = updateRectangleAndClipToArea(pt)
+            setTransitions cn, "-webkit-transform 0.25s linear"
             $(cn)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
+                targetcid: findIdealContainerForRect(r, [c.id])
+                aps: _(computeAllAnchoringPositions(targetcid)).select((a) -> c.id isnt a.cid)
                 aa: _.flatten(computeAnchorings(ap, r) for ap in aps)
 
                 best: {
                     horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
                     vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
                 }
-
-                # console.log "pos: (${pos.x}, ${pos.y}), best anchoring horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+                
+                console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), targetcid ${targetcid}, best anchoring horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
 
                 if best.horz and best.horz.dist > CONF_ANCHORING_DISTANCE then best.horz = null
                 if best.vert and best.vert.dist > CONF_ANCHORING_DISTANCE then best.vert = null
