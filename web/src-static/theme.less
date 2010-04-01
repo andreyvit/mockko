@@ -236,6 +236,8 @@ body {
 .component {
     position: absolute;
     cursor: move;
+    -webkit-transform: scale(1.0);
+    -webkit-transition: -webkit-transform 0.25s linear;
 }
 
 .hover-panel {
@@ -358,6 +360,6 @@ body {
 }
 
 .component.cannot-drop {
-    border: 1px solid red;
     opacity: 50%;
+    -webkit-transform: scale(0.75);
 }
