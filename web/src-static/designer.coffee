@@ -260,12 +260,11 @@ jQuery ($) ->
     
     ##########################################################################################################
     
-    rectOfComponent: (cid) ->
-        cn: cnodes[cid]
+    rectOfComponent: (cn) ->
         { x: cn.offsetLeft, y: cn.offsetTop, w: cn.offsetWidth, h: cn.offsetHeight }
     
     computeAnchoringPositionsOfComponent: (cid) ->
-        r: rectOfComponent cid
+        r: rectOfComponent cnodes[cid]
         [
             { orient: 'vert', cid: cid, coord: r.x }
             { orient: 'vert', cid: cid, coord: r.x + r.w }
@@ -274,22 +273,21 @@ jQuery ($) ->
         ]
         
     computeAllAnchoringPositions: ->
-        excluded: mode.componentsExcludedFromAnchoring
-        _.flatten(computeAnchoringPositionsOfComponent cid for cid, c of components when not _(excluded).include(cid))
+        _.flatten(computeAnchoringPositionsOfComponent cid for cid, c of components)
         
-    computeAnchorings: (ap, cpos, csize) ->
+    computeAnchorings: (ap, r) ->
         switch ap.orient
             when 'vert'
                 [
                     {
                         atype: 'left'
-                        dist: Math.abs(ap.coord - cpos.x)
+                        dist: Math.abs(ap.coord - r.x)
                         coord: ap.coord
                         orient: ap.orient
                     }
                     {
                         atype: 'right'
-                        dist: Math.abs(ap.coord - (cpos.x + csize.width))
+                        dist: Math.abs(ap.coord - (r.x + r.w))
                         coord: ap.coord
                         orient: ap.orient
                     }
@@ -298,24 +296,24 @@ jQuery ($) ->
                 [
                     {
                         atype: 'top'
-                        dist: Math.abs(ap.coord - cpos.y)
+                        dist: Math.abs(ap.coord - r.y)
                         coord: ap.coord
                         orient: ap.orient
                     }
                     {
                         atype: 'bottom'
-                        dist: Math.abs(ap.coord - (cpos.y + csize.height))
+                        dist: Math.abs(ap.coord - (r.y + r.h))
                         coord: ap.coord
                         orient: ap.orient
                     }
                 ]
                 
-    applyAnchoring: (a, cpos, csize) ->
+    applyAnchoring: (a, r) ->
         switch a.atype
-            when 'left'   then cpos.x = a.coord
-            when 'right'  then cpos.x = a.coord - csize.width
-            when 'top'    then cpos.y = a.coord
-            when 'bottom' then cpos.y = a.coord - csize.height
+            when 'left'   then r.x = a.coord
+            when 'right'  then r.x = a.coord - r.w
+            when 'top'    then r.y = a.coord
+            when 'bottom' then r.y = a.coord - r.h
     
     activateMode: (m) ->
         mode: m
@@ -338,88 +336,81 @@ jQuery ($) ->
             mouseup: (e) -> #
             
             hidesPalette: no
-            componentsExcludedFromAnchoring: []
         }
+    
+    startDragging: (c, cn, options) ->
+        origin: $('#design-pane').offset()
+        aps: _(computeAllAnchoringPositions()).select((a) -> c.id isnt a.cid)
+
+        computeHotSpot: (pt) ->
+            r: rectOfComponent cn
+            {
+                x: if r.w then ((pt.x - origin.left) - r.x) / r.w else 0.5
+                y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
+            }
+        hotspot: options.hotspot || computeHotSpot(options.startPt)
         
-    activateExistingComponentDragging: (cid, dragOrigin) ->
+        moveTo: (pt) ->
+            r: rectOfComponent cn
+            r.x: pt.x - origin.left - r.w * hotspot.x
+            r.y: pt.y - origin.top  - r.h * hotspot.y
+
+            aa: _.flatten(computeAnchorings(ap, r) for ap in aps)
+
+            best: {
+                horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
+                vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
+            }
+
+            CONF_ANCHORING_DISTANCE = 10
+
+            # console.log "pos: (${pos.x}, ${pos.y}), best anchoring horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+
+            if best.horz.dist > CONF_ANCHORING_DISTANCE then best.horz = null
+            if best.vert.dist > CONF_ANCHORING_DISTANCE then best.vert = null
+
+            applyAnchoring best.vert, r if best.vert
+            applyAnchoring best.horz, r if best.horz
+
+            c.location = { x: r.x, y: r.y }
+            updateComponentPosition c, cn
+            updateHoverPanelPosition()
+            
+        moveTo(options.startPt)
+            
+        { moveTo: moveTo }
+        
+    activateExistingComponentDragging: (cid, startPt) ->
         c: components[cid]
         cn: cnodes[cid]
-        window.status = "Dragging a component."
         
-        designAreaOrigin: $('#design-pane').offset()
-        dragOrigin = { x: dragOrigin.x - designAreaOrigin.left, y: dragOrigin.y - designAreaOrigin.top }
-        size: computeComponentSize(c, cn)
-        dragOriginalLocation: { x: parseInt($(cn).css('left')), y: parseInt($(cn).css('top')) }
-        hotSpot = {
-            x: (dragOrigin.x - dragOriginalLocation.x) / size.width
-            y: (dragOrigin.y - dragOriginalLocation.y) / size.height
-        }
-        console.log(hotSpot)
+        dragger: startDragging c, cn, { startPt: startPt }
+        
+        window.status = "Dragging a component."
         
         activateMode {
             mousemove: (e) ->
-                pt: { x: e.pageX, y: e.pageY }
-                
-                size: computeComponentSize(c, cn)
-                pos: {
-                    x: pt.x - designAreaOrigin.left - (size.width || 0)  * hotSpot.x
-                    y: pt.y - designAreaOrigin.top  - (size.height || 0) * hotSpot.y
-                }
-                
-                aa: _.flatten(computeAnchorings(ap, pos, size) for ap in aps)
-
-                best: {
-                    horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
-                    vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
-                }
-                
-                CONF_ANCHORING_DISTANCE = 10
-                
-                # console.log "pos: (${pos.x}, ${pos.y}), best anchoring horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
-                
-                if best.horz.dist > CONF_ANCHORING_DISTANCE then best.horz = null
-                if best.vert.dist > CONF_ANCHORING_DISTANCE then best.vert = null
-                
-                applyAnchoring best.vert, pos, size if best.vert
-                applyAnchoring best.horz, pos, size if best.horz
-                
-                c.location = pos
-                updateComponentPosition c, cn
-                updateHoverPanelPosition()
-                
-                # $(cn).css({ left: dragOriginalLocation.x + (pt.x - dragOrigin.x), top: dragOriginalLocation.y + (pt.y - dragOrigin.y) })
+                dragger.moveTo { x: e.pageX, y: e.pageY }
                 
             mouseup: (e) ->
                 componentsChanged()
                 activatePointingMode()
                 
             hidesPalette: yes
-            componentsExcludedFromAnchoring: [cid]
         }
-        aps: computeAllAnchoringPositions()  # have to do it here to exclude dragged components
         
-    activateNewComponentDragging: (dragOrigin, c) ->
+    activateNewComponentDragging: (startPt, c) ->
         cn: createNodeForControl c
         $('#design-pane').append cn
         
-        hotSpot = { x: 0.5, y: 0.5 }
-        designAreaOrigin: $('#design-pane').offset()
-        moveTo: (pt) ->
-            size: computeComponentSize(c, cn)
-            c.location = {
-                x: pt.x - designAreaOrigin.left - (size.width || 0)  * hotSpot.x
-                y: pt.y - designAreaOrigin.top  - (size.height || 0) * hotSpot.y
-            }
-            updateComponentPosition c, cn
-            
         updateComponentProperties c, cn
-        moveTo dragOrigin
+        dragger: startDragging c, cn, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }
         
         window.status = "Dragging a new component."
         
         activateMode {
             mousemove: (e) ->
-                moveTo { x: e.pageX, y: e.pageY }
+                dragger.moveTo { x: e.pageX, y: e.pageY }
                 
             mouseup: (e) ->
                 addToComponents c
@@ -429,7 +420,6 @@ jQuery ($) ->
                 activatePointingMode()
             
             hidesPalette: yes
-            componentsExcludedFromAnchoring: []
         }
     
     $('#design-pane').bind {
