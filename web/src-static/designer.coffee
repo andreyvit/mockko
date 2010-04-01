@@ -327,11 +327,11 @@ jQuery ($) ->
     ##########################################################################################################
     #  DOM rendering
     
-    createNodeForControl: (c) ->
+    createNodeForComponent: (c) ->
         ct: ctypes[c.type]
         $("<div />").addClass("component c-${c.type}").addClass(if ct.container then 'container' else 'leaf')[0]
     
-    findControlIdOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-cid')
+    findCidOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-cid')
     
     computeComponentSize: (c, cn) ->
         ct: ctypes[c.type]
@@ -367,47 +367,47 @@ jQuery ($) ->
     ##########################################################################################################
     #  hover panel
     
-    hoveredControlId: null
+    hoveredCid: null
     
     updateHoverPanelPosition: ->
-        return if hoveredControlId is null
-        cn: cnodes[hoveredControlId]
+        return if hoveredCid is null
+        cn: cnodes[hoveredCid]
         offset: { left: cn.offsetLeft, top: cn.offsetTop }
         $('#hover-panel').css({ left: offset.left, top: offset.top })
     
     componentHovered: (cid) ->
         return unless cnodes[cid]?  # the component is being deleted right now
-        return if hoveredControlId is cid
+        return if hoveredCid is cid
         
         ct: ctypes[components[cid].type]
         if ct.container
             $('#hover-panel').addClass('container').removeClass('leaf')
         else
             $('#hover-panel').removeClass('container').addClass('leaf')
-        $('#hover-panel').fadeIn(100) if hoveredControlId is null
-        hoveredControlId = cid
+        $('#hover-panel').fadeIn(100) if hoveredCid is null
+        hoveredCid = cid
         updateHoverPanelPosition()
         
     componentUnhovered: ->
-        return if hoveredControlId is null
-        hoveredControlId = null
+        return if hoveredCid is null
+        hoveredCid = null
         $('#hover-panel').hide()
         
     $('#hover-panel').hide()
     $('#hover-panel .delete-handle').click ->
-        if hoveredControlId isnt null
+        if hoveredCid isnt null
             $('#hover-panel').hide()
-            deleteComponent hoveredControlId 
-            hoveredControlId = null
+            deleteComponent hoveredCid 
+            hoveredCid = null
             
     $('#hover-panel .move-handle').mousedown (e) ->
         e.preventDefault()
         e.stopPropagation()
-        activateExistingComponentDragging hoveredControlId, { x: e.pageX, y: e.pageY }
+        activateExistingComponentDragging hoveredCid, { x: e.pageX, y: e.pageY }
     
         
-    # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredControlId isnt null
-    # resumeHoverPanel: -> updateHoverPanelPosition $('#hover-panel').fadeIn(100) if hoveredControlId isnt null
+    # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredCid isnt null
+    # resumeHoverPanel: -> updateHoverPanelPosition $('#hover-panel').fadeIn(100) if hoveredCid isnt null
     
     ##########################################################################################################
     #  dragging
@@ -640,7 +640,7 @@ jQuery ($) ->
         
     activateNewComponentDragging: (startPt, c) ->
         beginUndoTransaction "creation of ${friendlyComponentName c}"
-        cn: createNodeForControl c
+        cn: createNodeForComponent c
         $('#design-pane').append cn
         
         updateComponentProperties c, cn
@@ -671,11 +671,11 @@ jQuery ($) ->
     $('#design-pane').bind {
         mousedown: (e) ->
             e.preventDefault()
-            mode.mousedown e, findControlIdOfNode(e.target)
+            mode.mousedown e, findCidOfNode(e.target)
 
         mousemove: (e) ->
             e.preventDefault()
-            mode.mousemove e, findControlIdOfNode(e.target)
+            mode.mousemove e, findCidOfNode(e.target)
             
             # if !isDragging && component && isMouseDown && (Math.abs(pt.x - dragOrigin.x) > 2 || Math.abs(pt.y - dragOrigin.y) > 2)
             #     isDragging: true
@@ -684,7 +684,7 @@ jQuery ($) ->
                 
         mouseup: (e) ->
             e.preventDefault()
-            mode.mouseup e, findControlIdOfNode(e.target)
+            mode.mouseup e, findCidOfNode(e.target)
     }
 
     ##########################################################################################################
@@ -741,7 +741,7 @@ jQuery ($) ->
             addToComponents c
             
         for cid, c of components
-            $('#design-pane').append storeComponentNode(c, createNodeForControl(c))
+            $('#design-pane').append storeComponentNode(c, createNodeForComponent(c))
         
         updateComponentProperties(c, cnodes[cid]) for cid, c of components
         
