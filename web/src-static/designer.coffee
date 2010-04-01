@@ -184,6 +184,12 @@ ctgroups: [
 ]
 
 jQuery ($) ->
+
+    CONF_ANCHORING_DISTANCE = 10
+    CONF_DESIGNAREA_PUSHBACK_DISTANCE = 100
+
+    ##########################################################################################################
+    
     application: null
     activeScreen: null
     components: {}
@@ -228,6 +234,8 @@ jQuery ($) ->
     
     updateComponentProperties: (c, cn) -> updateComponentPosition(c, cn); updateComponentText(c, cn)
     
+    setTransitions: (cn, trans) -> $(cn).css('-webkit-transition', trans)
+
     ##########################################################################################################
     
     hoveredControlId: null
@@ -351,50 +359,57 @@ jQuery ($) ->
             }
         hotspot: options.hotspot || computeHotSpot(options.startPt)
         
-        moveTo: (pt) ->
+        updateRectangleAndClipToArea: (pt) ->
             r: rectOfComponent cn
             r.x: pt.x - origin.left - r.w * hotspot.x
             r.y: pt.y - origin.top  - r.h * hotspot.y
 
-            aa: _.flatten(computeAnchorings(ap, r) for ap in aps)
-
-            best: {
-                horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
-                vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
-            }
-
-            CONF_ANCHORING_DISTANCE = 10
-            CONF_DESIGNAREA_PUSHBACK_DISTANCE = 100
-
-            # console.log "pos: (${pos.x}, ${pos.y}), best anchoring horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
-
-            if best.horz and best.horz.dist > CONF_ANCHORING_DISTANCE then best.horz = null
-            if best.vert and best.vert.dist > CONF_ANCHORING_DISTANCE then best.vert = null
-
-            applyAnchoring best.vert, r if best.vert
-            applyAnchoring best.horz, r if best.horz
-            
             if allowedArea.x - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.x < allowedArea.x then r.x = allowedArea.x
             if allowedArea.y - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.y < allowedArea.y then r.y = allowedArea.y
             if allowedArea.x+allowedArea.w-r.w < r.x <= allowedArea.x+allowedArea.w-r.w + CONF_DESIGNAREA_PUSHBACK_DISTANCE then r.x = allowedArea.x+allowedArea.w - r.w
             if allowedArea.y+allowedArea.h-r.h < r.y <= allowedArea.y+allowedArea.h-r.h + CONF_DESIGNAREA_PUSHBACK_DISTANCE then r.y = allowedArea.y+allowedArea.h - r.h
             
             ok: (allowedArea.x <= r.x <= allowedArea.x+allowedArea.w-r.w and allowedArea.y <= r.y <= allowedArea.y+allowedArea.h-r.h)
+            [r, ok]
+        
+        moveTo: (pt) ->
+            setTransitions cn, "-webkit-transform 0.25s linear"
+            [r, ok] = updateRectangleAndClipToArea(pt)
             $(cn)[if ok then 'removeClass' else 'addClass']('cannot-drop')
+
+            if ok
+                aa: _.flatten(computeAnchorings(ap, r) for ap in aps)
+
+                best: {
+                    horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
+                    vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
+                }
+
+                # console.log "pos: (${pos.x}, ${pos.y}), best anchoring horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+
+                if best.horz and best.horz.dist > CONF_ANCHORING_DISTANCE then best.horz = null
+                if best.vert and best.vert.dist > CONF_ANCHORING_DISTANCE then best.vert = null
+
+                applyAnchoring best.vert, r if best.vert
+                applyAnchoring best.horz, r if best.horz
             
             c.location = { x: r.x, y: r.y }
+            
             updateComponentPosition c, cn
             updateHoverPanelPosition()
+            return ok
             
+        dropAt: (pt) -> moveTo pt
             
         moveTo(options.startPt)
             
-        { moveTo: moveTo }
+        { moveTo: moveTo, dropAt: dropAt }
         
     activateExistingComponentDragging: (cid, startPt) ->
         c: components[cid]
         cn: cnodes[cid]
         
+        originalLocation: c.location
         dragger: startDragging c, cn, { startPt: startPt }
         
         window.status = "Dragging a component."
@@ -404,8 +419,16 @@ jQuery ($) ->
                 dragger.moveTo { x: e.pageX, y: e.pageY }
                 
             mouseup: (e) ->
-                componentsChanged()
-                activatePointingMode()
+                if dragger.dropAt { x: e.pageX, y: e.pageY }
+                    componentsChanged()
+                    activatePointingMode()
+                else
+                    setTransitions cn, "all 0.25s default"
+                    c.location = originalLocation
+                    updateComponentPosition c, cn
+                    updateHoverPanelPosition()
+                    $(cn).removeClass 'cannot-drop'
+                    activatePointingMode()
                 
             hidesPalette: yes
         }
@@ -424,11 +447,17 @@ jQuery ($) ->
                 dragger.moveTo { x: e.pageX, y: e.pageY }
                 
             mouseup: (e) ->
-                addToComponents c
-                storeComponentNode c, cn
-                updateComponentProperties c, cn
-                componentsChanged()
-                activatePointingMode()
+                ok: dragger.dropAt { x: e.pageX, y: e.pageY }
+                if ok
+                    addToComponents c
+                    storeComponentNode c, cn
+                    updateComponentProperties c, cn
+                    componentsChanged()
+                    activatePointingMode()
+                else
+                    $(cn).fadeOut 250, ->
+                        $(cn).remove()
+                    activatePointingMode()
             
             hidesPalette: yes
         }
