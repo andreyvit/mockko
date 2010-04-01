@@ -274,11 +274,11 @@ jQuery ($) ->
     
     computeAnchoringPositionsOfComponent: (cid) ->
         r: rectOfComponent cnodes[cid]
-        [
-            { orient: 'vert', cid: cid, coord: r.x }
-            { orient: 'vert', cid: cid, coord: r.x + r.w }
-            { orient: 'horz',  cid: cid, coord: r.y }
-            { orient: 'horz',  cid: cid, coord: r.y + r.h }
+        _.compact [
+            { orient: 'vert', cid: cid, coord: r.x } if r.x > allowedArea.x
+            { orient: 'vert', cid: cid, coord: r.x + r.w } if r.x+r.w < allowedArea.x+allowedArea.w
+            { orient: 'horz',  cid: cid, coord: r.y } if r.y > allowedArea.y
+            { orient: 'horz',  cid: cid, coord: r.y + r.h } if r.y+r.h < allowedArea.y+allowedArea.h
         ]
         
     computeAllAnchoringPositions: ->
