@@ -217,6 +217,7 @@ jQuery ($) ->
     ctypes: {}
     mode: null
     allowedArea: null
+    doubleClickEditingCid: null
 
     ##########################################################################################################
     #  utilities
@@ -307,7 +308,9 @@ jQuery ($) ->
     #  component management
     
     addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components[c.id] = c
-    storeComponentNode: (c, cn) -> $(cn).setdata('moa-cid', c.id); cnodes[c.id] = cn
+    storeComponentNode: (c, cn) ->
+        $(cn).setdata('moa-cid', c.id); cnodes[c.id] = cn
+        $(cn).dblclick -> startDoubleClickEditing c, cn
     
     deleteComponent: (rootcid) ->
         beginUndoTransaction "deletion of ${friendlyComponentName components[rootcid]}"
@@ -421,6 +424,58 @@ jQuery ($) ->
     # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredCid isnt null
     # resumeHoverPanel: -> updateHoverPanelPosition $('#hover-panel').fadeIn(100) if hoveredCid isnt null
     
+
+    ##########################################################################################################
+    #  double-click editing
+    
+    startDoubleClickEditing: (c, cn) ->
+        activatePointingMode()
+        
+        ct: ctypes[c.type]
+        return unless ct.defaultText?
+        
+        doubleClickEditingCid = c.id
+        $(cn).addClass 'editing'
+        cn.contentEditable = true
+        cn.focus()
+        
+        originalText: c.text
+        
+        $(cn).blur -> finishDoubleClickEditing()
+        $(cn).keydown (e) ->
+            if e.keyCode == 13 then finishDoubleClickEditing(); false
+            if e.keyCode == 27 then finishDoubleClickEditing(originalText); false
+        
+        baseMode = mode
+        mode: $.extend({}, baseMode, {
+            mousedown: (e, cid) ->
+                return false if cid is doubleClickEditingCid
+                finishDoubleClickEditing()
+                baseMode.mousedown e, cid
+        })
+        
+    finishDoubleClickEditing: (overrideText) ->
+        return if doubleClickEditingCid is null
+        
+        c:  components[doubleClickEditingCid]
+        cn: cnodes[doubleClickEditingCid]
+
+        beginUndoTransaction "text change in ${friendlyComponentName c}"
+        
+        $(cn).removeClass 'editing'
+        cn.contentEditable = false
+        
+        $(cn).unbind 'blur'
+        $(cn).unbind 'keydown'
+        
+        c.text = overrideText || $(cn).text()
+        updateComponentProperties c, cn
+        componentsChanged()
+        
+        doubleClickEditingCid = null
+        activatePointingMode()
+    
+    
     ##########################################################################################################
     #  dragging
     
@@ -516,6 +571,7 @@ jQuery ($) ->
                 if cid
                     if not ctypes[components[cid].type].container
                         activateExistingComponentDragging cid, { x: e.pageX, y: e.pageY }
+                        true
 
             mousemove: (e, cid) ->
                 if cid
@@ -682,12 +738,12 @@ jQuery ($) ->
     
     $('#design-pane').bind {
         mousedown: (e) ->
-            e.preventDefault()
-            mode.mousedown e, findCidOfNode(e.target)
+            if mode.mousedown e, findCidOfNode(e.target)
+                e.preventDefault()
 
         mousemove: (e) ->
-            e.preventDefault()
-            mode.mousemove e, findCidOfNode(e.target)
+            if mode.mousemove e, findCidOfNode(e.target)
+                e.preventDefault()
             
             # if !isDragging && component && isMouseDown && (Math.abs(pt.x - dragOrigin.x) > 2 || Math.abs(pt.y - dragOrigin.y) > 2)
             #     isDragging: true
@@ -695,8 +751,8 @@ jQuery ($) ->
             #     $draggedComponentNode: $target
                 
         mouseup: (e) ->
-            e.preventDefault()
-            mode.mouseup e, findCidOfNode(e.target)
+            if mode.mouseup e, findCidOfNode(e.target)
+                e.preventDefault()
     }
 
     ##########################################################################################################
