@@ -263,7 +263,7 @@ jQuery ($) ->
     
     revertToMemento: (memento) -> loadApplication JSON.parse(memento)
     
-    $('#undo-button').click undoLastChange
+    $('#undo-button').click -> undoLastChange(); false
     
     undoStackChanged()
     
