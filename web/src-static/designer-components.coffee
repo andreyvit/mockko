@@ -2,7 +2,7 @@
 window.MakeApp: {} unless window.MakeApp?
 window.MakeApp.paletteDefinition: [
     {
-        name: "Background"
+        name: "Backgrounds"
         ctypes: [
             {
                 type: 'background'
@@ -10,6 +10,21 @@ window.MakeApp.paletteDefinition: [
                 container: yes
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { autoSize: 'fill' }
+                
+                styles: [
+                    {
+                        styleName: 'striped'
+                        label: 'Striped'
+                    }
+                    {
+                        styleName: 'white'
+                        label: 'White'
+                    }
+                    {
+                        styleName: 'black'
+                        label: 'Black'
+                    }
+                ]
             }
         ]
     }
@@ -22,6 +37,17 @@ window.MakeApp.paletteDefinition: [
                 defaultText: "Some text"
                 widthPolicy: { autoSize: 'browser' }
                 heightPolicy: { fixedSize: 20 }
+                
+                styles: [
+                    {
+                        styleName: 'plain'
+                        label: 'Plain'
+                    }
+                    {
+                        styleName: 'bar-title'
+                        label: 'Bar Title'
+                    }
+                ]
             }
         ]
     }

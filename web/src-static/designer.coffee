@@ -141,7 +141,7 @@ jQuery ($) ->
     
     createNodeForComponent: (c) ->
         ct: ctypes[c.type]
-        $("<div />").addClass("component c-${c.type}").addClass(if ct.container then 'container' else 'leaf')[0]
+        $("<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName}").addClass(if ct.container then 'container' else 'leaf')[0]
     
     findCidOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-cid')
     
@@ -560,8 +560,8 @@ jQuery ($) ->
     computeInitialSize: (policy, fullSize) ->
         policy.fixedSize?.portrait || policy.fixedSize || (if policy.autoSize is 'fill' then fullSize)
     
-    createNewComponent: (ct) ->
-        c: { type: ct.type }
+    createNewComponent: (ct, style) ->
+        c: { type: ct.type, styleName: style.styleName }
         c.size: {
             width:  computeInitialSize(ct.widthPolicy, 320)
             height: computeInitialSize(ct.heightPolicy, 460)
@@ -570,10 +570,10 @@ jQuery ($) ->
         c.text = ct.defaultText if ct.defaultText?
         return c
 
-    bindPaletteItem: (item, ct) ->
+    bindPaletteItem: (item, ct, style) ->
         item.mousedown (e) ->
             e.preventDefault()
-            c: createNewComponent ct
+            c: createNewComponent ct, style
             activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
     
     fillPalette: ->
@@ -582,11 +582,13 @@ jQuery ($) ->
             group: $('<div />').addClass('group').appendTo($content)
             $('<div />').addClass('header').html(ctg.name).appendTo(group)
             for ct in ctg.ctypes
-                item: $('<div />').addClass('item')
-                $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
-                caption: $('<div />').addClass('caption').html(ct.label).appendTo(item)
-                group.append item
-                bindPaletteItem item, ct
+                styles: ct.styles || [{ styleName: 'plain', label: ct.label }]
+                for style in styles
+                    item: $('<div />').addClass('item')
+                    $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
+                    caption: $('<div />').addClass('caption').html(style.label).appendTo(item)
+                    group.append item
+                    bindPaletteItem item, ct, style
                     
     updatePaletteVisibility: (reason) ->
         showing: $('.palette').is(':visible')
@@ -688,6 +690,6 @@ jQuery ($) ->
         }]
     }
     
-    sample1: {"screens":[{"components":[{"type":"background","size":{"width":320,"height":480},"location":{"x":47,"y":139},"id":"root"},{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":47,"y":139},"id":"c13"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":47,"y":159},"id":"c14"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":47,"y":570},"id":"c15"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":268},"text":"Back","id":"c16"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":97,"y":493},"text":"Call","id":"c17"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":268},"id":"c18"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":312},"text":"Back","id":"c21"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":362},"text":"Back","id":"c22"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":412},"text":"Back","id":"c23"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":315},"id":"c24"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":212,"y":493},"text":"Delete Contact","id":"c25"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":365},"id":"c26"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":415},"id":"c27"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":54,"y":166},"text":"Back","id":"c28"},{"type":"text","size":{"width":null,"height":20},"location":{"x":178,"y":166},"text":"Some text","id":"c32"}],"nextId":33}]}
+    sample1: {"screens":[{"components":[{"type":"background","styleName":"striped","size":{"width":320,"height":480},"location":{"x":47,"y":139},"id":"root"},{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":47,"y":139},"id":"c13"},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":47,"y":159},"id":"c14"},{"type":"tabBar","size":{"width":320,"height":49},"location":{"x":47,"y":570},"id":"c15"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":268},"text":"Back","id":"c16"},{"type":"roundedButton","size":{"width":null,"height":44},"location":{"x":97,"y":493},"text":"Call","id":"c17"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":268},"id":"c18"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":312},"text":"Back","id":"c21"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":362},"text":"Back","id":"c22"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":62,"y":412},"text":"Back","id":"c23"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":315},"id":"c24"},{"type":"coloredButton","size":{"width":null,"height":44},"location":{"x":212,"y":493},"text":"Delete Contact","id":"c25"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":365},"id":"c26"},{"type":"switch","size":{"width":94,"height":27},"location":{"x":259,"y":415},"id":"c27"},{"type":"barButton","size":{"width":null,"height":30},"location":{"x":54,"y":166},"text":"Back","id":"c28"},{"type":"text","styleName":"bar-title","size":{"width":null,"height":20},"location":{"x":159,"y":171},"text":"Some text","id":"c32"}],"nextId":33}]}
     
     loadApplication sample1
