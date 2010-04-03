@@ -39,10 +39,9 @@
 	text-shadow: rgba(0,0,0,0.5) 0 -1px 0;
 }
 
-/* buttons */
+/* bar buttons */
 
-.c-barButton {
-	display: block;
+.c-backButton {
 	height: 30px;
 	line-height: 30px;
 	color: #fff;
@@ -60,6 +59,83 @@
 	font-weight: bold;
 }
 
+.c-barButton {
+	height: 30px;
+	line-height: 30px;
+	color: #fff;
+	text-shadow: rgba(0,0,0,0.6) 0 -1px 0;
+	text-decoration: none;
+	border-width: 0 5px 0 13px;
+	-webkit-border-top-left-radius: 16px;
+	-webkit-border-bottom-left-radius: 16px;
+	-webkit-border-top-right-radius: 6px;
+	-webkit-border-bottom-right-radius: 6px;
+	padding-left: 7px;
+	padding-right: 7px;
+	font-size: 12px;
+	font-weight: bold;
+	border-width: 0 5px 0 5px;
+}
+.c-barButton-normal {
+	-webkit-border-image: url("images/navbutton.png") 0 5 0 5;
+}
+.c-barButton-done {
+	-webkit-border-image: url("images/navbuttonblue.png") 0 5 0 5;
+}
+
+/* colored buttons */
+
+.c-coloredButton {
+    border-width: 0 12px;
+    padding: 10px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+}
+.c-coloredButton-red {
+    -webkit-border-image: url(images/button-colored-red.png) 0 12 0 12;
+    color: #fff;
+    text-shadow: #7a0001 0 -1px 0;
+}
+.c-coloredButton-white {
+    -webkit-border-image: url(images/button-colored-white.png) 0 12 0 12;
+    text-shadow: rgba(255, 255, 255, 0.7) 0 1px 0;
+}
+.c-coloredButton-gray {
+    -webkit-border-image: url(images/button-colored-gray.png) 0 12 0 12;
+    color: #FFFFFF;
+}
+
+/* buy button */
+
+.c-buyButton {
+    height: 25px;
+    line-height: 25px;
+    border-width: 0 4px;
+    font-size: 12px;
+    color: #fff;
+    text-align: center;
+}
+.c-buyButton-green {
+    -webkit-border-image: url(images/button-buy-green.png) 0 4;
+    text-shadow: rgba(0, 0, 0, 0.5) 0 -1px 0;
+}
+.c-buyButton-blue {
+    -webkit-border-image: url(images/button-buy-blue.png) 0 4;
+    text-shadow: rgba(0, 0, 0, 0.5) 0 -1px 0;
+}
+
+.c-roundedButton {
+    background: white;
+    border: 1px solid #9d9e9e;
+    -webkit-border-radius: 8px;
+    text-align: left;
+    color: #516691;
+    padding-left: 30px;
+    padding-right: 30px;
+    line-height: 44px;
+}
+
 .c-statusBar {
     background-image: url(images/statusbar-po.png);
 }
@@ -74,25 +150,6 @@
 
 .c-toolbar {
     background-image: url(images/toolbar.png);
-}
-
-.c-roundedButton {
-    background: white;
-    border: 1px solid #9d9e9e;
-    -webkit-border-radius: 8px;
-    text-align: left;
-    color: #516691;
-    padding-left: 30px;
-    padding-right: 30px;
-    line-height: 44px;
-}
-
-.c-coloredButton {
-    -webkit-border-image: url(images/button-colored-red.png) 0 12 0 12;
-}
-
-.c-buyButton {
-    background-image: url(images/button-buy-green.png);
 }
 
 .c-switch {
