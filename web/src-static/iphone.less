@@ -39,6 +39,25 @@
 	text-shadow: rgba(0,0,0,0.5) 0 -1px 0;
 }
 
+.c-text-row-white {
+	font-size: 20px;
+	font-weight: bold;
+	color: #000;
+}
+
+.c-text-row-dark {
+	font-size: 20px;
+	font-weight: bold;
+	color: #fff;
+}
+
+.c-text-row-metal {
+	font-size: 20px;
+	font-weight: bold;
+	color: rgb(68, 68, 68);
+	text-shadow: #fff 0px 1px;
+}
+
 /* bar buttons */
 
 .c-backButton {
@@ -125,6 +144,8 @@
     text-shadow: rgba(0, 0, 0, 0.5) 0 -1px 0;
 }
 
+/* other buttons */
+
 .c-roundedButton {
     background: white;
     border: 1px solid #9d9e9e;
@@ -134,6 +155,55 @@
     padding-left: 30px;
     padding-right: 30px;
     line-height: 44px;
+}
+
+/* tables */
+
+.c-plain-row {
+    font-size: 20px;
+    margin-bottom: -1px;
+}
+
+.c-plain-row-white {
+    background: white;
+    border-bottom: 1px solid #d9d9d9;
+}
+
+.c-plain-row-dark {
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#1e1f21), to(#272729));
+    border-bottom: 2px solid #000;
+    border-top: 1px solid #4a4b4d;
+}
+
+.c-plain-row-plastic {
+    background: #17181a;
+    /* odd children should get background-color: #1c1c1f; */
+    border-width: 1px 0;
+    border-style: solid;
+    border-top-color: #222;
+    border-bottom-color: #000;
+}
+
+.c-plain-row-metal {
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #666;
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(238,238,238,1)), to(rgba(156,158,160,1)));
+    /* font: 26px; */
+}
+
+.c-plain-header {
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0,0,0,0)), to(rgba(0,0,0,.5)));
+    border-bottom: 1px solid #111113;
+    border-top: 1px solid #666;
+    color: #3e9ac3;
+    font-size: 16px;
+    margin: 1px 0 0 0;
+    padding: 2px 10px;
+    text-shadow: #000 0 1px 0;
+}
+
+.c-grouped-row {
+    
 }
 
 .c-statusBar {

@@ -47,6 +47,18 @@ window.MakeApp.paletteDefinition: [
                         styleName: 'bar-title'
                         label: 'Bar Title'
                     }
+                    {
+                        styleName: 'row-white'
+                        label: 'for White Row'
+                    }
+                    {
+                        styleName: 'row-dark'
+                        label: 'for Dark Row'
+                    }
+                    {
+                        styleName: 'row-metal'
+                        label: 'for Metal Row'
+                    }
                 ]
             }
         ]
@@ -201,6 +213,49 @@ window.MakeApp.paletteDefinition: [
                         label: 'Price Button'
                     }
                 ]
+            }
+        ]
+    }
+    {
+        name: "Table/List Rows"
+        ctypes: [
+            {
+                type: 'plain-row'
+                label: 'Edge-to-Edge Row'
+                container: yes
+                widthPolicy: { autoSize: 'fill' }
+                heightPolicy: { userSize: true, fixedSize: 44 }
+                styles: [
+                    {
+                        styleName: 'white'
+                        label: 'White Edge-To-Edge'
+                    }
+                    {
+                        styleName: 'dark'
+                        label: 'Dark Edge-To-Edge'
+                    }
+                    {
+                        styleName: 'metal'
+                        label: 'Metal Edge-To-Edge'
+                    }
+                    {
+                        styleName: 'plastic'
+                        label: 'Plastic Edge-To-Edge'
+                    }
+                ]
+            }
+            {
+                type: 'plain-header'
+                label: 'Header'
+                defaultText: "Cities"
+                widthPolicy: { autoSize: 'fill' }
+                heightPolicy: { userSize: true, fixedSize: 44 }
+            }
+            {
+                type: 'grouped-row'
+                label: 'Rounded Rect Row'
+                widthPolicy: { autoSize: 'fill' }
+                heightPolicy: { userSize: true, fixedSize: 44 }
             }
         ]
     }
