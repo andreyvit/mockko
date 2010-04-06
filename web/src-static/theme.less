@@ -237,6 +237,7 @@ body {
         top: 44px;
         right: 0px;
         bottom: 0px;
+        overflow: hidden;
     }
 }
 
@@ -368,13 +369,14 @@ body {
     .popover;
     
     width: 10px + 80px * 5;
-    height: 900px;
+    height: 85%;
     top: 55px;
     
     display: none;
     
     .content {
         padding: 5px 5px;
+        overflow-y: scroll;
     }
     
     .group {
@@ -389,19 +391,20 @@ body {
         }
     }
     
+    .item.palette-tile {
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+    }
+    
     .item {
-        width: 70px;
-        height: 50px;
+        -webkit-transform: scale(1);
         
         position: relative;
         float: left;
         margin-left: 5px;
         margin-right: 5px;
         margin-bottom: 10px;
-        
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
         
         cursor: move;
         
@@ -425,8 +428,8 @@ body {
         }
         
         :hover {
-            background: rgba(100, 100, 100, 0.5);
-            border: none;
+/*            background: rgba(100, 100, 100, 0.5);*/
+            outline: 1px solid white;
             
             .caption {
                 opacity: 1;

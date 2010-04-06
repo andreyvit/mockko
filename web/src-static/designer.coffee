@@ -154,17 +154,20 @@ jQuery ($) ->
     
     updateComponentPosition: (c, cn) ->
         ct: ctypes[c.type]
-        size: computeComponentSize(c, null)
         location: c.location
         
         $(cn).css({
-            'left':   "${location.x}px"
-            'top':    "${location.y}px"
+            left:   "${location.x}px"
+            top:    "${location.y}px"
+        })
+    
+    updateComponentSize: (c, cn) ->
+        size: computeComponentSize(c, null)
+        
+        $(cn).css({
             'width':  (if size.width then "${size.width}px" else 'auto')
             'height': "${size.height}px"
         })
-        
-        r: rectOfComponent cn
         
     updateZIndexes: ->
         ordered: _(_.keys components).sortBy (cid) -> r: rectOfComponent cnodes[cid]; -r.w * r.h
@@ -172,7 +175,9 @@ jQuery ($) ->
 
     updateComponentText: (c, cn) -> $(cn).html(c.text) if c.text?
     
-    updateComponentProperties: (c, cn) -> updateComponentPosition(c, cn); updateComponentText(c, cn)
+    updateComponentVisualProperties: (c, cn) -> updateComponentText(c, cn); updateComponentSize(c, cn)
+    
+    updateComponentProperties: (c, cn) -> updateComponentPosition(c, cn); updateComponentVisualProperties(c, cn)
     
     setTransitions: (cn, trans) -> $(cn).css('-webkit-transition', trans)
 
@@ -571,7 +576,7 @@ jQuery ($) ->
         return c
 
     bindPaletteItem: (item, ct, style) ->
-        item.mousedown (e) ->
+        $(item).mousedown (e) ->
             e.preventDefault()
             c: createNewComponent ct, style
             activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
@@ -584,11 +589,20 @@ jQuery ($) ->
             for ct in ctg.ctypes
                 styles: ct.styles || [{ styleName: 'plain', label: ct.label }]
                 for style in styles
-                    item: $('<div />').addClass('item')
-                    $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
-                    caption: $('<div />').addClass('caption').html(style.label).appendTo(item)
-                    group.append item
-                    bindPaletteItem item, ct, style
+                    c: createNewComponent ct, style
+                    n: createNodeForComponent c
+                    switch ct.palettePresentation || 'as-is'
+                        when 'tile'
+                            c.size = { width: 70; height: 50 }
+                    $(n).addClass('palette-tile').attr('title', style.label)
+                    c.size: computeComponentSize c
+                    updateComponentVisualProperties c, n
+                    $(n).addClass('item').appendTo(group)
+                    # item: $('<div />').addClass('item')
+                    # $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
+                    # caption: $('<div />').addClass('caption').html(style.label).appendTo(item)
+                    # group.append item
+                    bindPaletteItem n, ct, style
                     
     updatePaletteVisibility: (reason) ->
         showing: $('.palette').is(':visible')

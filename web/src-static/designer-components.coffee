@@ -11,6 +11,8 @@ window.MakeApp.paletteDefinition: [
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { autoSize: 'fill' }
                 
+                palettePresentation: 'tile'
+                
                 styles: [
                     {
                         styleName: 'striped'
