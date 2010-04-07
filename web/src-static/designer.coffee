@@ -151,7 +151,7 @@ jQuery ($) ->
             width: c.size.width || ct.widthPolicy?.fixedSize?.width || cn?.offsetWidth || null
             height: c.size.height || ct.heightPolicy?.fixedSize?.height || cn?.offsetHeight || null
         }
-    
+        
     updateComponentPosition: (c, cn) ->
         ct: ctypes[c.type]
         location: c.location
@@ -161,25 +161,43 @@ jQuery ($) ->
             top:    "${location.y}px"
         })
     
-    updateComponentSize: (c, cn) ->
-        size: computeComponentSize(c, null)
-        
-        $(cn).css({
-            'width':  (if size.width then "${size.width}px" else 'auto')
-            'height': "${size.height}px"
-        })
-        
     updateZIndexes: ->
-        ordered: _(_.keys components).sortBy (cid) -> r: rectOfComponent cnodes[cid]; -r.w * r.h
+        ordered: _(_.keys components).sortBy (cid) -> r: rectOfCID cid; -r.w * r.h
         _.each ordered, (cid, i) -> $(cnodes[cid]).css('z-index', i)
 
     updateComponentText: (c, cn) -> $(cn).html(c.text) if c.text?
     
-    updateComponentVisualProperties: (c, cn) -> updateComponentText(c, cn); updateComponentSize(c, cn)
+    updateComponentVisualProperties: (c, cn) -> updateComponentText(c, cn); updateEffectiveSize(c, cn)
     
     updateComponentProperties: (c, cn) -> updateComponentPosition(c, cn); updateComponentVisualProperties(c, cn)
     
     setTransitions: (cn, trans) -> $(cn).css('-webkit-transition', trans)
+
+
+    ##########################################################################################################
+    #  sizing
+    
+    recomputeEffectiveSizeInDimension: (userSize, policy, fullSize) ->
+        userSize || policy.fixedSize?.portrait || policy.fixedSize || switch policy.autoSize
+            when 'fill'    then fullSize
+            when 'browser' then null
+        
+    recomputeEffectiveSize: (c) ->
+        ct: ctypes[c.type]
+        c.effsize: {
+            w: recomputeEffectiveSizeInDimension c.size.width, ct.widthPolicy, 320
+            h: recomputeEffectiveSizeInDimension c.size.height, ct.heightPolicy, 460
+        }
+        
+    sizeToPx: (v) ->
+        if v then "${v}px" else 'auto'
+        
+    updateEffectiveSize: (c, cn) ->
+        recomputeEffectiveSize c
+        $(cn).css({ width: sizeToPx(c.effsize.w), height: sizeToPx(c.effsize.h) })
+        if c.effsize.w is null then c.effsize.w = cn.offsetWidth
+        if c.effsize.h is null then c.effsize.h = cn.offsetHeight
+
 
     ##########################################################################################################
     #  hover panel
@@ -281,9 +299,8 @@ jQuery ($) ->
     ##########################################################################################################
     #  dragging
     
-    rectOfComponent: (cn) ->
-        { x: cn.offsetLeft, y: cn.offsetTop, w: cn.offsetWidth, h: cn.offsetHeight }
-    rectOfCID: (cid) -> rectOfComponent cnodes[cid]
+    rectOfC: (c) -> { x: c.location.x, y: c.location.y, w: c.effsize.w, h: c.effsize.h }
+    rectOfCID: (cid) -> rectOfC components[cid]
     
     computeSnappingPositionsOfComponent: (cid) ->
         r: rectOfCID cid
@@ -394,16 +411,16 @@ jQuery ($) ->
         if c.id
             descendantIds: findDescendants c.id
             console.log descendantIds
-            originalR: rectOfComponent cn
+            originalR: rectOfC c
             originalDescendantsRs: {}
             for dcid in descendantIds
-                originalDescendantsRs[dcid] = rectOfComponent cnodes[dcid]
+                originalDescendantsRs[dcid] = rectOfCID dcid
             allDraggedIds: [c.id].concat(descendantIds)
         else
             allDraggedIds: []
         
         computeHotSpot: (pt) ->
-            r: rectOfComponent cn
+            r: rectOfC c
             {
                 x: if r.w then ((pt.x - origin.left) - r.x) / r.w else 0.5
                 y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
@@ -413,7 +430,7 @@ jQuery ($) ->
         $(cn).addClass 'dragging'
         
         updateRectangleAndClipToArea: (pt) ->
-            r: rectOfComponent cn
+            r: rectOfC c
             r.x: pt.x - origin.left - r.w * hotspot.x
             r.y: pt.y - origin.top  - r.h * hotspot.y
 
@@ -566,15 +583,10 @@ jQuery ($) ->
     
     paletteWanted: on
     
-    computeInitialSize: (policy, fullSize) ->
-        policy.fixedSize?.portrait || policy.fixedSize || (if policy.autoSize is 'fill' then fullSize)
-    
     createNewComponent: (ct, style) ->
         c: { type: ct.type, styleName: style.styleName }
-        c.size: {
-            width:  computeInitialSize(ct.widthPolicy, 320)
-            height: computeInitialSize(ct.heightPolicy, 460)
-        }
+        c.size: { width: null; height: null }
+        c.effsize: { w: null; h: null }
         c.location: { x: 0, y: 0 }
         c.text = ct.defaultText if ct.defaultText?
         return c
@@ -599,7 +611,6 @@ jQuery ($) ->
                         when 'tile'
                             c.size = { width: 70; height: 50 }
                     $(n).addClass('palette-tile').attr('title', style.label)
-                    c.size: computeComponentSize c
                     updateComponentVisualProperties c, n
                     $(n).addClass('item').appendTo(group)
                     # item: $('<div />').addClass('item')
