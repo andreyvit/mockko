@@ -410,6 +410,8 @@ jQuery ($) ->
             }
         hotspot: options.hotspot || computeHotSpot(options.startPt)
         
+        $(cn).addClass 'dragging'
+        
         updateRectangleAndClipToArea: (pt) ->
             r: rectOfComponent cn
             r.x: pt.x - origin.left - r.w * hotspot.x
@@ -473,7 +475,9 @@ jQuery ($) ->
             updateHoverPanelPosition()
             return ok
             
-        dropAt: (pt) -> moveTo pt
+        dropAt: (pt) ->
+            $(cn).removeClass 'dragging'
+            moveTo pt
             
         moveTo(options.startPt)
             
