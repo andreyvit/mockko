@@ -234,11 +234,6 @@ jQuery ($) ->
             $('#hover-panel').hide()
             deleteComponent hoveredCid 
             hoveredCid = null
-            
-    $('#hover-panel .move-handle').mousedown (e) ->
-        e.preventDefault()
-        e.stopPropagation()
-        activateExistingComponentDragging hoveredCid, { x: e.pageX, y: e.pageY }
     
         
     # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredCid isnt null
@@ -388,9 +383,8 @@ jQuery ($) ->
         activateMode {
             mousedown: (e, cid) ->
                 if cid
-                    if not ctypes[components[cid].type].container
-                        activateExistingComponentDragging cid, { x: e.pageX, y: e.pageY }
-                        true
+                    activateExistingComponentDragging cid, { x: e.pageX, y: e.pageY }
+                    true
 
             mousemove: (e, cid) ->
                 if cid
