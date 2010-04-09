@@ -519,11 +519,7 @@ jQuery ($) ->
                     componentsChanged()
                     activatePointingMode()
                 else
-                    setTransitions cn, "all 0.25s default"
-                    c.location = originalLocation
-                    updateComponentPosition c, cn
-                    updateHoverPanelPosition()
-                    $(cn).removeClass 'cannot-drop'
+                    deleteComponent cid
                     activatePointingMode()
                 
             hidesPalette: yes
