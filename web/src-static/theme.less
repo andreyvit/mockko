@@ -490,3 +490,51 @@ body {
         visibility: visible;
     }
 }
+
+.app-screen {
+    margin: 5px 0px;
+    cursor: pointer;
+    width: 100px;
+    height: 106px;
+
+    .content {
+        margin: 0px auto;
+        width: 80px;
+        height: 90px;
+        border: 1px solid black;
+        background: #eee;
+        -webkit-border-radius: 10px;
+    }
+    
+    .caption {
+        color: white;
+        text-shadow: #000 0px 1px;
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        line-height: 16px;
+    }
+    
+}
+
+.app-screen.active {
+    .content {
+        background: white;
+        border: 2px solid black;
+    }
+}
+
+#add-screen-button {
+    font-size: 14px;
+    cursor: pointer;
+    position: absolute;
+    bottom: 0px;
+    height: 44px;
+    text-align: center;
+    line-height: 44px;
+    width: 100%;
+    background: black;
+    color: white;
+    border: 1px solid #ccc;
+}
+#add-screen-button:before { content: "Add Screen"; }
