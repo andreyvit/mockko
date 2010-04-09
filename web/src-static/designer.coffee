@@ -15,6 +15,9 @@ jQuery ($) ->
     mode: null
     allowedArea: null
     doubleClickEditingCid: null
+    
+    # our very own idea of infinity
+    INF: 100000
 
     ##########################################################################################################
     #  utilities
@@ -100,6 +103,17 @@ jQuery ($) ->
             r.w * r.h
         else
             0
+        
+    proximityOfRectToRect: (a, b) ->
+        if doesRectIntersectRect(a, b)
+            r: rectIntersection(a, b)
+            -(r.w * r.h)
+        else
+            a2: { x: a.x+a.w, y: a.y+a.h }
+            b2: { x: b.x+b.w, y: b.y+b.h }
+            dx: Math.min(Math.abs(a.x - b.x), Math.abs(a2.x - b.x), Math.abs(a.x - b2.x), Math.abs(a2.x - b2.x))
+            dy: Math.min(Math.abs(a.y - b.y), Math.abs(a2.y - b.y), Math.abs(a.y - b2.y), Math.abs(a2.y - b2.y))
+            dy*dy
     
     ##########################################################################################################
     #  component management
@@ -154,7 +168,7 @@ jQuery ($) ->
         
     updateComponentPosition: (c, cn) ->
         ct: ctypes[c.type]
-        location: c.location
+        location: c.dragpos || c.location
         
         $(cn).css({
             left:   "${location.x}px"
@@ -197,6 +211,33 @@ jQuery ($) ->
         $(cn).css({ width: sizeToPx(c.effsize.w), height: sizeToPx(c.effsize.h) })
         if c.effsize.w is null then c.effsize.w = cn.offsetWidth
         if c.effsize.h is null then c.effsize.h = cn.offsetHeight
+
+
+    ##########################################################################################################
+    #  stacking
+    
+    TABLE_TYPES = { 'plain-row': yes, 'plain-header': yes, 'grouped-row': yes }
+    
+    findNearbyStack: (typeName, r, draggedCIDs) ->
+        return null unless typeName in TABLE_TYPES
+        
+        stack: { above: [], below: [], moveBy: INF }
+        draggedCIDs: stringSetWith draggedCIDs
+        for cid, c of components
+            if not (cid in draggedCIDs)
+                if c.type in TABLE_TYPES
+                    sr: rectOfC c
+                    proximity: proximityOfRectToRect r, sr
+                    if proximity < 20*20
+                        if sr.y < r.y
+                            stack.above.push { cid: cid, proximity: proximity }
+                        else
+                            if proximity <= 0
+                                stack.moveBy: Math.min(stack.moveBy, r.y+r.h-sr.y)
+                            stack.below.push { cid: cid, proximity: proximity }
+        if stack.moveBy is INF then stack.moveBy: 0
+        return stack
+    
 
 
     ##########################################################################################################
@@ -398,6 +439,31 @@ jQuery ($) ->
             
             hidesPalette: no
         }
+        
+    newLiveMover: () ->
+        {
+            moveComponents: (cids, amount) ->
+                cids: _.flatten([rcid].concat(findDescendants(rcid)) for rcid in cids)
+                cidSet: stringSetWith cids
+                for cid, c of components
+                    if c.dragpos and not (cid in cidSet)
+                        c.dragpos = null
+                        $(cnodes[cid]).removeClass 'stacked'
+                        updateComponentPosition c, cnodes[cid]
+                
+                for cid in cids
+                    $(cnodes[cid]).addClass 'stacked'
+                    c: components[cid]
+                    c.dragpos = { x: c.location.x + amount.x; y: c.location.y + amount.y }
+                    updateComponentPosition c, cnodes[cid]
+                    
+            finish: ->
+                for cid, c of components
+                    if c.dragpos
+                        c.dragpos = null
+                        $(cnodes[cid]).removeClass 'stacked'
+                        updateComponentPosition c, cnodes[cid]
+        }
     
     startDragging: (c, cn, options) ->
         origin: $('#design-pane').offset()
@@ -420,6 +486,7 @@ jQuery ($) ->
                 y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
             }
         hotspot: options.hotspot || computeHotSpot(options.startPt)
+        liveMover: newLiveMover()
         
         $(cn).addClass 'dragging'
         
@@ -453,8 +520,15 @@ jQuery ($) ->
             $(cn)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
+                stack: findNearbyStack(c.type, r, allDraggedIds) || { below: [] }
+                liveMover.moveComponents _(stack.below).pluck('cid'), { x: 0, y: stack.moveBy }
+                    
                 targetcid: findIdealContainerForRect(r, allDraggedIds)
-                aps: _(computeAllSnappingPositions(targetcid)).reject (a) -> _.include(allDraggedIds, a.cid)
+                
+                if stack.below.length > 0
+                    aps: []
+                else
+                    aps: _(computeAllSnappingPositions(targetcid)).reject (a) -> _.include(allDraggedIds, a.cid)
                 aa: _.flatten(computeSnappings(ap, r) for ap in aps)
 
                 best: {
@@ -470,12 +544,12 @@ jQuery ($) ->
                 applySnapping best.vert, r if best.vert
                 applySnapping best.horz, r if best.horz
             
-            c.location = { x: r.x, y: r.y }
+            c.dragpos = { x: r.x, y: r.y }
             
             if descendantIds
                 for dcid in descendantIds
                     delta: { x: r.x - originalR.x, y: r.y - originalR.y }
-                    components[dcid].location = {
+                    components[dcid].dragpos = {
                         x: originalDescendantsRs[dcid].x + delta.x
                         y: originalDescendantsRs[dcid].y + delta.y
                     }
@@ -488,7 +562,19 @@ jQuery ($) ->
             
         dropAt: (pt) ->
             $(cn).removeClass 'dragging'
-            moveTo pt
+            
+            liveMover.finish()
+
+            if moveTo pt
+                c.location = c.dragpos
+                c.dragpos = null
+                if descendantIds
+                    for dcid in descendantIds
+                        components[dcid].location = components[dcid].dragpos
+                        components[dcid].dragpos = null
+                true
+            else
+                false
             
         moveTo(options.startPt)
             

@@ -34,3 +34,10 @@ jQuery.fn.togglePopOver: (tipControl) ->
     
 jQuery.fn.setdata: (id, newData) -> $.data(this[0], id, newData); this
 jQuery.fn.getdata: (id) -> $.data(this[0], id)
+
+window.stringSetWith: (list) ->
+    set: {}
+    for item in list
+        set[item] = true
+    return set
+
