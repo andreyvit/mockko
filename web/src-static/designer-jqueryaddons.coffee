@@ -12,7 +12,7 @@ jQuery.fn.showPopOverPointingTo: (tipControl, animation) ->
     center: offset.left + tipControl.outerWidth() / 2
     bottom: offset.top + tipControl.outerHeight()
     
-    tipSize: { width: 32, height: 16 }
+    tipSize: { width: 37, height: 20 }
     
     popoverWidth: this.outerWidth()
     

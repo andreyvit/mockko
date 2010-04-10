@@ -24,31 +24,59 @@ a { -webkit-tap-highlight-color: rgba(0,0,0,0); }
 	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(133,133,133,0.7)), color-stop(3%, rgba(99,99,99,0.7)), color-stop(50%, rgba(32,32,32,0.7)), color-stop(51%, rgba(0,0,0,0.7)), color-stop(99.9%, rgba(0,0,0,0.7)), to(rgba(38,38,38,0.7)));
 }
 .normal-bar-background {
-	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#b0bccd), color-stop(50%, #899cb4), color-stop(50%, #8094ae), color-stop(51%, #8195af), to(#6d84a2));
+    background: url(images/UINavigationBarSilverBackground.png);
+	/*background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#b0bccd), color-stop(50%, #899cb4), color-stop(50%, #8094ae), color-stop(51%, #8195af), to(#6d84a2));
 	border-top: 1px solid #cdd5df;
-	border-bottom: 1px solid #2d3642;
+	border-bottom: 1px solid #2d3642;*/
+	color: #656C73;
+	text-shadow: rgba(255, 255, 255, 0.746094) 0px 1px 0px;
 }
 .striped-background {
     background: -webkit-gradient(linear,left top,right top,from(#c5ccd4), color-stop(71%, #c5ccd4), color-stop(72%, #cbd2d8), to(#cbd2d8));
 }
 
-.normal-bar-button {
+.silver-back-button {
+	-webkit-border-image: url(http://developer.apple.com/iphone/library/iPad/ui/assets/button/UINavigationBarSilverBack.png) 0 4 0 12 stretch stretch;
+    border-width: 0px 4px 0px 12px;
+    
+    :active {
+        -webkit-border-image: url(http://developer.apple.com/iphone/library/iPad/ui/assets/button/UINavigationBarSilverBackPressed.png) 0 4 0 12 stretch stretch;
+    }
+}
+
+.silver-bar-button {
 	/*background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#6d7174), color-stop(50%, #353d3d), to(#272c2c));*/
-	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#6d7174), color-stop(50%, #353d3d), to(#272c2c));
-	-webkit-border-radius: 5px;
-	border: 1px solid #383838;
+/*  background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#6d7174), color-stop(50%, #353d3d), to(#272c2c));
+    border: 1px solid #383838;
+    -webkit-border-radius: 5px; */
+	-webkit-border-image: url(http://developer.apple.com/iphone/library/iPad/ui/assets/button/UINavigationBarSilverButton.png) 0 5 0 5 stretch stretch;
+    border-width: 0px 5px;
+    max-width: 160px;
+	text-shadow: rgba(0, 0, 0, 0.597656) 0px -1px 0px;
+	color: white;
+	
+	:active {
+    	-webkit-border-image: url(http://developer.apple.com/iphone/library/iPad/ui/assets/button/UINavigationBarSilverButtonPressed.png) 0 5 0 5 stretch stretch;
+	}
 }
 
 .popover {
     position: absolute;
     
+    -webkit-box-shadow: rgba(0, 0, 0, 0.496094) 0px 0px 40px 0px;
+    -webkit-border-image: url(images/popover-border.png) 6 6 6 6 stretch stretch;
+    
+    width: 320px;
+    height: 600px;
+    -webkit-border-radius: 7px;
+    
     .tip {
         position: absolute;
-        background: url(images/popover-tip-top.png) no-repeat;
+        background: url(images/popover-arrow-up.png) no-repeat;
         background-position: 0% 0%;
-        width: 32px;
-        height: 16px;
-        top: -16px;
+        width: 37px;
+        height: 20px;
+        top: -20px;
     }
     
     .top {
@@ -57,13 +85,6 @@ a { -webkit-tap-highlight-color: rgba(0,0,0,0); }
         left: 0px;
         right: 0px;
         height: 44px;
-        background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(95, 102, 112, 0.9)), color-stop(50%, rgb(13, 21, 36)), to(rgb(11, 18, 32)));
-        -webkit-border-top-left-radius: 7px;
-        -webkit-border-top-right-radius: 7px;
-        -moz-border-radius-topleft: 7px;
-        -moz-border-radius-topright: 7px;
-        border-top-left-radius: 7px;
-        border-top-right-radius: 7px;
             
         h1 {
             position: absolute;
@@ -90,25 +111,9 @@ a { -webkit-tap-highlight-color: rgba(0,0,0,0); }
         top: 44px;
         left: 0px;
         right: 0px;
-        bottom: 44px;
-        background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgb(11, 18, 32)), to(rgba(17, 24, 39, 1)));
+        bottom: 0px;
     }
     
-    .bottom {
-        position: absolute;
-        bottom: 0px;
-        left: 0px;
-        right: 0px;
-        height: 44px;
-        background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgb(17, 24, 39)), to(rgb(14, 14, 15)));
-        -webkit-border-bottom-right-radius: 7px;
-        -webkit-border-bottom-left-radius: 7px;
-        -moz-border-radius-bottomright: 7px;
-        -moz-border-radius-bottomleft: 7px;
-        border-bottom-right-radius: 7px;
-        border-bottom-left-radius: 7px;
-    }
-
 }
 
 /* SPECIFIC */
@@ -146,7 +151,6 @@ body {
 
 .toolbar {
     -webkit-box-sizing: border-box;
-    border-bottom: 1px solid #2d3642;
     padding: 10px;
     height: 44px;
     position: relative;
@@ -156,23 +160,18 @@ body {
     .left, .right {
     	line-height: 30px;
     	height: 30px;
-    	top: 4px;
+    	top: 7px;
     	position: absolute;
     	font-size: 12px;
     	font-weight: bold;
 
     	a {
         	display: block;
-        	color: #fff;
-        	text-shadow: rgba(0,0,0,0.6) 0 -1px 0;
         	text-decoration: none;
         	text-align: center;
         	
-        	.normal-bar-button;
+        	.silver-bar-button;
         	
-/*          
-            -webkit-border-image: url("images/navbuttonblack.png") 0 5 0 5;
-*/        	
         	width: auto;
         	padding-left: 7px;
         	padding-right: 7px;
@@ -208,11 +207,9 @@ body {
         font-size: 20px;
         width: 200px;
         font-weight: bold;
-    	text-shadow: rgba(0,0,0,0.6) 0 -1px 0;
         text-align: center;
         text-overflow: ellipsis;
         white-space: nowrap;
-        color: #fff;
     }
 }
 
@@ -221,7 +218,10 @@ body {
     width: 100px;
     top: 44px;
     bottom: 0px;
-	background: rgba(38,38,38,0.7);
+	background: #dddfe4;
+	border-right: 1px solid black;
+	color: #656C73;
+	text-shadow: rgba(255, 255, 255, 0.746094) 0px 1px 0px;
 }
 
 
@@ -231,7 +231,7 @@ body {
     .left-pane {
     }
     #design-pane {
-        background: green;
+        background: #dddfe4;
         position: absolute;
         left: 100px;
         top: 44px;
@@ -355,8 +355,8 @@ body {
 
 #share-popover {
     .popover;
-    width: 330px;
-    height: 400px;
+    width: 320px;
+    height: 600px;
     display: none;
     
     .content {
@@ -375,8 +375,8 @@ body {
 .palette {
     .popover;
     
-    width: 10px + 80px * 5;
-    height: 85%;
+    width: 360px;
+    height: 600px;
     top: 55px;
     
     display: none;
@@ -384,28 +384,38 @@ body {
     .content {
         padding: 5px 5px;
         overflow-y: scroll;
+        background: url("images/background-striped.png");
     }
     
     .group {
         .clearfix;
         
         .header {
-            margin: 8px 10px 4px 10px;
+            margin: 10px 5px 8px 5px;
             font-size: 12px;
+            font-weight: bold;
             line-height: 16px;
-            color: white;
-            border-bottom: 1px solid white;
+        	color: #656C73;
+        	text-shadow: rgba(255, 255, 255, 0.746094) 0px 1px 0px;
+            border-bottom: 1px solid #656C73;
         }
+    }
+    
+    .items {
+        @scale: 1;
+        width: 320px / @scale;
+        -webkit-transform-origin: 0% 0%;
+        -webkit-transform: scale(@scale);
     }
     
     .item.palette-tile {
         -webkit-border-radius: 5px;
         -moz-border-radius: 5px;
-        border-radius: 5px;
+        border: 1px solid #656C73;
     }
     
     .item {
-        -webkit-transform: scale(1);
+        border-radius: 5px;
         
         position: relative;
         float: left;
@@ -436,7 +446,8 @@ body {
         
         :hover {
 /*            background: rgba(100, 100, 100, 0.5);*/
-            outline: 1px solid white;
+/*            outline: 1px solid #656C73;*/
+            -webkit-box-shadow: white 0px 0px 10px;
             
             .caption {
                 opacity: 1;
@@ -507,8 +518,6 @@ body {
     }
     
     .caption {
-        color: white;
-        text-shadow: #000 0px 1px;
         width: 100%;
         text-align: center;
         font-size: 12px;
@@ -525,16 +534,20 @@ body {
 }
 
 #add-screen-button {
-    font-size: 14px;
+    .silver-bar-button;
     cursor: pointer;
     position: absolute;
     bottom: 0px;
-    height: 44px;
+    height: 30px;
     text-align: center;
-    line-height: 44px;
-    width: 100%;
+    line-height: 30px;
+    width: 90px;
+	font-size: 12px;
+	font-weight: bold;
+	margin: 0px 5px 5px 5px;
+/*    font-size: 14px;
     background: black;
     color: white;
     border: 1px solid #ccc;
-}
+*/}
 #add-screen-button:before { content: "Add Screen"; }

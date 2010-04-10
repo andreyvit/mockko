@@ -674,10 +674,11 @@ jQuery ($) ->
             activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
     
     fillPalette: ->
-        $content: $('.palette .content')
+        $content: $('#palette-container')
         for ctg in MakeApp.paletteDefinition
             group: $('<div />').addClass('group').appendTo($content)
             $('<div />').addClass('header').html(ctg.name).appendTo(group)
+            items: $('<div />').addClass('items').appendTo(group)
             for ct in ctg.ctypes
                 styles: ct.styles || [{ styleName: 'plain', label: ct.label }]
                 for style in styles
@@ -686,9 +687,10 @@ jQuery ($) ->
                     switch ct.palettePresentation || 'as-is'
                         when 'tile'
                             c.size = { width: 70; height: 50 }
-                    $(n).addClass('palette-tile').attr('title', style.label)
+                            $(n).addClass('palette-tile')
+                    $(n).attr('title', style.label)
                     updateComponentVisualProperties c, n
-                    $(n).addClass('item').appendTo(group)
+                    $(n).addClass('item').appendTo(items)
                     # item: $('<div />').addClass('item')
                     # $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
                     # caption: $('<div />').addClass('caption').html(style.label).appendTo(item)
