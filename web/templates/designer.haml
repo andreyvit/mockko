@@ -14,12 +14,14 @@
     #design-screen.screen
       .toolbar
         .left
-          %a#go-myapps(href="#myapps") My Applications
+          %a#login-button(href="#") Sign In To Continue
+          %a#dashboard-button(href="#myapps") My Applications
           %a#undo-button(href="#undo")
             #undo-hint
               %span Undo something...
             Undo
         .right
+          %a#logout-button(href="#") Sign Out
           %a#add-button(href="#") +
           %a#share-button(href="#") Share
         %h1 Make App
