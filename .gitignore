@@ -1,6 +1,6 @@
 *.pyc
 .DS_Store
-/web/static/theme/theme.css
+/web/static/theme/theme*.css
 /web/static/iphone/iphone.css
 /web/static/designer*.js
 /web/templates/designer.html
