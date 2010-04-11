@@ -1,0 +1,122 @@
+
+@import "theme-mixins";
+
+html, body {
+    height: 100%;
+}
+
+body {
+    overflow-x: hidden;
+    -webkit-user-select: none;
+    -webkit-text-size-adjust: none;
+    font-family: Helvetica;
+    -webkit-perspective: 800;
+    -webkit-transform-style: preserve-3d;
+	-webkit-touch-callout: none;
+}
+.selectable, input, textarea { -webkit-user-select: auto; }
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+a {
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+
+.screen {
+    -webkit-backface-visibility: hidden;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    -webkit-transform: translate3d(0,0,0) rotate(0) scale(1);
+	-webkit-background-size: 0.438em 100%; 
+	display: none;
+}
+
+.toolbar {
+    -webkit-box-sizing: border-box;
+    padding: 10px;
+    height: 44px;
+    position: relative;
+    
+    .normal-bar-background;
+    
+    .left, .right {
+    	line-height: 30px;
+    	height: 30px;
+    	top: 7px;
+    	position: absolute;
+    	font-size: 12px;
+    	font-weight: bold;
+
+    	a {
+        	display: block;
+        	text-decoration: none;
+        	text-align: center;
+        	
+        	.silver-bar-button;
+        	
+        	width: auto;
+        	padding-left: 7px;
+        	padding-right: 7px;
+	    }
+	}
+    
+    >.left {
+    	left: 9px;
+    	
+    	a {
+        	float: left;
+        	margin-right: 10px;
+	    }
+    }
+    
+    >.right {
+    	right: 9px;
+    	
+    	a {
+        	float: right;
+        	margin-left: 10px;
+	    }
+    }
+    
+    >h1 {
+        position: absolute;
+        overflow: hidden;
+        left: 50%;
+        top: 10px;
+        line-height: 1em;
+        margin: 1px 0 0 -100px;
+        height: 40px;
+        font-size: 20px;
+        width: 200px;
+        font-weight: bold;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.left-pane {
+    position: absolute;
+    width: 100px;
+    top: 44px;
+    bottom: 0px;
+	background: #dddfe4;
+	border-right: 1px solid black;
+	color: #656C73;
+	text-shadow: rgba(255, 255, 255, 0.746094) 0px 1px 0px;
+}
+
+
+.authenticated-user .login-button { display: none; }
+.anonymous-user .logout-button { display: none; }
+.local-user .login-button { display: none; }
+.local-user .logout-button { display: none; }

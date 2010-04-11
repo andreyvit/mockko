@@ -8,9 +8,23 @@
     %script(src="../static/designer-components.js" type="text/javascript" charset="utf-8")
     %script(src="../static/designer.js" type="text/javascript" charset="utf-8")
     %link(rel="stylesheet" href="../static/lib/animations.css" type="text/css" media="screen" title="no title" charset="utf-8")
-    %link(rel="stylesheet" href="../static/theme/theme.css" type="text/css" media="screen" title="no title" charset="utf-8")
+    %link(rel="stylesheet" href="../static/theme/theme-common.css" type="text/css" media="screen" title="no title" charset="utf-8")
+    %link(rel="stylesheet" href="../static/theme/theme-designer.css" type="text/css" media="screen" title="no title" charset="utf-8")
+    %link(rel="stylesheet" href="../static/theme/theme-dashboard.css" type="text/css" media="screen" title="no title" charset="utf-8")
     %link(rel="stylesheet" href="../static/iphone/iphone.css" type="text/css" media="screen" title="no title" charset="utf-8")
   %body
+    #dashboard-screen.screen
+      .toolbar
+        .left
+          %a#new-app-button(href="#") New Application
+        .right
+          %a#logout-button(href="#") Sign Out
+        %h1 My Applications
+        
+      #apps-list
+        .app
+        
+
     #design-screen.screen
       .toolbar
         .left

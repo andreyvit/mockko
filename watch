@@ -1,5 +1,7 @@
 #! /bin/sh
 (coffee -wc web/src-static/*.coffee -o web/static/) &
-(lessc -w web/src-static/theme.less web/static/theme/theme.css) &
+(lessc -w web/src-static/theme-common.less web/static/theme/theme-common.css) &
+(lessc -w web/src-static/theme-designer.less web/static/theme/theme-designer.css) &
+(lessc -w web/src-static/theme-dashboard.less web/static/theme/theme-dashboard.css) &
 (lessc -w web/src-static/iphone.less web/static/iphone/iphone.css) &
 (./haml_w) &
