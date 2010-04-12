@@ -36,7 +36,7 @@ jQuery ($) ->
         
         authenticated: {
             adjustUI: (userData) ->
-                $('#logout-button').attr 'href', userData.logout_url
+                $('.logout-button').attr 'href', userData.logout_url
                 
             startDesigner: (userData) ->
                 switchToDashboard()
