@@ -2,4 +2,64 @@
 @import "theme-mixins";
 
 #dashboard-screen {
+    -webkit-background-size: 670px 647px;
+    background: url(images/background-shredded-denim.jpg) repeat;
+}
+
+#apps-list {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    top: 50%;
+    margin-top: -120px;
+    
+    .app {
+        position: relative;
+        width: 160px;
+        height: 240px;
+        cursor: pointer;
+        
+        .pile1, .pile2, .content {
+            position: absolute;
+            width: 160px;
+            height: 240px;
+            background: white;
+            -webkit-box-shadow: 0 3px 6px rgba(0,0,0,.25);
+            -moz-box-shadow: 0 3px 6px rgba(0,0,0,.25);
+            border: 1px solid #ccc;
+        }
+        .content {
+            -webkit-transform-origin: 50% 90%;
+            -webkit-transition: -webkit-transform .15s linear;
+            
+            :hover {
+                -webkit-transform: scale(1.25);
+                -moz-transform: scale(1.25);
+                position: relative;
+                z-index: 5;
+                -webkit-box-shadow: 0 3px 6px rgba(0,0,0,.5);
+                -moz-box-shadow: 0 3px 6px rgba(0,0,0,.5);
+            }
+        }
+        .pile1 {
+            -webkit-transform: scale(1.02) rotate(-1deg);
+        }
+        .pile2 {
+            -webkit-transform: scale(1.02) rotate(2deg);
+        }
+        
+        .caption {
+            position: absolute;
+            top: 260px;
+            height: 20px;
+            line-height: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            left: 0px;
+            right: 0px;
+            text-align: center;
+            color: #ddd;
+            text-shadow: rgba(0,0,0,1) 0px -1px;
+        }
+    }
 }

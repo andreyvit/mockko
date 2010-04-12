@@ -855,8 +855,13 @@ jQuery ($) ->
     switchToDashboard: ->
         $(".screen").hide()
         $('#dashboard-screen').show()
+    
+    $('#new-app-button').click ->
+        loadApplication sample1
+        switchToDesign()
         
-        
+    $('#dashboard-button').click ->
+        switchToDashboard()
     
     loadDesigner: (userData) ->
         $("body").removeClass("anonymous-user authenticated-user").addClass("${userData.status}-user")
@@ -865,10 +870,10 @@ jQuery ($) ->
                 $('#login-button').attr 'href', userData.login_url
             when 'authenticated'
                 $('#logout-button').attr 'href', userData.logout_url
-        loadApplication sample1
         
         switch userData.status
             when 'anonymous', 'local'
+                loadApplication sample1
                 switchToDesign()
             when 'authenticated'
                 switchToDashboard()
