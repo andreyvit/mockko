@@ -7,6 +7,9 @@ jQuery ($) ->
     ##########################################################################################################
     #  constants
     
+    applicationList: null
+    serverMode: null
+    applicationId: null
     application: null
     activeScreen: null
     components: {}
@@ -18,6 +21,91 @@ jQuery ($) ->
     
     # our very own idea of infinity
     INF: 100000
+    
+    SERVER_MODES = {
+        anonymous: {
+            adjustUI: (userData) ->
+                $('#login-button').attr 'href', userData.login_url
+                
+            startDesigner: (userData) ->
+                createNewApplication()
+                
+            saveApplicationChanges: ->
+                #
+        }
+        
+        authenticated: {
+            adjustUI: (userData) ->
+                $('#logout-button').attr 'href', userData.logout_url
+                
+            startDesigner: (userData) ->
+                switchToDashboard()
+                
+            saveApplicationChanges: ->
+                $.ajax {
+                    url: '/apps/' + (if applicationId then "${applicationId}/" else "")
+                    type: 'POST'
+                    data: JSON.stringify(application)
+                    contentType: 'application/json'
+                    dataType: 'json'
+                    success: (r) ->
+                        if r.error
+                            switch r.error
+                                when 'signed-out'
+                                    alert "Cannot save your changes because you were logged out. Please sign in again."
+                                else
+                                    alert "Other error: ${r.error}"
+                        else
+                            applicationId = r.id
+                    error: (xhr, status, e) ->
+                        alert "Failed to save the application: ${status} - ${e}"
+                        # TODO ERROR HANDLING!
+                }
+                
+            loadApplications: (callback) ->
+                $.ajax {
+                    url: '/apps/'
+                    dataType: 'json'
+                    success: (r) ->
+                        if r.error
+                            switch r.error
+                                when 'signed-out'
+                                    alert "Cannot load your applications because you were logged out. Please sign in again."
+                                else
+                                    alert "Other error: ${r.error}"
+                        else
+                            callback(r.apps)
+                    error: (xhr, status, e) ->
+                        alert "Failed to save the application: ${status} - ${e}"
+                        # TODO ERROR HANDLING!
+                }
+        }
+        
+        local: {
+            adjustUI: (userData) ->
+                #
+                
+            startDesigner: (userData) ->
+                createNewApplication()
+                
+            saveApplicationChanges: ->
+                #
+
+            loadApplications: (callback) ->
+                callback { apps: [ { id: 42, body: sample1 } ] }
+        }
+    }
+
+
+    ##########################################################################################################
+    #  DOM templates
+    
+    domTemplates = {}
+    $('.template').each ->
+        domTemplates[this.id] = this
+        $(this).removeClass('template').remove()
+    domTemplate: (id) ->
+        domTemplates[id].cloneNode(true)
 
     ##########################################################################################################
     #  utilities
@@ -47,6 +135,7 @@ jQuery ($) ->
             console.log "Change: ${lastChange.name}"
             undoStack.push lastChange
             undoStackChanged()
+            saveApplicationChanges()
         lastChange = null
 
     undoStackChanged: ->
@@ -59,10 +148,11 @@ jQuery ($) ->
         console.log "Undoing: ${change.name}"
         revertToMemento change.memento
         undoStackChanged()
+        saveApplicationChanges()
         
     createApplicationMemento: -> JSON.stringify(application)
     
-    revertToMemento: (memento) -> loadApplication JSON.parse(memento)
+    revertToMemento: (memento) -> loadApplication JSON.parse(memento), applicationId
     
     $('#undo-button').click -> undoLastChange(); false
     
@@ -784,10 +874,16 @@ jQuery ($) ->
         false
         
     
-    loadApplication: (app) ->
+    loadApplication: (app, appId) ->
+        app.name = createNewApplicationName() unless app.name
         application = app
+        applicationId = appId
+        $('#app-name').html(app.name)
         updateScreenList()
         switchToScreen application.screens[0]
+        
+    saveApplicationChanges: ->
+        serverMode.saveApplicationChanges()
         
     ##########################################################################################################
 
@@ -816,7 +912,7 @@ jQuery ($) ->
                 app: JSON.parse(v)
             catch e
                 good: no
-            loadApplication app if app
+            loadApplication app, applicationId if app
         $('#share-popover textarea').css('background-color', if good then 'white' else '#ffeeee')
     
     for event in ['change', 'blur', 'keydown', 'keyup', 'keypress', 'focus', 'mouseover', 'mouseout', 'paste', 'input']
@@ -847,6 +943,34 @@ jQuery ($) ->
     
     sample1: {"screens":[{"components":[{"type":"background","styleName":"striped","size":{"width":320,"height":480},"location":{"x":47,"y":139},"id":"root","effsize":{"w":320,"h":480}},{"type":"statusBar","size":{"width":320,"height":20},"location":{"x":47,"y":139},"id":"c13","effsize":{"w":320,"h":20}},{"type":"navBar","size":{"width":320,"height":44},"location":{"x":47,"y":159},"id":"c14","effsize":{"w":320,"h":44}},{"type":"text","styleName":"bar-title","size":{"width":null,"height":20},"location":{"x":159,"y":171},"text":"Some text","id":"c32","effsize":{"w":96,"h":20}},{"type":"backButton","styleName":"plain","size":{"width":null,"height":30},"location":{"x":56,"y":166},"text":"Back","id":"c33","effsize":{"w":62,"h":30}},{"type":"barButton","styleName":"normal","size":{"width":null,"height":30},"location":{"x":309,"y":166},"text":"Edit","id":"c38","effsize":{"w":46,"h":30}},{"type":"buyButton","styleName":"green","size":{"width":80,"height":25},"location":{"x":279,"y":256.5},"text":"BUY NOW","id":"c43","effsize":{"w":80,"h":25}},{"type":"buyButton","styleName":"blue","size":{"width":80,"height":25},"location":{"x":279,"y":212.5},"text":"$0.99","id":"c44","effsize":{"w":80,"h":25}},{"type":"plain-row","styleName":"white","size":{"width":320,"height":44},"location":{"x":47,"y":203},"id":"c45","effsize":{"w":320,"h":44}},{"type":"plain-row","styleName":"white","size":{"width":320,"height":44},"location":{"x":47,"y":247},"id":"c46","effsize":{"w":320,"h":44}},{"type":"coloredButton","styleName":"white","size":{"width":null,"height":44},"location":{"x":255,"y":519},"text":"Call","id":"c47","effsize":{"w":81,"h":44}},{"type":"coloredButton","styleName":"gray","size":{"width":null,"height":44},"location":{"x":60,"y":519},"text":"Delete Contact","id":"c48","effsize":{"w":184,"h":44}},{"type":"plain-row","styleName":"white","size":{"width":320,"height":44},"location":{"x":47,"y":291},"id":"c49","effsize":{"w":320,"h":44}},{"type":"buyButton","styleName":"blue","size":{"width":80,"height":25},"location":{"x":279,"y":300.5},"text":"$1.99","id":"c50","effsize":{"w":80,"h":25}},{"type":"plain-row","styleName":"dark","size":{"width":320,"height":44},"location":{"x":47,"y":335},"id":"c52","effsize":{"w":320,"h":44}},{"type":"plain-row","styleName":"dark","size":{"width":320,"height":44},"location":{"x":47,"y":379},"id":"c53","effsize":{"w":320,"h":44}},{"type":"plain-row","styleName":"metal","size":{"width":320,"height":44},"location":{"x":47,"y":423},"id":"c54","effsize":{"w":320,"h":44}},{"type":"plain-row","styleName":"metal","size":{"width":320,"height":44},"location":{"x":47,"y":467},"id":"c55","effsize":{"w":320,"h":44}},{"type":"tabBar","styleName":"plain","size":{"width":320,"height":49},"location":{"x":47,"y":571},"id":"c56","effsize":{"w":320,"h":49}},{"type":"text","styleName":"row-white","size":{"width":null,"height":20},"location":{"x":60,"y":300},"text":"Angry Birds","id":"c57","effsize":{"w":114,"h":20}},{"type":"text","styleName":"row-white","size":{"width":null,"height":20},"location":{"x":61,"y":217},"text":"iFart","id":"c58","effsize":{"w":44,"h":20}},{"type":"text","styleName":"row-white","size":{"width":null,"height":20},"location":{"x":59.99999999999999,"y":261},"text":"Make App","id":"c59","effsize":{"w":94,"h":20}},{"type":"text","styleName":"row-metal","size":{"width":null,"height":20},"location":{"x":58,"y":435},"text":"Novosibirsk","id":"c60","effsize":{"w":114,"h":20}},{"type":"text","styleName":"row-metal","size":{"width":null,"height":20},"location":{"x":58,"y":479},"text":"Cupertino","id":"c61","effsize":{"w":94,"h":20}},{"type":"text","styleName":"row-metal","size":{"width":null,"height":20},"location":{"x":276,"y":435},"text":"5:00 pm","id":"c62","effsize":{"w":76,"h":20}},{"type":"text","styleName":"row-metal","size":{"width":null,"height":20},"location":{"x":276,"y":479},"text":"4:00 am","id":"c63","effsize":{"w":75,"h":20}},{"type":"text","styleName":"row-dark","size":{"width":null,"height":20},"location":{"x":60,"y":347},"text":"Dark rows","id":"c64","effsize":{"w":97,"h":20}},{"type":"text","styleName":"row-dark","size":{"width":null,"height":20},"location":{"x":61,"y":391},"text":"are nice too","id":"c65","effsize":{"w":113,"h":20}}],"nextId":66,"userIndex":1,"sid":1},{"components":[{"id":"root","type":"background","styleName":"striped","location":{"x":47,"y":139},"size":{"width":320,"height":480},"effsize":{"w":320,"h":480},"dragpos":null},{"type":"coloredButton","styleName":"red","size":{"width":null,"height":null},"effsize":{"w":184,"h":44},"location":{"x":115,"y":357},"text":"Delete Contact","dragpos":null,"id":"c1"}],"userIndex":2,"sid":2,"nextId":2},{"components":[{"id":"root","type":"background","styleName":"striped","location":{"x":47,"y":139},"size":{"width":320,"height":480},"effsize":{"w":320,"h":480}}],"userIndex":3,"sid":3,"nextId":1}]}
     
+    createNewApplicationName: ->
+        adjs = ['Best-Selling', 'Great', 'Glorious', 'Stunning', 'Gorgeous']
+        i = Math.floor(Math.random() * adjs.length)
+        return "My ${adjs[i]} App"
+        
+    createNewApplication: ->
+        loadApplication sample1, null
+        switchToDesign()
+        
+    bindApplication: (app, appId, an) ->
+        $(an).click ->
+            loadApplication app, appId
+            switchToDesign()
+        
+        
+    refreshApplicationList: ->
+        serverMode.loadApplications (apps) ->
+            applicationList = apps
+            $('#apps-list .app').remove()
+            for appData in apps
+                appId: appData.id
+                app: JSON.parse(appData.body)
+                an: domTemplate('app-template')
+                $('.caption', $(an)).html(app.name)
+                console.log(app)
+                $(an).appendTo('#apps-list')
+                bindApplication app, appId, an
+    
     switchToDesign: ->
         $(".screen").hide()
         $('#design-screen').show()
@@ -855,28 +979,18 @@ jQuery ($) ->
     switchToDashboard: ->
         $(".screen").hide()
         $('#dashboard-screen').show()
+        refreshApplicationList()
     
-    $('#new-app-button').click ->
-        loadApplication sample1
-        switchToDesign()
+    $('#new-app-button').click -> createNewApplication()
         
     $('#dashboard-button').click ->
         switchToDashboard()
     
     loadDesigner: (userData) ->
         $("body").removeClass("anonymous-user authenticated-user").addClass("${userData.status}-user")
-        switch userData.status
-            when 'anonymous'
-                $('#login-button').attr 'href', userData.login_url
-            when 'authenticated'
-                $('#logout-button').attr 'href', userData.logout_url
-        
-        switch userData.status
-            when 'anonymous', 'local'
-                loadApplication sample1
-                switchToDesign()
-            when 'authenticated'
-                switchToDashboard()
+        serverMode = SERVER_MODES[userData.status]
+        serverMode.adjustUI userData
+        serverMode.startDesigner userData
     
     if window.location.href.match /^file:/
         loadDesigner { status: 'local' }

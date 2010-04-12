@@ -27,3 +27,7 @@ config['tipfy'] = {
 config['tipfy.ext.auth'] = {
     'user_model': 'makeapp.models:Account',
 }
+
+config['tipfy.ext.i18n'] = {
+    'locale_request_lookup': [('cookies', 'tipfy.locale')],
+}

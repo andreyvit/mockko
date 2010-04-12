@@ -7,6 +7,7 @@ from google.appengine.ext import db
 
 class Account(db.Model):
     user = db.UserProperty()
+    
     invited_by = db.SelfReferenceProperty()
     
     created_at = db.DateTimeProperty(auto_now_add=True)
@@ -14,10 +15,7 @@ class Account(db.Model):
     
 class App(db.Model):
     name = db.StringProperty(required=True)
+    body = db.TextProperty()
+    
     created_by = db.ReferenceProperty(Account)
-    editors = db.ListProperty(db.Key)
-
-ADJs = ['Best-Selling', 'Great', 'Glorious', 'Stunning', 'Gorgeous']
-
-def create_app_name():
-    return 'My %s App' % choice(ADJs)
+    editors    = db.ListProperty(db.Key)
