@@ -278,19 +278,33 @@
     }
 }
 
+#screens-list {
+    padding-top: 5px;
+}
+
 .app-screen {
-    margin: 5px 0px;
+    
+    padding: 5px 0px 0px 0px;
     cursor: pointer;
-    width: 100px;
-    height: 106px;
+    width: 80px + 10px + 10px;
+    height: 120px + 10px + 16px + 5px;
 
     .content {
-        margin: 0px auto;
-        width: 80px;
-        height: 90px;
-        border: 1px solid black;
-        background: #eee;
-        -webkit-border-radius: 10px;
+        opacity: 0.9;
+        margin: 0px 5px;
+        width: 90px;
+        height: 130px;
+        padding: 5px;
+        background: #000;
+        -webkit-box-shadow: 0 3px 6px rgba(0,0,0,.25);
+        -moz-box-shadow: 0 3px 6px rgba(0,0,0,.25);
+        -webkit-border-radius: 5px;
+        overflow: hidden;
+        
+        .rendered {
+            -webkit-transform-origin: 0% 0%;
+            -webkit-transform: scale(0.25);
+        }
     }
     
     .caption {
@@ -303,9 +317,12 @@
 }
 
 .app-screen.active {
+    background: rgba(0, 0, 255, 0.25);
     .content {
-        background: white;
-        border: 2px solid black;
+/*        -webkit-box-shadow: 0 3px 6px rgba(255,255,255,0.5);*/
+    }
+    .caption {
+        color: #000;
     }
 }
 

@@ -801,10 +801,21 @@ jQuery ($) ->
     ##########################################################################################################
     #  screens/applications
     
+    renderScreenComponents: (screen, node) ->
+        for orig in screen.components
+            c: $.extend(true, {}, orig)  # deep copy
+            c.location.x -= 47
+            c.location.y -= 139
+            cn: createNodeForComponent c
+            updateComponentProperties c, cn
+            $(node).append(cn)
+    
     renderScreen: (screen) ->
-        content: $("<div />").addClass("content")
-        cap: $("<div />").addClass("caption").html("Screen ${screen.userIndex}")
-        $("<div />").addClass("app-screen").attr('id', "app-screen-${screen.sid}").append(content).append(cap)
+        sn: domTemplate('app-screen-template')
+        $('.caption', sn).html("Screen ${screen.userIndex}")
+        $(sn).attr 'id', "app-screen-${screen.sid}"
+        renderScreenComponents(screen, $('.content .rendered', sn))
+        return sn
         
     bindScreen: (screen, sn) ->
         $(sn).click ->
@@ -968,6 +979,7 @@ jQuery ($) ->
                 an: domTemplate('app-template')
                 $('.caption', $(an)).html(app.name)
                 console.log(app)
+                renderScreenComponents(app.screens[0], $('.content .rendered', an))
                 $(an).appendTo('#apps-list')
                 bindApplication app, appId, an
     

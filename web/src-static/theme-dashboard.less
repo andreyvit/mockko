@@ -18,19 +18,22 @@
         position: relative;
         margin-right: 60px;
         width: 160px;
-        height: 240px;
+        height: 280px;
         cursor: pointer;
         
         .pile1, .pile2, .content {
+            -webkit-box-sizing: content-box;
             position: absolute;
             width: 160px;
             height: 240px;
-            background: white;
+            padding: 5px;
+            background: #000;
             -webkit-box-shadow: 0 3px 6px rgba(0,0,0,.25);
             -moz-box-shadow: 0 3px 6px rgba(0,0,0,.25);
             border: 1px solid #ccc;
         }
         .content {
+            overflow: hidden;
             -webkit-transform-origin: 50% 90%;
             -webkit-transition: -webkit-transform .15s linear;
             
@@ -41,6 +44,11 @@
                 z-index: 5;
                 -webkit-box-shadow: 0 3px 6px rgba(0,0,0,.5);
                 -moz-box-shadow: 0 3px 6px rgba(0,0,0,.5);
+            }
+            
+            .rendered {
+                -webkit-transform-origin: 0% 0%;
+                -webkit-transform: scale(0.5);
             }
         }
         .pile1 {
