@@ -797,7 +797,16 @@ jQuery ($) ->
             anim: if reason is 'mode' then 'fadein' else 'popin'
             $('.palette').showPopOverPointingTo $('#add-button'), anim
             
+    resizePalette: ->
+        maxPopOverSize: $(window).height() - 44 - 20
+        $('.palette').css 'height', Math.min(maxPopOverSize, 600)
+        
     $('#add-button').click -> paletteWanted = !paletteWanted; updatePaletteVisibility('wanted')
+    
+    initPalette: ->
+        fillPalette()
+        resizePalette()
+        
     
     ##########################################################################################################
     #  screens/applications
@@ -938,7 +947,7 @@ jQuery ($) ->
                 ctypes[ct.type] = ct
 
     initComponentTypes()
-    fillPalette()
+    initPalette()
     
     sample0: {
         screens: [{
@@ -1008,6 +1017,8 @@ jQuery ($) ->
     $('#welcome-continue-link').click ->
         $('#welcome-screen').fadeOut()
         false
+        
+    $(window).resize -> resizePalette()
     
     if window.location.href.match /^file:/
         loadDesigner { status: 'local' }
