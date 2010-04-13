@@ -346,3 +346,68 @@
 #add-screen-button:before { content: "Add Screen"; }
 
 .anonymous-user #dashboard-button { display: none; }
+
+
+#welcome-screen {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+#welcome-popup {
+    @width: 700px;
+    @height: 500px;
+    
+    -webkit-background-size: 437px 394px;
+    background: url(images/background-grid-paper.jpg) repeat;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: @width;
+    height: @height;
+    margin-left: @width / 2 * -1;
+    margin-top: @height / 2 * -1;
+    border: 1px solid #000;
+    -webkit-box-shadow: #000 0px 0px 40px;
+    
+    padding: 60px 40px 20px 40px;
+    
+    font-family: Helvetica;
+    font-size: 16px;
+    line-height: 24px;
+    
+    h1 {
+        line-height: 24px;
+        font-size: 24px;
+        color: #222;
+        font-weight: bold;
+        margin-bottom: 36px;
+    }
+    
+    p {
+        margin-top: 16px;
+        
+        .small {
+            font-size: 14px;
+            line-height: 24px;
+        }
+    }
+    
+    .buttons {
+        
+        position: absolute;
+        bottom: 40px;
+        left: 0px;
+        right: 0px;
+        line-height: 40px;
+        font-size: 24px;
+        text-align: center;
+        
+        a, a:link, a:visited {
+            text-decoration: underline;
+            font-weight: bold;
+            color: blue;
+            margin: 0px 10px;
+        }
+        
+    }
+    
+}

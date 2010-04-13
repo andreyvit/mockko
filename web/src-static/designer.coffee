@@ -25,10 +25,11 @@ jQuery ($) ->
     SERVER_MODES = {
         anonymous: {
             adjustUI: (userData) ->
-                $('#login-button').attr 'href', userData.login_url
+                $('.login-button').attr 'href', userData.login_url
                 
             startDesigner: (userData) ->
                 createNewApplication()
+                $('#welcome-screen').show()
                 
             saveApplicationChanges: ->
                 #
@@ -1003,6 +1004,10 @@ jQuery ($) ->
         serverMode = SERVER_MODES[userData.status]
         serverMode.adjustUI userData
         serverMode.startDesigner userData
+        
+    $('#welcome-continue-link').click ->
+        $('#welcome-screen').fadeOut()
+        false
     
     if window.location.href.match /^file:/
         loadDesigner { status: 'local' }
