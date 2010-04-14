@@ -3,9 +3,7 @@ jQuery.fn.runWebKitAnimation: (animationClass, classesToAdd, classesToRemove) ->
     this.one 'webkitAnimationEnd', => this.removeClass("${animationClass} ${classesToRemove || ''}")
     this.addClass "${animationClass} ${classesToAdd || ''}"
         
-jQuery.fn.showPopOverPointingTo: (tipControl, animation) ->
-    return if this.is(':visible')
-    
+jQuery.fn.repositionPopOver: (tipControl) ->
     tipControl: jQuery(tipControl)
     tip: this.find('.tip')
     offset: tipControl.offset()
@@ -22,6 +20,10 @@ jQuery.fn.showPopOverPointingTo: (tipControl, animation) ->
     
     this.css({ top: popoverOffset.top - parentOffset.top, left: popoverOffset.left - parentOffset.left })
     tip.css('left', center - popoverOffset.left - tipSize.width / 2)
+        
+jQuery.fn.showPopOverPointingTo: (tipControl, animation) ->
+    return if this.is(':visible')
+    this.repositionPopOver tipControl
     this.one 'webkitAnimationEnd', => this.removeClass('popin')
     this.runWebKitAnimation (animation || 'popin'), 'visible', ''
     

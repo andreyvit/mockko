@@ -800,6 +800,8 @@ jQuery ($) ->
     resizePalette: ->
         maxPopOverSize: $(window).height() - 44 - 20
         $('.palette').css 'height', Math.min(maxPopOverSize, 600)
+        if $('.palette').is(':visible')
+            $('.palette').repositionPopOver $('#add-button')
         
     $('#add-button').click -> paletteWanted = !paletteWanted; updatePaletteVisibility('wanted')
     
