@@ -6,6 +6,7 @@
     %script(src="../static/lib/underscore.js" type="text/javascript" charset="utf-8")
     %script(src="../static/designer-jqueryaddons.js" type="text/javascript" charset="utf-8")
     %script(src="../static/designer-components.js" type="text/javascript" charset="utf-8")
+    %script(src="../static/designer-templates.js" type="text/javascript" charset="utf-8")
     %script(src="../static/designer.js" type="text/javascript" charset="utf-8")
     %link(rel="stylesheet" href="../static/lib/animations.css" type="text/css" media="screen" title="no title" charset="utf-8")
     %link(rel="stylesheet" href="../static/theme/theme-common.css" type="text/css" media="screen" title="no title" charset="utf-8")
@@ -65,11 +66,12 @@
       
       #design-pane
         #device-panel.d-iphone-po
-        #hover-panel.hover-panel
-          .handle.delete-handle
-            .tip delete
-          .handle.duplicate-handle
-            .tip duplicate
+          #design-area
+            #hover-panel.hover-panel
+              .handle.delete-handle
+                .tip delete
+              .handle.duplicate-handle
+                .tip duplicate
 
       .palette
         .tip
