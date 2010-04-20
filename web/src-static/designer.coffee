@@ -212,7 +212,7 @@ jQuery ($) ->
     storeComponentNode: (c, cn) ->
         $(cn).setdata('moa-comp', c)
         c.node = cn
-        $(cn).dblclick -> startDoubleClickEditing c, cn
+        $(cn).dblclick -> startDoubleClickEditing c
     
     deleteComponent: (rootc) ->
         beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
@@ -250,19 +250,12 @@ jQuery ($) ->
         $("<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName}").addClass(if ct.container then 'container' else 'leaf')[0]
     
     findComponentOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-comp')
-    
-    computeComponentSize: (c, cn) ->
-        ct: ctypes[c.type]
-        {
-            width: c.size.width || ct.widthPolicy?.fixedSize?.width || cn?.offsetWidth || null
-            height: c.size.height || ct.heightPolicy?.fixedSize?.height || cn?.offsetHeight || null
-        }
         
     updateComponentPosition: (c, cn) ->
         ct: ctypes[c.type]
         location: c.dragpos || c.location
         
-        $(cn).css({
+        $(cn || c.node).css({
             left:   "${location.x}px"
             top:    "${location.y}px"
         })
@@ -271,9 +264,11 @@ jQuery ($) ->
         ordered: _(components).sortBy (c) -> r: rectOf c; -r.w * r.h
         _.each ordered, (c, i) -> $(c.node).css('z-index', i)
 
-    updateComponentText: (c, cn) -> $(cn).html(c.text) if c.text?
+    updateComponentText: (cn) -> $(cn || c.node).html(c.text) if c.text?
     
-    updateComponentVisualProperties: (c, cn) -> updateComponentText(c, cn); updateEffectiveSize(c, cn)
+    updateComponentVisualProperties: (c, cn) ->
+        updateComponentText(c, cn)
+        updateEffectiveSize(c) unless cn?
     
     updateComponentProperties: (c, cn) -> updateComponentPosition(c, cn); updateComponentVisualProperties(c, cn)
     
@@ -298,11 +293,11 @@ jQuery ($) ->
     sizeToPx: (v) ->
         if v then "${v}px" else 'auto'
         
-    updateEffectiveSize: (c, cn) ->
+    updateEffectiveSize: (c) ->
         recomputeEffectiveSize c
-        $(cn).css({ width: sizeToPx(c.effsize.w), height: sizeToPx(c.effsize.h) })
-        if c.effsize.w is null then c.effsize.w = cn.offsetWidth
-        if c.effsize.h is null then c.effsize.h = cn.offsetHeight
+        $(c.node).css({ width: sizeToPx(c.effsize.w), height: sizeToPx(c.effsize.h) })
+        if c.effsize.w is null then c.effsize.w = c.node.offsetWidth
+        if c.effsize.h is null then c.effsize.h = c.node.offsetHeight
 
 
     ##########################################################################################################
@@ -376,21 +371,21 @@ jQuery ($) ->
     ##########################################################################################################
     #  double-click editing
     
-    startDoubleClickEditing: (c, cn) ->
+    startDoubleClickEditing: (c) ->
         activatePointingMode()
         
         ct: ctypes[c.type]
         return unless ct.defaultText?
         
         componentBeingDoubleClickEdited = c
-        $(cn).addClass 'editing'
-        cn.contentEditable = true
-        cn.focus()
+        $(c.node).addClass 'editing'
+        c.node.contentEditable = true
+        c.node.focus()
         
         originalText: c.text
         
-        $(cn).blur -> finishDoubleClickEditing()
-        $(cn).keydown (e) ->
+        $(c.node).blur -> finishDoubleClickEditing()
+        $(c.node).keydown (e) ->
             if e.keyCode == 13 then finishDoubleClickEditing(); false
             if e.keyCode == 27 then finishDoubleClickEditing(originalText); false
         
@@ -406,18 +401,17 @@ jQuery ($) ->
         return if componentBeingDoubleClickEdited is null
         
         c:  componentBeingDoubleClickEdited
-        cn: c.node
 
         beginUndoTransaction "text change in ${friendlyComponentName c}"
         
-        $(cn).removeClass 'editing'
-        cn.contentEditable = false
+        $(c.node).removeClass 'editing'
+        c.node.contentEditable = false
         
-        $(cn).unbind 'blur'
-        $(cn).unbind 'keydown'
+        $(c.node).unbind 'blur'
+        $(c.node).unbind 'keydown'
         
-        c.text = overrideText || $(cn).text()
-        updateComponentProperties c, cn
+        c.text = overrideText || $(c.node).text()
+        updateComponentProperties c
         componentsChanged()
         
         componentBeingDoubleClickEdited = null
@@ -555,7 +549,7 @@ jQuery ($) ->
                         updateComponentPosition c, c.node
         }
     
-    startDragging: (c, cn, options) ->
+    startDragging: (c, options) ->
         origin: $('#design-area').offset()
         
         if c.node
@@ -576,7 +570,7 @@ jQuery ($) ->
         hotspot: options.hotspot || computeHotSpot(options.startPt)
         liveMover: newLiveMover()
         
-        $(cn).addClass 'dragging'
+        $(c.node).addClass 'dragging'
         
         updateRectangleAndClipToArea: (pt) ->
             r: rectOf c
@@ -604,8 +598,8 @@ jQuery ($) ->
         
         moveTo: (pt) ->
             [r, ok] = updateRectangleAndClipToArea(pt)
-            setTransitions cn, "-webkit-transform 0.25s linear"
-            $(cn)[if ok then 'removeClass' else 'addClass']('cannot-drop')
+            setTransitions c.node, "-webkit-transform 0.25s linear"
+            $(c.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
                 stack: findNearbyStack(c.type, r, allDraggedComps) || { below: [] }
@@ -644,12 +638,12 @@ jQuery ($) ->
                     console.log "moved ${c.id}, updated descendant ${dc.id} delta x ${delta.x}, y ${delta.y}"
                     updateComponentPosition dc, dc.node
             
-            updateComponentPosition c, cn
+            updateComponentPosition c
             updateHoverPanelPosition()
             return ok
             
         dropAt: (pt) ->
-            $(cn).removeClass 'dragging'
+            $(c.node).removeClass 'dragging'
             
             liveMover.finish()
 
@@ -670,10 +664,9 @@ jQuery ($) ->
         
     activateExistingComponentDragging: (c, startPt) ->
         beginUndoTransaction "movement of ${friendlyComponentName c}"
-        cn: c.node
         
         originalLocation: c.location
-        dragger: startDragging c, cn, { startPt: startPt }
+        dragger: startDragging c, { startPt: startPt }
         
         window.status = "Dragging a component."
         
@@ -694,11 +687,11 @@ jQuery ($) ->
         
     activateNewComponentDragging: (startPt, c) ->
         beginUndoTransaction "creation of ${friendlyComponentName c}"
-        cn: createNodeForComponent c
-        $('#design-area').append cn
+        cn: storeComponentNode c, createNodeForComponent(c)
+        $('#design-area').append c.node
         
-        updateComponentProperties c, cn
-        dragger: startDragging c, cn, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }
+        updateComponentProperties c
+        dragger: startDragging c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }
         
         window.status = "Dragging a new component."
         
@@ -710,13 +703,12 @@ jQuery ($) ->
                 ok: dragger.dropAt { x: e.pageX, y: e.pageY }
                 if ok
                     addToComponents c
-                    storeComponentNode c, cn
-                    updateComponentProperties c, cn
+                    updateComponentProperties c
                     componentsChanged()
                     activatePointingMode()
                 else
-                    $(cn).fadeOut 250, ->
-                        $(cn).remove()
+                    $(c.node).fadeOut 250, ->
+                        $(c.node).remove()
                     activatePointingMode()
             
             hidesPalette: yes
