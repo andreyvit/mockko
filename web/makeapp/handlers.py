@@ -1,5 +1,5 @@
 
-from tipfy import RequestHandler, url_for, redirect, redirect_to, render_json_response, request
+from tipfy import RequestHandler, url_for, redirect, redirect_to, render_json_response, request, BadRequest
 from tipfy.ext.jinja2 import render_response
 # from tipfy.ext.user import user_required, get_current_user
 

@@ -43,6 +43,8 @@ window.stringSetWith: (list) ->
         set[item] = true
     return set
 
+window.cloneObj: (o) -> $.extend(true, {}, o)
+
 window.ihash: (->
     nextValue: 0
     ihash: (value) ->
@@ -52,7 +54,8 @@ window.ihash: (->
 
 window.setOf: (list) ->
     set: {}
-    set[ihash item] = item for item in list
+    for item in list
+        set[ihash item] = item
     return set
 
 window.inSet: (el, set) -> ihash(el) in set

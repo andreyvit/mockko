@@ -29,12 +29,14 @@ window.MakeApp.appTemplates.basic = {
                 }
                 {
                     type: "statusBar",
+                    styleName: "grey"
                     size: { width: null, height: null }
                     location: { x: 0, y: 0 }
                     id: "c13"
                 }
                 {
                     type: "navBar",
+                    styleName: "grey"
                     size: { width: null, height: null }
                     location: { x: 0, y: 20 }
                     id: "c14"

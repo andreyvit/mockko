@@ -45,7 +45,7 @@ jQuery ($) ->
                 $.ajax {
                     url: '/apps/' + (if applicationId then "${applicationId}/" else "")
                     type: 'POST'
-                    data: JSON.stringify(application)
+                    data: JSON.stringify(externalizeApplication(application))
                     contentType: 'application/json'
                     dataType: 'json'
                     success: (r) ->
@@ -114,6 +114,31 @@ jQuery ($) ->
         if s[0] in {a: yes, e: yes, i: yes, o: yes, u: yes} then "an ${s}" else "a ${s}"
 
     ##########################################################################################################
+    #  external representation
+    
+    externalizeComponent: (c) ->
+        {
+            type: c.type
+            location: cloneObj c.location
+            effsize: cloneObj c.effsize
+            size: cloneObj c.size
+            styleName: c.styleName
+            text: c.text
+        }
+        
+    externalizeScreen: (screen) ->
+        {
+            components: (externalizeComponent(c) for c in screen.components)
+        }
+    
+    externalizeApplication: (app) ->
+        {
+            name: app.name
+            screens: (externalizeScreen(s) for s in app.screens)
+        }
+    
+
+    ##########################################################################################################
     #  undo
     
     undoStack: []
@@ -150,7 +175,7 @@ jQuery ($) ->
         undoStackChanged()
         saveApplicationChanges()
         
-    createApplicationMemento: -> JSON.stringify(application)
+    createApplicationMemento: -> JSON.stringify(externalizeApplication(application))
     
     revertToMemento: (memento) -> loadApplication JSON.parse(memento), applicationId
     
@@ -162,7 +187,7 @@ jQuery ($) ->
     #  global events
     
     componentsChanged: ->
-        activeScreen.components = $.extend(true, {}, components)
+        activeScreen.components = (externalizeComponent(c) for c in components)
         endUndoTransaction()
         
         if $('#share-popover').is(':visible')
@@ -264,11 +289,14 @@ jQuery ($) ->
         ordered: _(components).sortBy (c) -> r: rectOf c; -r.w * r.h
         _.each ordered, (c, i) -> $(c.node).css('z-index', i)
 
-    renderComponentText: (cn) -> $(cn || c.node).html(c.text) if c.text?
+    renderComponentText: (c, cn) -> $(cn || c.node).html(c.text) if c.text?
     
     renderComponentVisualProperties: (c, cn) ->
         renderComponentText(c, cn)
-        updateEffectiveSize(c) unless cn?
+        if cn?
+            renderComponentSize c, cn
+        else
+            updateEffectiveSize c
     
     renderComponentProperties: (c, cn) -> renderComponentPosition(c, cn); renderComponentVisualProperties(c, cn)
     
@@ -286,15 +314,17 @@ jQuery ($) ->
     sizeToPx: (v) ->
         if v then "${v}px" else 'auto'
         
-    updateEffectiveSize: (c) ->
-        # update what can be computed without a browser
+    renderComponentSize: (c, cn) ->
         ct: ctypes[c.type]
-        c.effsize: {
+        effsize: {
             w: recomputeEffectiveSizeInDimension c.size.width, ct.widthPolicy, 320
             h: recomputeEffectiveSizeInDimension c.size.height, ct.heightPolicy, 460
         }
+        $(cn || c.node).css({ width: sizeToPx(effsize.w), height: sizeToPx(effsize.h) })
+        return effsize
         
-        $(c.node).css({ width: sizeToPx(c.effsize.w), height: sizeToPx(c.effsize.h) })
+    updateEffectiveSize: (c) ->
+        c.effsize: renderComponentSize c
         # get browser-computed size if needed
         if c.effsize.w is null then c.effsize.w = c.node.offsetWidth
         if c.effsize.h is null then c.effsize.h = c.node.offsetHeight
@@ -552,7 +582,7 @@ jQuery ($) ->
     startDragging: (c, options) ->
         origin: $('#design-area').offset()
         
-        if c.node
+        if c.id
             descendants: findDescendants c
             originalR: rectOf c
             for dc in descendants
@@ -618,7 +648,7 @@ jQuery ($) ->
                     vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
                 }
                 
-                console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), targetcid ${target.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+                console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
 
                 if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
                 if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
@@ -843,14 +873,14 @@ jQuery ($) ->
             
         activeScreen = screen
         activeScreen.nextId ||= 1
-        components = {}
+        components = []
         for c in activeScreen.components
             addToComponents c
-            
+        
         for c in components
             $('#design-area').append storeComponentNode(c, createNodeForComponent(c))
         
-        renderComponentProperties(c, c.node) for c in components
+        renderComponentProperties(c) for c in components
         
         devicePanel: $('#device-panel')[0]
         allowedArea: {
@@ -897,7 +927,7 @@ jQuery ($) ->
     ##########################################################################################################
 
     updateSharePopover: ->
-        s: JSON.stringify(application)
+        s: JSON.stringify(externalizeApplication(application))
         $('#share-popover textarea').val(s)
         
     $('#share-button').click ->
@@ -913,7 +943,7 @@ jQuery ($) ->
     
     checkApplicationLoading: ->
         v: $('#share-popover textarea').val()
-        s: JSON.stringify(application)
+        s: JSON.stringify(externalizeApplication(application))
         
         good: yes
         if v != s && v != ''
@@ -950,7 +980,6 @@ jQuery ($) ->
         $(an).click ->
             loadApplication app, appId
             switchToDesign()
-        
         
     refreshApplicationList: ->
         serverMode.loadApplications (apps) ->
