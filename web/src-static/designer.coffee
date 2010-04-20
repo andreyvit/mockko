@@ -168,7 +168,7 @@ jQuery ($) ->
         if $('#share-popover').is(':visible')
             updateSharePopover()
             
-        updateZIndexes()
+        reassignZIndexes()
     
     ##########################################################################################################
     #  geometry
@@ -236,7 +236,7 @@ jQuery ($) ->
         r: rectOf c
         _(pc for pc in components when pc != c && isRectInsideRect(r, rectOf(pc))).min (pc) -> r: rectOf(pc); r.w*r.h
         
-    findIdealContainerForRect: (r, excluded) ->
+    findBestTargetContainerForRect: (r, excluded) ->
         comps: _.reject components, (c) -> _.include(excluded, c)
         # find container with maximum area of overlap
         bestc: _(comps).max (c) -> areaOfIntersection(r, rectOf(c))
@@ -251,7 +251,7 @@ jQuery ($) ->
     
     findComponentOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-comp')
         
-    updateComponentPosition: (c, cn) ->
+    renderComponentPosition: (c, cn) ->
         ct: ctypes[c.type]
         location: c.dragpos || c.location
         
@@ -260,17 +260,17 @@ jQuery ($) ->
             top:    "${location.y}px"
         })
     
-    updateZIndexes: ->
+    reassignZIndexes: ->
         ordered: _(components).sortBy (c) -> r: rectOf c; -r.w * r.h
         _.each ordered, (c, i) -> $(c.node).css('z-index', i)
 
-    updateComponentText: (cn) -> $(cn || c.node).html(c.text) if c.text?
+    renderComponentText: (cn) -> $(cn || c.node).html(c.text) if c.text?
     
-    updateComponentVisualProperties: (c, cn) ->
-        updateComponentText(c, cn)
+    renderComponentVisualProperties: (c, cn) ->
+        renderComponentText(c, cn)
         updateEffectiveSize(c) unless cn?
     
-    updateComponentProperties: (c, cn) -> updateComponentPosition(c, cn); updateComponentVisualProperties(c, cn)
+    renderComponentProperties: (c, cn) -> renderComponentPosition(c, cn); renderComponentVisualProperties(c, cn)
     
     setTransitions: (cn, trans) -> $(cn).css('-webkit-transition', trans)
 
@@ -283,19 +283,19 @@ jQuery ($) ->
             when 'fill'    then fullSize
             when 'browser' then null
         
-    recomputeEffectiveSize: (c) ->
+    sizeToPx: (v) ->
+        if v then "${v}px" else 'auto'
+        
+    updateEffectiveSize: (c) ->
+        # update what can be computed without a browser
         ct: ctypes[c.type]
         c.effsize: {
             w: recomputeEffectiveSizeInDimension c.size.width, ct.widthPolicy, 320
             h: recomputeEffectiveSizeInDimension c.size.height, ct.heightPolicy, 460
         }
         
-    sizeToPx: (v) ->
-        if v then "${v}px" else 'auto'
-        
-    updateEffectiveSize: (c) ->
-        recomputeEffectiveSize c
         $(c.node).css({ width: sizeToPx(c.effsize.w), height: sizeToPx(c.effsize.h) })
+        # get browser-computed size if needed
         if c.effsize.w is null then c.effsize.w = c.node.offsetWidth
         if c.effsize.h is null then c.effsize.h = c.node.offsetHeight
 
@@ -411,7 +411,7 @@ jQuery ($) ->
         $(c.node).unbind 'keydown'
         
         c.text = overrideText || $(c.node).text()
-        updateComponentProperties c
+        renderComponentProperties c
         componentsChanged()
         
         componentBeingDoubleClickEdited = null
@@ -534,19 +534,19 @@ jQuery ($) ->
                     if c.dragpos and not inSet c, componentSet
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
-                        updateComponentPosition c, c.node
+                        renderComponentPosition c, c.node
                 
                 for c in comps
                     $(c.node).addClass 'stacked'
                     c.dragpos = { x: c.location.x + amount.x; y: c.location.y + amount.y }
-                    updateComponentPosition c, c.node
+                    renderComponentPosition c, c.node
                     
             finish: ->
                 for c in components
                     if c.dragpos
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
-                        updateComponentPosition c, c.node
+                        renderComponentPosition c, c.node
         }
     
     startDragging: (c, options) ->
@@ -605,7 +605,7 @@ jQuery ($) ->
                 stack: findNearbyStack(c.type, r, allDraggedComps) || { below: [] }
                 liveMover.moveComponents stack.below, { x: 0, y: stack.moveBy }
                     
-                target: findIdealContainerForRect(r, allDraggedComps)
+                target: findBestTargetContainerForRect(r, allDraggedComps)
                 
                 if stack.below.length > 0
                     aps: []
@@ -636,9 +636,9 @@ jQuery ($) ->
                         y: dc.preDragRect.y + delta.y
                     }
                     console.log "moved ${c.id}, updated descendant ${dc.id} delta x ${delta.x}, y ${delta.y}"
-                    updateComponentPosition dc, dc.node
+                    renderComponentPosition dc, dc.node
             
-            updateComponentPosition c
+            renderComponentPosition c
             updateHoverPanelPosition()
             return ok
             
@@ -690,7 +690,7 @@ jQuery ($) ->
         cn: storeComponentNode c, createNodeForComponent(c)
         $('#design-area').append c.node
         
-        updateComponentProperties c
+        renderComponentProperties c
         dragger: startDragging c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }
         
         window.status = "Dragging a new component."
@@ -703,7 +703,7 @@ jQuery ($) ->
                 ok: dragger.dropAt { x: e.pageX, y: e.pageY }
                 if ok
                     addToComponents c
-                    updateComponentProperties c
+                    renderComponentProperties c
                     componentsChanged()
                     activatePointingMode()
                 else
@@ -768,7 +768,7 @@ jQuery ($) ->
                             c.size = { width: 70; height: 50 }
                             $(n).addClass('palette-tile')
                     $(n).attr('title', style.label)
-                    updateComponentVisualProperties c, n
+                    renderComponentVisualProperties c, n
                     $(n).addClass('item').appendTo(items)
                     # item: $('<div />').addClass('item')
                     # $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
@@ -805,7 +805,7 @@ jQuery ($) ->
         for orig in screen.components
             c: $.extend(true, {}, orig)  # deep copy
             cn: createNodeForComponent c
-            updateComponentProperties c, cn
+            renderComponentProperties c, cn
             $(node).append(cn)
     
     renderScreen: (screen) ->
@@ -850,7 +850,7 @@ jQuery ($) ->
         for c in components
             $('#design-area').append storeComponentNode(c, createNodeForComponent(c))
         
-        updateComponentProperties(c, c.node) for c in components
+        renderComponentProperties(c, c.node) for c in components
         
         devicePanel: $('#device-panel')[0]
         allowedArea: {
