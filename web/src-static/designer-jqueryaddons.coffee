@@ -43,3 +43,16 @@ window.stringSetWith: (list) ->
         set[item] = true
     return set
 
+window.ihash: (->
+    nextValue: 0
+    ihash: (value) ->
+        return value.toString() unless value instanceof Object
+        return value.__ihash || (value.__ihash = "#" + ++nextValue)
+)()
+
+window.setOf: (list) ->
+    set: {}
+    set[ihash item] = item for item in list
+    return set
+
+window.inSet: (el, set) -> ihash(el) in set

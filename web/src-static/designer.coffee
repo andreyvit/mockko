@@ -12,12 +12,11 @@ jQuery ($) ->
     applicationId: null
     application: null
     activeScreen: null
-    components: {}
-    cnodes: {}
+    components: []
     ctypes: {}
     mode: null
     allowedArea: null
-    doubleClickEditingCid: null
+    componentBeingDoubleClickEdited: null
     
     # our very own idea of infinity
     INF: 100000
@@ -163,7 +162,7 @@ jQuery ($) ->
     #  global events
     
     componentsChanged: ->
-        activeScreen.components = (c for cid, c of components)
+        activeScreen.components = $.extend(true, {}, components)
         endUndoTransaction()
         
         if $('#share-popover').is(':visible')
@@ -209,37 +208,39 @@ jQuery ($) ->
     ##########################################################################################################
     #  component management
     
-    addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components[c.id] = c
+    addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components.push c
     storeComponentNode: (c, cn) ->
-        $(cn).setdata('moa-cid', c.id); cnodes[c.id] = cn
+        $(cn).setdata('moa-comp', c)
+        c.node = cn
         $(cn).dblclick -> startDoubleClickEditing c, cn
     
-    deleteComponent: (rootcid) ->
-        beginUndoTransaction "deletion of ${friendlyComponentName components[rootcid]}"
-        cids = findDescendants rootcid
-        cids.push rootcid
+    deleteComponent: (rootc) ->
+        beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
+        comps = findDescendants rootc
+        comps.push rootc
         
-        for cid in cids
-            cn: cnodes[cid]
-            delete cnodes[cid]
-            delete components[cid]
+        for c in comps
+            cn: c.node
+            index: _(components).indexOf c
+            if index >= 0
+                components.splice index, 1
             $(cn).hide 'drop', { direction: 'down' }, 'normal', -> $(cn).remove()
         componentsChanged()
             
-    findDescendants: (contid) ->
-        contr: rectOfCID contid
-        cid for cid, c of components when cid != contid && isRectInsideRect(rectOfCID(cid), contr)
+    findDescendants: (cont) ->
+        contr: rectOf cont
+        c for c in components when c isnt cont && isRectInsideRect(rectOf(c), contr)
         
-    findParent: (cid) ->
+    findParent: (c) ->
         # a parent is a covering component of minimal area
-        r: rectOfCID cid
-        _(pcid for pcid in components when pcid != cid && isRectInsideRect(r, rectOfCID(pcid))).min (pcid) -> r: rectOfCID(pcid); r.w*r.h
+        r: rectOf c
+        _(pc for pc in components when pc != c && isRectInsideRect(r, rectOf(pc))).min (pc) -> r: rectOf(pc); r.w*r.h
         
     findIdealContainerForRect: (r, excluded) ->
-        cids: _.reject _.keys(components), (cid) -> _.include(excluded, cid)
+        comps: _.reject components, (c) -> _.include(excluded, c)
         # find container with maximum area of overlap
-        bestcid: _(cids).max (cid) -> areaOfIntersection(r, rectOfCID(cid))
-        if bestcid and areaOfIntersection(r, rectOfCID(bestcid)) > 0 then bestcid else null
+        bestc: _(comps).max (c) -> areaOfIntersection(r, rectOf(c))
+        if bestc and areaOfIntersection(r, rectOf(bestc)) > 0 then bestc else null
 
     ##########################################################################################################
     #  DOM rendering
@@ -248,7 +249,7 @@ jQuery ($) ->
         ct: ctypes[c.type]
         $("<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName}").addClass(if ct.container then 'container' else 'leaf')[0]
     
-    findCidOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-cid')
+    findComponentOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-comp')
     
     computeComponentSize: (c, cn) ->
         ct: ctypes[c.type]
@@ -267,8 +268,8 @@ jQuery ($) ->
         })
     
     updateZIndexes: ->
-        ordered: _(_.keys components).sortBy (cid) -> r: rectOfCID cid; -r.w * r.h
-        _.each ordered, (cid, i) -> $(cnodes[cid]).css('z-index', i)
+        ordered: _(components).sortBy (c) -> r: rectOf c; -r.w * r.h
+        _.each ordered, (c, i) -> $(c.node).css('z-index', i)
 
     updateComponentText: (c, cn) -> $(cn).html(c.text) if c.text?
     
@@ -309,23 +310,23 @@ jQuery ($) ->
     
     TABLE_TYPES = { 'plain-row': yes, 'plain-header': yes, 'grouped-row': yes }
     
-    findNearbyStack: (typeName, r, draggedCIDs) ->
+    findNearbyStack: (typeName, r, draggedComps) ->
         return null unless typeName in TABLE_TYPES
         
         stack: { above: [], below: [], moveBy: INF }
-        draggedCIDs: stringSetWith draggedCIDs
-        for cid, c of components
-            if not (cid in draggedCIDs)
+        draggedComponentSet: setOf draggedComps
+        for c in components
+            if not inSet c, draggedComponentSet
                 if c.type in TABLE_TYPES
-                    sr: rectOfC c
+                    sr: rectOf c
                     proximity: proximityOfRectToRect r, sr
                     if proximity < 20*20
                         if sr.y < r.y
-                            stack.above.push { cid: cid, proximity: proximity }
+                            stack.above.push { c: c, proximity: proximity }
                         else
                             if proximity <= 0
                                 stack.moveBy: Math.min(stack.moveBy, r.y+r.h-sr.y)
-                            stack.below.push { cid: cid, proximity: proximity }
+                            stack.below.push { c: c, proximity: proximity }
         if stack.moveBy is INF then stack.moveBy: 0
         return stack
     
@@ -334,42 +335,42 @@ jQuery ($) ->
     ##########################################################################################################
     #  hover panel
     
-    hoveredCid: null
+    hoveredComponent: null
     
     updateHoverPanelPosition: ->
-        return if hoveredCid is null
-        cn: cnodes[hoveredCid]
+        return if hoveredComponent is null
+        cn: hoveredComponent.node
         offset: { left: cn.offsetLeft, top: cn.offsetTop }
         $('#hover-panel').css({ left: offset.left, top: offset.top })
     
-    componentHovered: (cid) ->
-        return unless cnodes[cid]?  # the component is being deleted right now
-        return if hoveredCid is cid
+    componentHovered: (c) ->
+        return unless c.node?  # the component is being deleted right now
+        return if hoveredComponent is c
         
-        ct: ctypes[components[cid].type]
+        ct: ctypes[c.type]
         if ct.container
             $('#hover-panel').addClass('container').removeClass('leaf')
         else
             $('#hover-panel').removeClass('container').addClass('leaf')
-        $('#hover-panel').fadeIn(100) if hoveredCid is null
-        hoveredCid = cid
+        $('#hover-panel').fadeIn(100) if hoveredComponent is null
+        hoveredComponent = c
         updateHoverPanelPosition()
         
     componentUnhovered: ->
-        return if hoveredCid is null
-        hoveredCid = null
+        return if hoveredComponent is null
+        hoveredComponent = null
         $('#hover-panel').hide()
         
     $('#hover-panel').hide()
     $('#hover-panel .delete-handle').click ->
-        if hoveredCid isnt null
+        if hoveredComponent isnt null
             $('#hover-panel').hide()
-            deleteComponent hoveredCid 
-            hoveredCid = null
+            deleteComponent hoveredComponent 
+            hoveredComponent = null
     
         
-    # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredCid isnt null
-    # resumeHoverPanel: -> updateHoverPanelPosition $('#hover-panel').fadeIn(100) if hoveredCid isnt null
+    # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredComponent isnt null
+    # resumeHoverPanel: -> updateHoverPanelPosition $('#hover-panel').fadeIn(100) if hoveredComponent isnt null
     
 
     ##########################################################################################################
@@ -381,7 +382,7 @@ jQuery ($) ->
         ct: ctypes[c.type]
         return unless ct.defaultText?
         
-        doubleClickEditingCid = c.id
+        componentBeingDoubleClickEdited = c
         $(cn).addClass 'editing'
         cn.contentEditable = true
         cn.focus()
@@ -395,17 +396,17 @@ jQuery ($) ->
         
         baseMode = mode
         mode: $.extend({}, baseMode, {
-            mousedown: (e, cid) ->
-                return false if cid is doubleClickEditingCid
+            mousedown: (e, c) ->
+                return false if c is componentBeingDoubleClickEdited
                 finishDoubleClickEditing()
-                baseMode.mousedown e, cid
+                baseMode.mousedown e, c
         })
         
     finishDoubleClickEditing: (overrideText) ->
-        return if doubleClickEditingCid is null
+        return if componentBeingDoubleClickEdited is null
         
-        c:  components[doubleClickEditingCid]
-        cn: cnodes[doubleClickEditingCid]
+        c:  componentBeingDoubleClickEdited
+        cn: c.node
 
         beginUndoTransaction "text change in ${friendlyComponentName c}"
         
@@ -419,33 +420,32 @@ jQuery ($) ->
         updateComponentProperties c, cn
         componentsChanged()
         
-        doubleClickEditingCid = null
+        componentBeingDoubleClickEdited = null
         activatePointingMode()
     
     
     ##########################################################################################################
     #  dragging
     
-    rectOfC: (c) -> { x: c.location.x, y: c.location.y, w: c.effsize.w, h: c.effsize.h }
-    rectOfCID: (cid) -> rectOfC components[cid]
+    rectOf: (c) -> { x: c.location.x, y: c.location.y, w: c.effsize.w, h: c.effsize.h }
     
-    computeSnappingPositionsOfComponent: (cid) ->
-        r: rectOfCID cid
+    computeSnappingPositionsOfComponent: (c) ->
+        r: rectOf c
         _.compact [
-            { orient: 'vert', type: 'edge', cid: cid, coord: r.x } if r.x > allowedArea.x
-            { orient: 'vert', type: 'edge', cid: cid, coord: r.x + r.w } if r.x+r.w < allowedArea.x+allowedArea.w
-            { orient: 'vert', type: 'center', cid: cid, coord: r.x + r.w / 2 }
-            { orient: 'horz', type: 'edge', cid: cid, coord: r.y } if r.y > allowedArea.y
-            { orient: 'horz', type: 'edge', cid: cid, coord: r.y + r.h } if r.y+r.h < allowedArea.y+allowedArea.h
-            { orient: 'horz', type: 'center', cid: cid, coord: r.y + r.h / 2 }
+            { orient: 'vert', type: 'edge', c: c, coord: r.x } if r.x > allowedArea.x
+            { orient: 'vert', type: 'edge', c: c, coord: r.x + r.w } if r.x+r.w < allowedArea.x+allowedArea.w
+            { orient: 'vert', type: 'center', c: c, coord: r.x + r.w / 2 }
+            { orient: 'horz', type: 'edge', c: c, coord: r.y } if r.y > allowedArea.y
+            { orient: 'horz', type: 'edge', c: c, coord: r.y + r.h } if r.y+r.h < allowedArea.y+allowedArea.h
+            { orient: 'horz', type: 'center', c: c, coord: r.y + r.h / 2 }
         ]
         
-    computeChildrenSnappingPositionsOfContainer: (cid) -> computeSnappingPositionsOfComponent cid
+    computeChildrenSnappingPositionsOfContainer: (c) -> computeSnappingPositionsOfComponent c
         
-    computeAllSnappingPositions: (pcid) ->
-        cids: if pcid is null then _.keys(components) else findDescendants(pcid)
-        r: _.flatten(computeSnappingPositionsOfComponent cid for cid in cids)
-        if pcid is null then r else r.concat computeChildrenSnappingPositionsOfContainer pcid
+    computeAllSnappingPositions: (pc) ->
+        comps: if pc is null then components else findDescendants(pc)
+        r: _.flatten(computeSnappingPositionsOfComponent c for c in comps)
+        if pc is null then r else r.concat computeChildrenSnappingPositionsOfContainer pc
         
     computeSnappings: (ap, r) ->
         switch ap.type
@@ -513,14 +513,14 @@ jQuery ($) ->
     activatePointingMode: ->
         window.status = "Hover a component for options. Click to edit. Drag to move."
         activateMode {
-            mousedown: (e, cid) ->
-                if cid
-                    activateExistingComponentDragging cid, { x: e.pageX, y: e.pageY }
+            mousedown: (e, c) ->
+                if c
+                    activateExistingComponentDragging c, { x: e.pageX, y: e.pageY }
                     true
 
-            mousemove: (e, cid) ->
-                if cid
-                    componentHovered cid
+            mousemove: (e, c) ->
+                if c
+                    componentHovered c
                 else if $(e.target).closest('.hover-panel').length
                     #
                 else
@@ -533,45 +533,42 @@ jQuery ($) ->
         
     newLiveMover: () ->
         {
-            moveComponents: (cids, amount) ->
-                cids: _.flatten([rcid].concat(findDescendants(rcid)) for rcid in cids)
-                cidSet: stringSetWith cids
-                for cid, c of components
-                    if c.dragpos and not (cid in cidSet)
+            moveComponents: (comps, amount) ->
+                comps: _.flatten([rcomp].concat(findDescendants(rcomp)) for rcomp in comps)
+                componentSet: setOf comps
+                for c in components
+                    if c.dragpos and not inSet c, componentSet
                         c.dragpos = null
-                        $(cnodes[cid]).removeClass 'stacked'
-                        updateComponentPosition c, cnodes[cid]
+                        $(c.node).removeClass 'stacked'
+                        updateComponentPosition c, c.node
                 
-                for cid in cids
-                    $(cnodes[cid]).addClass 'stacked'
-                    c: components[cid]
+                for c in comps
+                    $(c.node).addClass 'stacked'
                     c.dragpos = { x: c.location.x + amount.x; y: c.location.y + amount.y }
-                    updateComponentPosition c, cnodes[cid]
+                    updateComponentPosition c, c.node
                     
             finish: ->
-                for cid, c of components
+                for c in components
                     if c.dragpos
                         c.dragpos = null
-                        $(cnodes[cid]).removeClass 'stacked'
-                        updateComponentPosition c, cnodes[cid]
+                        $(c.node).removeClass 'stacked'
+                        updateComponentPosition c, c.node
         }
     
     startDragging: (c, cn, options) ->
         origin: $('#design-area').offset()
         
-        if c.id
-            descendantIds: findDescendants c.id
-            console.log descendantIds
-            originalR: rectOfC c
-            originalDescendantsRs: {}
-            for dcid in descendantIds
-                originalDescendantsRs[dcid] = rectOfCID dcid
-            allDraggedIds: [c.id].concat(descendantIds)
+        if c.node
+            descendants: findDescendants c
+            originalR: rectOf c
+            for dc in descendants
+                dc.preDragRect = rectOf dc
+            allDraggedComps: [c].concat(descendants)
         else
-            allDraggedIds: []
+            allDraggedComps: []
         
         computeHotSpot: (pt) ->
-            r: rectOfC c
+            r: rectOf c
             {
                 x: if r.w then ((pt.x - origin.left) - r.x) / r.w else 0.5
                 y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
@@ -582,7 +579,7 @@ jQuery ($) ->
         $(cn).addClass 'dragging'
         
         updateRectangleAndClipToArea: (pt) ->
-            r: rectOfC c
+            r: rectOf c
             r.x: pt.x - origin.left - r.w * hotspot.x
             r.y: pt.y - origin.top  - r.h * hotspot.y
 
@@ -611,15 +608,15 @@ jQuery ($) ->
             $(cn)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
-                stack: findNearbyStack(c.type, r, allDraggedIds) || { below: [] }
-                liveMover.moveComponents _(stack.below).pluck('cid'), { x: 0, y: stack.moveBy }
+                stack: findNearbyStack(c.type, r, allDraggedComps) || { below: [] }
+                liveMover.moveComponents stack.below, { x: 0, y: stack.moveBy }
                     
-                targetcid: findIdealContainerForRect(r, allDraggedIds)
+                target: findIdealContainerForRect(r, allDraggedComps)
                 
                 if stack.below.length > 0
                     aps: []
                 else
-                    aps: _(computeAllSnappingPositions(targetcid)).reject (a) -> _.include(allDraggedIds, a.cid)
+                    aps: _(computeAllSnappingPositions(target)).reject (a) -> _.include(allDraggedComps, a)
                 aa: _.flatten(computeSnappings(ap, r) for ap in aps)
 
                 best: {
@@ -627,7 +624,7 @@ jQuery ($) ->
                     vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
                 }
                 
-                console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), targetcid ${targetcid}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+                console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), targetcid ${target.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
 
                 if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
                 if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
@@ -637,15 +634,15 @@ jQuery ($) ->
             
             c.dragpos = { x: r.x, y: r.y }
             
-            if descendantIds
-                for dcid in descendantIds
+            if descendants
+                for dc in descendants
                     delta: { x: r.x - originalR.x, y: r.y - originalR.y }
-                    components[dcid].dragpos = {
-                        x: originalDescendantsRs[dcid].x + delta.x
-                        y: originalDescendantsRs[dcid].y + delta.y
+                    dc.dragpos = {
+                        x: dc.preDragRect.x + delta.x
+                        y: dc.preDragRect.y + delta.y
                     }
-                    console.log "moved ${c.id}, updated descendant ${dcid} delta x ${delta.x}, y ${delta.y}"
-                    updateComponentPosition components[dcid], cnodes[dcid]
+                    console.log "moved ${c.id}, updated descendant ${dc.id} delta x ${delta.x}, y ${delta.y}"
+                    updateComponentPosition dc, dc.node
             
             updateComponentPosition c, cn
             updateHoverPanelPosition()
@@ -659,10 +656,10 @@ jQuery ($) ->
             if moveTo pt
                 c.location = c.dragpos
                 c.dragpos = null
-                if descendantIds
-                    for dcid in descendantIds
-                        components[dcid].location = components[dcid].dragpos
-                        components[dcid].dragpos = null
+                if descendants
+                    for dc in descendants
+                        dc.location = dc.dragpos
+                        dc.dragpos = null
                 true
             else
                 false
@@ -671,10 +668,9 @@ jQuery ($) ->
             
         { moveTo: moveTo, dropAt: dropAt }
         
-    activateExistingComponentDragging: (cid, startPt) ->
-        beginUndoTransaction "movement of ${friendlyComponentName components[cid]}"
-        c: components[cid]
-        cn: cnodes[cid]
+    activateExistingComponentDragging: (c, startPt) ->
+        beginUndoTransaction "movement of ${friendlyComponentName c}"
+        cn: c.node
         
         originalLocation: c.location
         dragger: startDragging c, cn, { startPt: startPt }
@@ -690,7 +686,7 @@ jQuery ($) ->
                     componentsChanged()
                     activatePointingMode()
                 else
-                    deleteComponent cid
+                    deleteComponent c
                     activatePointingMode()
                 
             hidesPalette: yes
@@ -728,11 +724,11 @@ jQuery ($) ->
     
     $('#design-pane').bind {
         mousedown: (e) ->
-            if mode.mousedown e, findCidOfNode(e.target)
+            if mode.mousedown e, findComponentOfNode(e.target)
                 e.preventDefault()
 
         mousemove: (e) ->
-            if mode.mousemove e, findCidOfNode(e.target)
+            if mode.mousemove e, findComponentOfNode(e.target)
                 e.preventDefault()
             
             # if !isDragging && component && isMouseDown && (Math.abs(pt.x - dragOrigin.x) > 2 || Math.abs(pt.y - dragOrigin.y) > 2)
@@ -741,7 +737,7 @@ jQuery ($) ->
             #     $draggedComponentNode: $target
                 
         mouseup: (e) ->
-            if mode.mouseup e, findCidOfNode(e.target)
+            if mode.mouseup e, findComponentOfNode(e.target)
                 e.preventDefault()
     }
 
@@ -851,7 +847,7 @@ jQuery ($) ->
     switchToScreen: (screen) ->
         setActiveScreen screen
         
-        $(cn).remove() for cid, cn of cnodes
+        $(c.node).remove() for c in components when c.node != null
             
         activeScreen = screen
         activeScreen.nextId ||= 1
@@ -859,10 +855,10 @@ jQuery ($) ->
         for c in activeScreen.components
             addToComponents c
             
-        for cid, c of components
+        for c in components
             $('#design-area').append storeComponentNode(c, createNodeForComponent(c))
         
-        updateComponentProperties(c, cnodes[cid]) for cid, c of components
+        updateComponentProperties(c, c.node) for c in components
         
         devicePanel: $('#device-panel')[0]
         allowedArea: {
