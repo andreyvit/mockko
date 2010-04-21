@@ -234,8 +234,8 @@ jQuery ($) ->
     #  component management
     
     addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components.push c
-    storeComponentNode: (c, cn) ->
-        $(cn).setdata('moa-comp', c)
+    
+    storeAndBindComponentNode: (c, cn) ->
         c.node = cn
         $(cn).dblclick -> startDoubleClickEditing c
     
@@ -272,7 +272,19 @@ jQuery ($) ->
     
     createNodeForComponent: (c) ->
         ct: ctypes[c.type]
-        $("<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName}").addClass(if ct.container then 'container' else 'leaf')[0]
+        $("<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c)[0]
+        
+    _renderComponentHierarchy: (c, storeFunc) ->
+        n: storeFunc c, createNodeForComponent(c)
+        
+        for child in c.children || []
+            childNode: _renderComponentHierarchy(child, storeFunc)
+            $(n).append(childNode)
+            
+        return n
+            
+    renderStaticComponentHierarchy: (c) -> _renderComponentHierarchy c, (c, n) -> n
+    renderInteractiveComponentHeirarchy: (c) -> _renderComponentHierarchy c, storeAndBindComponentNode
     
     findComponentOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-comp')
         
@@ -717,7 +729,7 @@ jQuery ($) ->
         
     activateNewComponentDragging: (startPt, c) ->
         beginUndoTransaction "creation of ${friendlyComponentName c}"
-        cn: storeComponentNode c, createNodeForComponent(c)
+        cn: renderInteractiveComponentHeirarchy c
         $('#design-area').append c.node
         
         renderComponentProperties c
@@ -792,7 +804,7 @@ jQuery ($) ->
                 styles: ct.styles || [{ styleName: 'plain', label: ct.label }]
                 for style in styles
                     c: createNewComponent ct, style
-                    n: createNodeForComponent c
+                    n: renderStaticComponentHierarchy c
                     switch ct.palettePresentation || 'as-is'
                         when 'tile'
                             c.size = { width: 70; height: 50 }
@@ -878,7 +890,7 @@ jQuery ($) ->
             addToComponents c
         
         for c in components
-            $('#design-area').append storeComponentNode(c, createNodeForComponent(c))
+            $('#design-area').append storeAndBindComponentNode(c, createNodeForComponent(c))
         
         renderComponentProperties(c) for c in components
         
