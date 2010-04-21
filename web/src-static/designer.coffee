@@ -124,17 +124,44 @@ jQuery ($) ->
             size: cloneObj c.size
             styleName: c.styleName
             text: c.text
+            children: (externalizeComponent(child) for child in c.children || [])
+        }
+        
+    internalizeComponent: (c) ->
+        {
+            type: c.type
+            location: cloneObj c.location
+            # we'll recompute the effective size anyway
+            # effsize: cloneObj c.effsize
+            size: cloneObj c.size
+            styleName: c.styleName
+            text: c.text
+            children: (internalizeComponent(child) for child in c.children || [])
         }
         
     externalizeScreen: (screen) ->
         {
             components: (externalizeComponent(c) for c in screen.components)
         }
+        
+    internalizeScreen: (screen) ->
+        s: {
+            components: (internalizeComponent(c) for c in screen.components)
+        }
+        for c in s.components
+            assignParentsToChildrenOf c
+        return s
     
     externalizeApplication: (app) ->
         {
             name: app.name
             screens: (externalizeScreen(s) for s in app.screens)
+        }
+        
+    internalizeApplication: (app) ->
+        {
+            name: app.name
+            screens: (internalizeScreen(s) for s in app.screens)
         }
     
 
@@ -239,6 +266,32 @@ jQuery ($) ->
         c.node = cn
         $(cn).dblclick -> startDoubleClickEditing c
     
+    # traverse(comp-or-array-of-comps, [parent], func)
+    traverse: (comp, parent, func) ->
+        return if not comp?
+        if not func
+            func = parent; parent = null
+        if _.isArray comp
+            for child in comp
+                traverse child, parent, func
+        else
+            func(comp, parent)
+            for child in comp.children || []
+                traverse child, comp, func
+        null
+        
+    assignParentsToChildrenOf: (c) -> traverse c.children, c, (child, parent) -> child.parent = parent
+    
+    createNewComponent: (ct, style) ->
+        c: { type: ct.type, styleName: style.styleName }
+        c.size: { width: null; height: null }
+        c.effsize: { w: null; h: null }
+        c.location: { x: 0, y: 0 }
+        c.text = ct.defaultText if ct.defaultText?
+        c.children = if ct.children then cloneObj(ct.children) else []
+        assignParentsToChildrenOf c
+        return c
+    
     deleteComponent: (rootc) ->
         beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
         comps = findDescendants rootc
@@ -275,7 +328,11 @@ jQuery ($) ->
         $("<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c)[0]
         
     _renderComponentHierarchy: (c, storeFunc) ->
+        console.log(c)
         n: storeFunc c, createNodeForComponent(c)
+        if c.type == 'navBar'
+            console.log("Nav Bar:")
+            console.log(c)
         
         for child in c.children || []
             childNode: _renderComponentHierarchy(child, storeFunc)
@@ -283,8 +340,17 @@ jQuery ($) ->
             
         return n
             
-    renderStaticComponentHierarchy: (c) -> _renderComponentHierarchy c, (c, n) -> n
-    renderInteractiveComponentHeirarchy: (c) -> _renderComponentHierarchy c, storeAndBindComponentNode
+    renderStaticComponentHierarchy: (c) ->
+        _renderComponentHierarchy c, (ch, n) ->
+            renderComponentVisualProperties ch, n
+            renderComponentPosition ch, n if ch != c
+            n
+        
+    renderInteractiveComponentHeirarchy: (c) ->
+        _renderComponentHierarchy c, (ch, n) ->
+            storeAndBindComponentNode ch, n
+            renderComponentProperties ch
+            n
     
     findComponentOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-comp')
         
@@ -732,7 +798,6 @@ jQuery ($) ->
         cn: renderInteractiveComponentHeirarchy c
         $('#design-area').append c.node
         
-        renderComponentProperties c
         dragger: startDragging c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }
         
         window.status = "Dragging a new component."
@@ -779,14 +844,6 @@ jQuery ($) ->
     #  palette
     
     paletteWanted: on
-    
-    createNewComponent: (ct, style) ->
-        c: { type: ct.type, styleName: style.styleName }
-        c.size: { width: null; height: null }
-        c.effsize: { w: null; h: null }
-        c.location: { x: 0, y: 0 }
-        c.text = ct.defaultText if ct.defaultText?
-        return c
 
     bindPaletteItem: (item, ct, style) ->
         $(item).mousedown (e) ->
@@ -810,7 +867,6 @@ jQuery ($) ->
                             c.size = { width: 70; height: 50 }
                             $(n).addClass('palette-tile')
                     $(n).attr('title', style.label)
-                    renderComponentVisualProperties c, n
                     $(n).addClass('item').appendTo(items)
                     # item: $('<div />').addClass('item')
                     # $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
@@ -844,10 +900,9 @@ jQuery ($) ->
     #  screens/applications
     
     renderScreenComponents: (screen, node) ->
-        for orig in screen.components
-            c: $.extend(true, {}, orig)  # deep copy
-            cn: createNodeForComponent c
-            renderComponentProperties c, cn
+        for c in screen.components
+            cn: renderStaticComponentHierarchy c
+            renderComponentPosition c, cn
             $(node).append(cn)
     
     renderScreen: (screen) ->
@@ -890,9 +945,7 @@ jQuery ($) ->
             addToComponents c
         
         for c in components
-            $('#design-area').append storeAndBindComponentNode(c, createNodeForComponent(c))
-        
-        renderComponentProperties(c) for c in components
+            $('#design-area').append renderInteractiveComponentHeirarchy(c)
         
         devicePanel: $('#device-panel')[0]
         allowedArea: {
@@ -926,6 +979,7 @@ jQuery ($) ->
         
     
     loadApplication: (app, appId) ->
+        app = internalizeApplication(app)
         app.name = createNewApplicationName() unless app.name
         application = app
         applicationId = appId

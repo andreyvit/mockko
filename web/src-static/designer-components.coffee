@@ -115,6 +115,15 @@ window.MakeApp.paletteDefinition: [
                         label: 'Black Translucent Navigation Bar'
                     }
                 ]
+                children: [
+                    {
+                        type: 'text'
+                        styleName: 'bar-title'
+                        text: "Title"
+                        location: { x: 10, y: 10 }
+                        size: { width: null, height: null }
+                    }
+                ]
             }
             {
                 type: 'toolbar'

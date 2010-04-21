@@ -43,7 +43,17 @@ window.stringSetWith: (list) ->
         set[item] = true
     return set
 
-window.cloneObj: (o) -> $.extend(true, {}, o)
+window.cloneObj: (o) -> 
+    return o if o == null || typeof o != "object"
+    return o if o.constructor != Object && o.constructor != Array
+    if o.constructor == Date || o.constructor == RegExp || o.constructor == Function ||
+    o.constructor == String || o.constructor == Number || o.constructor == Boolean
+        return new o.constructor o
+        
+    if o.constructor == Array
+        $.extend({}, {o:o}).o
+    else
+        $.extend({}, o)
 
 window.ihash: (->
     nextValue: 0
