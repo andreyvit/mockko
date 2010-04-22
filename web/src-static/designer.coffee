@@ -297,8 +297,8 @@ jQuery ($) ->
         c.effsize: { w: null; h: null }
         c.location: { x: 0, y: 0 }
         c.text = ct.defaultText if ct.defaultText?
-        c.children = if ct.children then (internalizeComponent(c) for c in ct.children) else []
-        c.inDocument: no
+        c.children = if ct.children then (internalizeComponent(child) for child in ct.children) else []
+        traverse c, (comp) -> comp.inDocument: no
         c.parent: null
         assignParentsToChildrenOf c
         return c
@@ -340,11 +340,7 @@ jQuery ($) ->
         $("<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c)[0]
         
     _renderComponentHierarchy: (c, storeFunc) ->
-        console.log(c)
         n: storeFunc c, createNodeForComponent(c)
-        if c.type == 'navBar'
-            console.log("Nav Bar:")
-            console.log(c)
         
         for child in c.children || []
             childNode: _renderComponentHierarchy(child, storeFunc)
@@ -865,11 +861,12 @@ jQuery ($) ->
                 styles: ct.styles || [{ styleName: 'plain', label: ct.label }]
                 for style in styles
                     c: createNewComponent ct, style
+                    switch ct.palettePresentation || 'as-is'
+                        when 'tile' then c.size = { width: 70; height: 50 }
+                        
                     n: renderStaticComponentHierarchy c
                     switch ct.palettePresentation || 'as-is'
-                        when 'tile'
-                            c.size = { width: 70; height: 50 }
-                            $(n).addClass('palette-tile')
+                        when 'tile' then $(n).addClass('palette-tile')
                     $(n).attr('title', style.label)
                     $(n).addClass('item').appendTo(items)
                     # item: $('<div />').addClass('item')
@@ -1048,7 +1045,6 @@ jQuery ($) ->
                 app: internalizeApplication(app)
                 an: domTemplate('app-template')
                 $('.caption', $(an)).html(app.name)
-                console.log(app)
                 renderScreenComponents(app.screens[0], $('.content .rendered', an))
                 $(an).appendTo('#apps-list')
                 bindApplication app, appId, an
