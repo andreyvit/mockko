@@ -440,27 +440,39 @@ jQuery ($) ->
     ##########################################################################################################
     #  stacking
     
-    TABLE_TYPES = { 'plain-row': yes, 'plain-header': yes, 'grouped-row': yes }
+    TABLE_TYPES = setOf ['plain-row', 'plain-header', 'grouped-row']
+    
+    # discoverStacksInComponent: (c) ->
     
     findNearbyStack: (typeName, r, draggedComps) ->
         return null unless typeName in TABLE_TYPES
-        
-        stack: { above: [], below: [], moveBy: INF }
         draggedComponentSet: setOf draggedComps
+        
+        best: null
         traverse activeScreen.rootComponent, (c) ->
             if not inSet c, draggedComponentSet
                 if c.type in TABLE_TYPES
-                    sr: rectOf c
-                    proximity: proximityOfRectToRect r, sr
-                    if proximity < 20*20
-                        if sr.y < r.y
-                            stack.above.push { c: c, proximity: proximity }
-                        else
-                            if proximity <= 0
-                                stack.moveBy: Math.min(stack.moveBy, r.y+r.h-sr.y)
-                            stack.below.push { c: c, proximity: proximity }
-        if stack.moveBy is INF then stack.moveBy: 0
-        return stack
+                    proximity: proximityOfRectToRect r, rectOf c
+                    if best is null or proximity < best.proximity
+                        best: { proximity: proximity, comp: c }
+        
+        return null if best is null or best.proximity > 20*20
+        kicker: best.comp
+        
+        peers: _(kicker.parent.children).select (c) -> c.type in TABLE_TYPES and not inSet c, draggedComponentSet
+        _(peers).sortBy (c) -> c.location.y
+        
+        below: _(peers).select (c) -> cr: rectOf c; cr.y + cr.h/2 > r.y
+        below = _(below).sortBy (c) -> c.location.y
+        
+        snapR: null
+        if below.length > 0
+            console.log("below:")
+            console.log(below)
+            snapR: cloneObj(r)
+            snapR.y = (rectOf below[0]).y
+            
+        { above: [], below: below, moveBy: r.h, snapR: snapR }
     
 
 
@@ -679,12 +691,23 @@ jQuery ($) ->
                     c.dragpos = { x: c.location.x + amount.x; y: c.location.y + amount.y }
                     componentPositionChangedWhileDragging c
                     
-            finish: ->
+            rollback: ->
                 traverse activeScreen.rootComponent, (c) ->
                     if c.dragpos
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedWhileDragging c
+                    
+            commit: ->
+                traverse activeScreen.rootComponent, (c) ->
+                    if c.dragpos
+                        c.location = {
+                            x: c.dragpos.x - c.parent.abspos.x
+                            y: c.dragpos.y - c.parent.abspos.y
+                        }
+                        c.dragpos = null
+                        $(c.node).removeClass 'stacked'
+                        componentPositionChangedPernamently c
         }
     
     startDragging: (c, options) ->
@@ -738,25 +761,27 @@ jQuery ($) ->
                 liveMover.moveComponents stack.below, { x: 0, y: stack.moveBy }
                     
                 target: findBestTargetContainerForRect(r, [c])
+                target = activeScreen.rootComponent if c.type in TABLE_TYPES
                 
                 if stack.below.length > 0
                     aps: []
+                    r = stack.snapR if stack.snapR
                 else
                     aps: _(computeAllSnappingPositions(target)).reject (a) -> c == a.c
-                aa: _.flatten(computeSnappings(ap, r) for ap in aps)
+                    aa: _.flatten(computeSnappings(ap, r) for ap in aps)
 
-                best: {
-                    horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
-                    vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
-                }
+                    best: {
+                        horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
+                        vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
+                    }
                 
-                console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+                    console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
 
-                if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
-                if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
+                    if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
+                    if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
 
-                applySnapping best.vert, r if best.vert
-                applySnapping best.horz, r if best.horz
+                    applySnapping best.vert, r if best.vert
+                    applySnapping best.horz, r if best.horz
             
             c.dragpos = { x: r.x, y: r.y }
             
@@ -767,8 +792,6 @@ jQuery ($) ->
         dropAt: (pt) ->
             $(c.node).removeClass 'dragging'
             
-            liveMover.finish()
-
             if res: moveTo pt
                 if c.parent != res.target
                     _(c.parent.children).removeValue c  if c.parent
@@ -787,9 +810,11 @@ jQuery ($) ->
                     
                 c.inDocument = yes
                 componentPositionChangedPernamently c
-                
+
+                liveMover.commit()
                 true
             else
+                liveMover.rollback()
                 false
             
         if c.node.parentNode
