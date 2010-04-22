@@ -316,19 +316,21 @@ jQuery ($) ->
     #     _(pc for pc in components when pc != c && isRectInsideRect(r, rectOf(pc))).min (pc) -> r: rectOf(pc); r.w*r.h
         
     findBestTargetContainerForRect: (r, excluded) ->
-        best: null
         trav: (comp) ->
             return null if _.include excluded, comp
 
+            bestHere: null
             for child in comp.children
                 if res: trav(child)
-                    if best == null or res.area > best.area
-                        best = res
+                    if bestHere == null or res.area > bestHere.area
+                        bestHere = res
 
-            area: areaOfIntersection r, rectOf comp
-            if area > 0
-                if best == null or area > best.area
-                    best = { comp: comp, area: area }
+            if bestHere is null
+                area: areaOfIntersection r, rectOf comp
+                if area > 0
+                    bestHere: { comp: comp, area: area }
+            else
+                bestHere
         
         trav(activeScreen.rootComponent)?.comp || activeScreen.rootComponent
 
@@ -388,6 +390,24 @@ jQuery ($) ->
     renderComponentProperties: (c, cn) -> renderComponentPosition(c, cn); renderComponentVisualProperties(c, cn)
     
     setTransitions: (cn, trans) -> $(cn).css('-webkit-transition', trans)
+    
+    updateAbsolutePositions: (comp) ->
+        trav: (c, parentPos) ->
+            c.abspos: { x: c.location.x + parentPos.x, y: c.location.y + parentPos.y }
+            for child in c.children
+                trav child, c.abspos
+        trav(comp, (if comp.parent then comp.parent.abspos else { x: 0, y: 0 }))
+    
+    componentPositionChangedWhileDragging: (c) ->
+        renderComponentPosition c
+        if c is hoveredComponent
+            updateHoverPanelPosition()
+    
+    componentPositionChangedPernamently: (c) ->
+        renderComponentPosition c
+        updateAbsolutePositions c
+        if c is hoveredComponent
+            updateHoverPanelPosition()
 
 
     ##########################################################################################################
@@ -451,8 +471,9 @@ jQuery ($) ->
     
     updateHoverPanelPosition: ->
         return if hoveredComponent is null
-        cn: hoveredComponent.node
-        offset: { left: cn.offsetLeft, top: cn.offsetTop }
+        refOffset: $('#design-area').offset()
+        compOffset: $(hoveredComponent.node).offset()
+        offset: { left: compOffset.left - refOffset.left, top: compOffset.top - refOffset.top }
         $('#hover-panel').css({ left: offset.left, top: offset.top })
     
     componentHovered: (c) ->
@@ -528,7 +549,7 @@ jQuery ($) ->
         $(c.node).unbind 'keydown'
         
         c.text = overrideText || $(c.node).text()
-        renderComponentProperties c
+        renderComponentVisualProperties c
         componentsChanged()
         
         componentBeingDoubleClickEdited = null
@@ -538,7 +559,8 @@ jQuery ($) ->
     ##########################################################################################################
     #  dragging
     
-    rectOf: (c) -> { x: c.location.x, y: c.location.y, w: c.effsize.w, h: c.effsize.h }
+    sizeOf: (c) -> { w: c.effsize.w, h: c.effsize.h }
+    rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
     
     computeSnappingPositionsOfComponent: (c) ->
         r: rectOf c
@@ -650,19 +672,19 @@ jQuery ($) ->
                     if c.dragpos and not inSet c, componentSet
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
-                        renderComponentPosition c, c.node
+                        componentPositionChangedWhileDragging c
                 
                 for c in comps
                     $(c.node).addClass 'stacked'
                     c.dragpos = { x: c.location.x + amount.x; y: c.location.y + amount.y }
-                    renderComponentPosition c, c.node
+                    componentPositionChangedWhileDragging c
                     
             finish: ->
                 traverse activeScreen.rootComponent, (c) ->
                     if c.dragpos
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
-                        renderComponentPosition c, c.node
+                        componentPositionChangedWhileDragging c
         }
     
     startDragging: (c, options) ->
@@ -683,7 +705,7 @@ jQuery ($) ->
         $(c.node).addClass 'dragging'
         
         updateRectangleAndClipToArea: (pt) ->
-            r: rectOf c
+            r: sizeOf c
             r.x: pt.x - origin.left - r.w * hotspot.x
             r.y: pt.y - origin.top  - r.h * hotspot.y
 
@@ -738,8 +760,7 @@ jQuery ($) ->
             
             c.dragpos = { x: r.x, y: r.y }
             
-            renderComponentPosition c
-            updateHoverPanelPosition()
+            componentPositionChangedWhileDragging c
             
             if ok then { target: target } else null
             
@@ -749,23 +770,33 @@ jQuery ($) ->
             liveMover.finish()
 
             if res: moveTo pt
-                c.location = c.dragpos
-                c.dragpos = null
                 if c.parent != res.target
-                    if c.node.parentNode
-                        c.node.parentNode.removeChild(c.node)
-                    if c.parent
-                        _(c.parent.children).removeValue c
+                    _(c.parent.children).removeValue c  if c.parent
                     c.parent = res.target
-                    c.parent.node.appendChild(c.node)
                     c.parent.children.push c
+
+                if c.node.parentNode
+                    c.node.parentNode.removeChild(c.node)
+                c.parent.node.appendChild(c.node)
+                    
+                c.location = {
+                    x: c.dragpos.x - c.parent.abspos.x
+                    y: c.dragpos.y - c.parent.abspos.y
+                }
+                c.dragpos = null
                     
                 c.inDocument = yes
+                componentPositionChangedPernamently c
                 
                 true
             else
                 false
             
+        if c.node.parentNode
+            c.node.parentNode.removeChild(c.node)
+        activeScreen.rootComponent.node.appendChild(c.node)
+        updateEffectiveSize c  # we might have just added a new component
+        
         moveTo(options.startPt)
             
         { moveTo: moveTo, dropAt: dropAt }
@@ -796,7 +827,6 @@ jQuery ($) ->
     activateNewComponentDragging: (startPt, c) ->
         beginUndoTransaction "creation of ${friendlyComponentName c}"
         cn: renderInteractiveComponentHeirarchy c
-        $('#design-area').append c.node
         
         dragger: startDragging c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }
         
@@ -810,7 +840,6 @@ jQuery ($) ->
                 ok: dragger.dropAt { x: e.pageX, y: e.pageY }
                 if ok
                     traverse c, (child) -> assignNameIfStillUnnamed child, activeScreen
-                    renderComponentProperties c
                     componentsChanged()
                     activatePointingMode()
                 else
@@ -823,6 +852,7 @@ jQuery ($) ->
     
     $('#design-pane').bind {
         mousedown: (e) ->
+            return if e.button != 0
             if mode.mousedown e, findComponentOfNode(e.target)
                 e.preventDefault()
 
@@ -942,6 +972,8 @@ jQuery ($) ->
         activeScreen.nextId ||= 1
         
         $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
+        updateAbsolutePositions activeScreen.rootComponent
+        traverse activeScreen.rootComponent, (c) -> updateEffectiveSize c
         
         devicePanel: $('#device-panel')[0]
         allowedArea: {
@@ -1087,3 +1119,7 @@ jQuery ($) ->
                 alert "Failed to load the application: ${status} - ${e}"
                 # TODO ERROR HANDLING!
         }
+        
+    # Make-App Dump
+    window.mad: ->
+        console.log(activeScreen)

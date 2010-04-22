@@ -120,7 +120,21 @@ window.MakeApp.paletteDefinition: [
                         type: 'text'
                         styleName: 'bar-title'
                         text: "Title"
-                        location: { x: 10, y: 10 }
+                        location: { x: 139, y: 12 }
+                        size: { width: null, height: null }
+                    }
+                    {
+                        type: 'backButton'
+                        styleName: 'plain'
+                        text: "Back"
+                        location: { x: 7, y: 7 }
+                        size: { width: null, height: null }
+                    }
+                    {
+                        type: 'barButton'
+                        styleName: 'normal'
+                        text: "Edit"
+                        location: { x: 262, y: 7 }
                         size: { width: null, height: null }
                     }
                 ]
