@@ -268,6 +268,15 @@ window.MakeApp.paletteDefinition: [
                         label: 'Plastic Edge-To-Edge'
                     }
                 ]
+                children: [
+                    {
+                        type: 'text'
+                        styleName: 'row-metal'
+                        text: "Some text"
+                        location: { x: 8, y: 12 }
+                        size: { width: null, height: null }
+                    }
+                ]
             }
             {
                 type: 'plain-header'

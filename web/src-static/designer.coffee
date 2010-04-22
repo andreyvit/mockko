@@ -676,7 +676,11 @@ jQuery ($) ->
             hidesPalette: no
         }
         
-    newLiveMover: () ->
+    newLiveMover: (excluded) ->
+        traverse activeScreen.rootComponent, (c) ->
+            if not _.include(excluded, c)
+                $(c.node).addClass 'stackable'
+
         {
             moveComponents: (comps, amount) ->
                 componentSet: setOf comps
@@ -693,12 +697,18 @@ jQuery ($) ->
                     
             rollback: ->
                 traverse activeScreen.rootComponent, (c) ->
+                    if not _.include excluded, c
+                        $(c.node).removeClass 'stackable'
+                traverse activeScreen.rootComponent, (c) ->
                     if c.dragpos
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedWhileDragging c
                     
             commit: ->
+                traverse activeScreen.rootComponent, (c) ->
+                    if not _.include excluded, c
+                        $(c.node).removeClass 'stackable'
                 traverse activeScreen.rootComponent, (c) ->
                     if c.dragpos
                         c.location = {
@@ -723,7 +733,7 @@ jQuery ($) ->
                 y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
             }
         hotspot: options.hotspot || computeHotSpot(options.startPt)
-        liveMover: newLiveMover()
+        liveMover: newLiveMover([c])
         
         $(c.node).addClass 'dragging'
         
