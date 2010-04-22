@@ -69,3 +69,10 @@ window.setOf: (list) ->
     return set
 
 window.inSet: (el, set) -> ihash(el) in set
+
+_.mixin {
+    removeValue: (array, value) ->
+        index: _.indexOf array, value
+        if index >= 0
+            array.splice index, 1
+}

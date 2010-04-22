@@ -12,7 +12,6 @@ jQuery ($) ->
     applicationId: null
     application: null
     activeScreen: null
-    components: []
     ctypes: {}
     mode: null
     allowedArea: null
@@ -20,6 +19,14 @@ jQuery ($) ->
     
     # our very own idea of infinity
     INF: 100000
+    
+    DEFAULT_ROOT_COMPONENT: {
+        type: "background"
+        styleName: "striped"
+        size: { width: 320, height: 480 }
+        location: { x: 0, y: 0 }
+        id: "root"
+    }
     
     SERVER_MODES = {
         anonymous: {
@@ -137,20 +144,23 @@ jQuery ($) ->
             styleName: c.styleName
             text: c.text
             children: (internalizeComponent(child) for child in c.children || [])
+            inDocument: yes
         }
         
     externalizeScreen: (screen) ->
         {
-            components: (externalizeComponent(c) for c in screen.components)
+            rootComponent: externalizeComponent(screen.rootComponent)
         }
         
     internalizeScreen: (screen) ->
-        s: {
-            components: (internalizeComponent(c) for c in screen.components)
+        rootComponent: internalizeComponent(screen.rootComponent || DEFAULT_ROOT_COMPONENT)
+        assignParentsToChildrenOf rootComponent
+        screen: {
+            rootComponent: rootComponent
+            nextId: 1
         }
-        for c in s.components
-            assignParentsToChildrenOf c
-        return s
+        traverse rootComponent, (c) -> assignNameIfStillUnnamed c, screen
+        return screen
     
     externalizeApplication: (app) ->
         {
@@ -214,7 +224,6 @@ jQuery ($) ->
     #  global events
     
     componentsChanged: ->
-        activeScreen.components = (externalizeComponent(c) for c in components)
         endUndoTransaction()
         
         if $('#share-popover').is(':visible')
@@ -260,7 +269,7 @@ jQuery ($) ->
     ##########################################################################################################
     #  component management
     
-    addToComponents: (c) -> c.id ||= "c${activeScreen.nextId++}"; components.push c
+    assignNameIfStillUnnamed: (c, screen) -> c.id ||= "c${screen.nextId++}"
     
     storeAndBindComponentNode: (c, cn) ->
         c.node = cn
@@ -288,37 +297,40 @@ jQuery ($) ->
         c.effsize: { w: null; h: null }
         c.location: { x: 0, y: 0 }
         c.text = ct.defaultText if ct.defaultText?
-        c.children = if ct.children then cloneObj(ct.children) else []
+        c.children = if ct.children then (internalizeComponent(c) for c in ct.children) else []
+        c.inDocument: no
+        c.parent: null
         assignParentsToChildrenOf c
         return c
     
     deleteComponent: (rootc) ->
         beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
-        comps = findDescendants rootc
-        comps.push rootc
-        
-        for c in comps
-            cn: c.node
-            index: _(components).indexOf c
-            if index >= 0
-                components.splice index, 1
-            $(cn).hide 'drop', { direction: 'down' }, 'normal', -> $(cn).remove()
+
+        _(rootc.parent.children).removeValue rootc
+        $(rootc.node).hide 'drop', { direction: 'down' }, 'normal', -> $(rootc.node).remove()
         componentsChanged()
-            
-    findDescendants: (cont) ->
-        contr: rectOf cont
-        c for c in components when c isnt cont && isRectInsideRect(rectOf(c), contr)
         
-    findParent: (c) ->
-        # a parent is a covering component of minimal area
-        r: rectOf c
-        _(pc for pc in components when pc != c && isRectInsideRect(r, rectOf(pc))).min (pc) -> r: rectOf(pc); r.w*r.h
+    # findParent: (c) -> c.parent
+    #     # a parent is a covering component of minimal area
+    #     r: rectOf c
+    #     _(pc for pc in components when pc != c && isRectInsideRect(r, rectOf(pc))).min (pc) -> r: rectOf(pc); r.w*r.h
         
     findBestTargetContainerForRect: (r, excluded) ->
-        comps: _.reject components, (c) -> _.include(excluded, c)
-        # find container with maximum area of overlap
-        bestc: _(comps).max (c) -> areaOfIntersection(r, rectOf(c))
-        if bestc and areaOfIntersection(r, rectOf(bestc)) > 0 then bestc else null
+        best: null
+        trav: (comp) ->
+            return null if _.include excluded, comp
+
+            for child in comp.children
+                if res: trav(child)
+                    if best == null or res.area > best.area
+                        best = res
+
+            area: areaOfIntersection r, rectOf comp
+            if area > 0
+                if best == null or area > best.area
+                    best = { comp: comp, area: area }
+        
+        trav(activeScreen.rootComponent)?.comp || activeScreen.rootComponent
 
     ##########################################################################################################
     #  DOM rendering
@@ -364,8 +376,9 @@ jQuery ($) ->
         })
     
     reassignZIndexes: ->
-        ordered: _(components).sortBy (c) -> r: rectOf c; -r.w * r.h
-        _.each ordered, (c, i) -> $(c.node).css('z-index', i)
+        traverse activeScreen.rootComponent, (comp) ->
+            ordered: _(comp.children).sortBy (c) -> r: rectOf c; -r.w * r.h
+            _.each ordered, (c, i) -> $(c.node).css('z-index', i)
 
     renderComponentText: (c, cn) -> $(cn || c.node).html(c.text) if c.text?
     
@@ -418,7 +431,7 @@ jQuery ($) ->
         
         stack: { above: [], below: [], moveBy: INF }
         draggedComponentSet: setOf draggedComps
-        for c in components
+        traverse activeScreen.rootComponent, (c) ->
             if not inSet c, draggedComponentSet
                 if c.type in TABLE_TYPES
                     sr: rectOf c
@@ -545,7 +558,7 @@ jQuery ($) ->
     computeChildrenSnappingPositionsOfContainer: (c) -> computeSnappingPositionsOfComponent c
         
     computeAllSnappingPositions: (pc) ->
-        comps: if pc is null then components else findDescendants(pc)
+        comps: pc.children
         r: _.flatten(computeSnappingPositionsOfComponent c for c in comps)
         if pc is null then r else r.concat computeChildrenSnappingPositionsOfContainer pc
         
@@ -636,9 +649,8 @@ jQuery ($) ->
     newLiveMover: () ->
         {
             moveComponents: (comps, amount) ->
-                comps: _.flatten([rcomp].concat(findDescendants(rcomp)) for rcomp in comps)
                 componentSet: setOf comps
-                for c in components
+                traverse activeScreen.rootComponent, (c) ->
                     if c.dragpos and not inSet c, componentSet
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
@@ -650,7 +662,7 @@ jQuery ($) ->
                     renderComponentPosition c, c.node
                     
             finish: ->
-                for c in components
+                traverse activeScreen.rootComponent, (c) ->
                     if c.dragpos
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
@@ -660,14 +672,8 @@ jQuery ($) ->
     startDragging: (c, options) ->
         origin: $('#design-area').offset()
         
-        if c.id
-            descendants: findDescendants c
+        if c.inDocument
             originalR: rectOf c
-            for dc in descendants
-                dc.preDragRect = rectOf dc
-            allDraggedComps: [c].concat(descendants)
-        else
-            allDraggedComps: []
         
         computeHotSpot: (pt) ->
             r: rectOf c
@@ -710,15 +716,15 @@ jQuery ($) ->
             $(c.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
-                stack: findNearbyStack(c.type, r, allDraggedComps) || { below: [] }
+                stack: findNearbyStack(c.type, r, [c]) || { below: [] }
                 liveMover.moveComponents stack.below, { x: 0, y: stack.moveBy }
                     
-                target: findBestTargetContainerForRect(r, allDraggedComps)
+                target: findBestTargetContainerForRect(r, [c])
                 
                 if stack.below.length > 0
                     aps: []
                 else
-                    aps: _(computeAllSnappingPositions(target)).reject (a) -> _.include(allDraggedComps, a)
+                    aps: _(computeAllSnappingPositions(target)).reject (a) -> c == a.c
                 aa: _.flatten(computeSnappings(ap, r) for ap in aps)
 
                 best: {
@@ -736,32 +742,30 @@ jQuery ($) ->
             
             c.dragpos = { x: r.x, y: r.y }
             
-            if descendants
-                for dc in descendants
-                    delta: { x: r.x - originalR.x, y: r.y - originalR.y }
-                    dc.dragpos = {
-                        x: dc.preDragRect.x + delta.x
-                        y: dc.preDragRect.y + delta.y
-                    }
-                    console.log "moved ${c.id}, updated descendant ${dc.id} delta x ${delta.x}, y ${delta.y}"
-                    renderComponentPosition dc, dc.node
-            
             renderComponentPosition c
             updateHoverPanelPosition()
-            return ok
+            
+            if ok then { target: target } else null
             
         dropAt: (pt) ->
             $(c.node).removeClass 'dragging'
             
             liveMover.finish()
 
-            if moveTo pt
+            if res: moveTo pt
                 c.location = c.dragpos
                 c.dragpos = null
-                if descendants
-                    for dc in descendants
-                        dc.location = dc.dragpos
-                        dc.dragpos = null
+                if c.parent != res.target
+                    if c.node.parentNode
+                        c.node.parentNode.removeChild(c.node)
+                    if c.parent
+                        _(c.parent.children).removeValue c
+                    c.parent = res.target
+                    c.parent.node.appendChild(c.node)
+                    c.parent.children.push c
+                    
+                c.inDocument = yes
+                
                 true
             else
                 false
@@ -809,7 +813,7 @@ jQuery ($) ->
             mouseup: (e) ->
                 ok: dragger.dropAt { x: e.pageX, y: e.pageY }
                 if ok
-                    addToComponents c
+                    traverse c, (child) -> assignNameIfStillUnnamed child, activeScreen
                     renderComponentProperties c
                     componentsChanged()
                     activatePointingMode()
@@ -900,10 +904,9 @@ jQuery ($) ->
     #  screens/applications
     
     renderScreenComponents: (screen, node) ->
-        for c in screen.components
-            cn: renderStaticComponentHierarchy c
-            renderComponentPosition c, cn
-            $(node).append(cn)
+        cn: renderStaticComponentHierarchy screen.rootComponent
+        renderComponentPosition screen.rootComponent, cn
+        $(node).append(cn)
     
     renderScreen: (screen) ->
         sn: domTemplate('app-screen-template')
@@ -936,16 +939,12 @@ jQuery ($) ->
     switchToScreen: (screen) ->
         setActiveScreen screen
         
-        $(c.node).remove() for c in components when c.node != null
+        $('#design-area .component').remove()
             
         activeScreen = screen
         activeScreen.nextId ||= 1
-        components = []
-        for c in activeScreen.components
-            addToComponents c
         
-        for c in components
-            $('#design-area').append renderInteractiveComponentHeirarchy(c)
+        $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
         
         devicePanel: $('#device-panel')[0]
         allowedArea: {
@@ -959,16 +958,8 @@ jQuery ($) ->
         
     $('#add-screen-button').click ->
         beginUndoTransaction "creation of a new screen"
-        application.screens.push screen: {
-            components: [
-                {
-                    id:   'root',
-                    type: 'background',
-                    styleName: 'striped',
-                    location: { x: 0, y: 0 }
-                    size: { width: 320, height: 480 }
-                }
-            ]
+        application.screens.push screen: internalizeScreen {
+            rootComponent: DEFAULT_ROOT_COMPONENT
         }
         screen.userIndex: application.screens.length
         screen.sid: screen.userIndex # TEMP FIXME
@@ -1054,6 +1045,7 @@ jQuery ($) ->
             for appData in apps
                 appId: appData.id
                 app: JSON.parse(appData.body)
+                app: internalizeApplication(app)
                 an: domTemplate('app-template')
                 $('.caption', $(an)).html(app.name)
                 console.log(app)
