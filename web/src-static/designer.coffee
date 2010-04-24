@@ -273,7 +273,7 @@ jQuery ($) ->
     
     storeAndBindComponentNode: (c, cn) ->
         c.node = cn
-        $(cn).dblclick -> startDoubleClickEditing c
+        $(cn).dblclick -> startDoubleClickEditing c; false
     
     skipTraversingChildren: {}
     # traverse(comp-or-array-of-comps, [parent], func)
@@ -551,7 +551,7 @@ jQuery ($) ->
         
         originalText: c.text
         
-        $(c.node).blur -> finishDoubleClickEditing()
+        $(c.node).blur -> finishDoubleClickEditing() if c is componentBeingDoubleClickEdited
         $(c.node).keydown (e) ->
             if e.keyCode == 13 then finishDoubleClickEditing(); false
             if e.keyCode == 27 then finishDoubleClickEditing(originalText); false
@@ -581,6 +581,7 @@ jQuery ($) ->
         renderComponentVisualProperties c
         componentsChanged()
         
+        $(c.node).blur()
         componentBeingDoubleClickEdited = null
         activatePointingMode()
     
