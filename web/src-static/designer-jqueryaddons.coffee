@@ -70,6 +70,25 @@ window.setOf: (list) ->
 
 window.inSet: (el, set) -> ihash(el) in set
 
+window.timeouts: {
+    set: (ms, func) -> setTimeout(func, ms)
+    clear: (t) -> clearTimeout(t)
+    reset: (t, ms, func) -> this.clear(t) if t; this.set(ms, func)
+}
+
+window.Timeout: (defaultMS) ->
+    value: null
+    this.set: (ms, func) ->
+        if not func?
+            func = ms
+            ms = defaultMS
+        clearTimeout value if value
+        value = setTimeout func, ms
+    this.clear: ->
+        clearTimeout value if value
+        value = null
+    this
+
 _.mixin {
     removeValue: (array, value) ->
         index: _.indexOf array, value

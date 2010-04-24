@@ -36,13 +36,16 @@
 
 .component.dragging {
     z-index: 10000 !important;
+    -webkit-transition: -webkit-transform 0.20s linear;
+}
+
+.component.dragging.anchored {
+    -webkit-transition: -webkit-transform 0.20s linear, left 0.20s linear, top 0.20s linear;
+/*    outline: 1px solid green;*/
 }
 
 .component.stackable {
-    -webkit-transition: left 0.25s, top 0.25s;
-}
-
-.component.stacked {
+    -webkit-transition: left 0.20s, top 0.20s;
 /*    outline: 1px solid red;*/
 }
 

@@ -275,6 +275,7 @@ jQuery ($) ->
         c.node = cn
         $(cn).dblclick -> startDoubleClickEditing c
     
+    skipTraversingChildren: {}
     # traverse(comp-or-array-of-comps, [parent], func)
     traverse: (comp, parent, func) ->
         return if not comp?
@@ -284,9 +285,10 @@ jQuery ($) ->
             for child in comp
                 traverse child, parent, func
         else
-            func(comp, parent)
-            for child in comp.children || []
-                traverse child, comp, func
+            r: func(comp, parent)
+            if r isnt skipTraversingChildren
+                for child in comp.children || []
+                    traverse child, comp, func
         null
         
     assignParentsToChildrenOf: (c) -> traverse c.children, c, (child, parent) -> child.parent = parent
@@ -368,6 +370,7 @@ jQuery ($) ->
         ct: ctypes[c.type]
         location: c.dragpos || c.location
         
+        console.log "Move ${c.id} to (${location.x}, ${location.y})"
         $(cn || c.node).css({
             left:   "${location.x}px"
             top:    "${location.y}px"
@@ -388,8 +391,6 @@ jQuery ($) ->
             updateEffectiveSize c
     
     renderComponentProperties: (c, cn) -> renderComponentPosition(c, cn); renderComponentVisualProperties(c, cn)
-    
-    setTransitions: (cn, trans) -> $(cn).css('-webkit-transition', trans)
     
     updateAbsolutePositions: (comp) ->
         trav: (c, parentPos) ->
@@ -666,6 +667,8 @@ jQuery ($) ->
             when 'bottom' then r.y = a.coord - r.h
             when 'xcenter' then r.x = a.coord - r.w/2
             when 'ycenter' then r.y = a.coord - r.h/2
+            else return false
+        true
     
     activateMode: (m) ->
         mode: m
@@ -693,14 +696,21 @@ jQuery ($) ->
         }
         
     newLiveMover: (excluded) ->
+        excludedSet: setOf excluded
         traverse activeScreen.rootComponent, (c) ->
-            if not _.include(excluded, c)
-                $(c.node).addClass 'stackable'
+            if inSet c, excludedSet
+                return skipTraversingChildren
+            $(c.node).addClass 'stackable'
 
         {
             moveComponents: (comps, amount) ->
+                for c in comps
+                    if inSet c, excludedSet
+                        throw "Component ${c.id} cannot be moved because it has been excluded!"
                 componentSet: setOf comps
                 traverse activeScreen.rootComponent, (c) ->
+                    if inSet c, excludedSet
+                        return skipTraversingChildren
                     if c.dragpos and not inSet c, componentSet
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
@@ -713,9 +723,12 @@ jQuery ($) ->
                     
             rollback: ->
                 traverse activeScreen.rootComponent, (c) ->
-                    if not _.include excluded, c
-                        $(c.node).removeClass 'stackable'
+                    if inSet c, excludedSet
+                        return skipTraversingChildren
+                    $(c.node).removeClass 'stackable'
                 traverse activeScreen.rootComponent, (c) ->
+                    if inSet c, excludedSet
+                        return skipTraversingChildren
                     if c.dragpos
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
@@ -749,7 +762,9 @@ jQuery ($) ->
                 y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
             }
         hotspot: options.hotspot || computeHotSpot(options.startPt)
-        liveMover: newLiveMover([c])
+        liveMover: newLiveMover [c]
+        wasAnchored: no
+        anchoredTransitionChangeTimeout: new Timeout 200
         
         $(c.node).addClass 'dragging'
         
@@ -779,7 +794,6 @@ jQuery ($) ->
         
         moveTo: (pt) ->
             [r, ok] = updateRectangleAndClipToArea(pt)
-            setTransitions c.node, "-webkit-transform 0.25s linear"
             $(c.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
@@ -789,9 +803,12 @@ jQuery ($) ->
                 target: findBestTargetContainerForRect(r, [c])
                 target = activeScreen.rootComponent if c.type in TABLE_TYPES
                 
+                isAnchored: no
                 if stack.below.length > 0
                     aps: []
-                    r = stack.snapR if stack.snapR
+                    if stack.snapR
+                        r = stack.snapR
+                        isAnchored: yes
                 else
                     aps: _(computeAllSnappingPositions(target)).reject (a) -> c == a.c
                     aa: _.flatten(computeSnappings(ap, r) for ap in aps)
@@ -806,10 +823,18 @@ jQuery ($) ->
                     if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
                     if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
 
-                    applySnapping best.vert, r if best.vert
-                    applySnapping best.horz, r if best.horz
+                    xa: applySnapping best.vert, r if best.vert
+                    ya: applySnapping best.horz, r if best.horz
+                    # isAnchored: xa or ya
             
             c.dragpos = { x: r.x, y: r.y }
+            
+            if wasAnchored and not isAnchored
+                anchoredTransitionChangeTimeout.set -> $(c.node).removeClass 'anchored'
+            else if isAnchored and not wasAnchored
+                anchoredTransitionChangeTimeout.clear()
+                $(c.node).addClass 'anchored'
+            wasAnchored = isAnchored
             
             componentPositionChangedWhileDragging c
             
