@@ -444,6 +444,13 @@ jQuery ($) ->
     
     # discoverStacksInComponent: (c) ->
     
+    areVerticallyAdjacent: (c1, c2) ->
+        r1: rectOf c1
+        r2: rectOf c2
+        r1.y + r1.h == r2.y
+        
+    midy: (r) -> r.y + r.h / 2
+    
     findNearbyStack: (typeName, r, draggedComps) ->
         return null unless typeName in TABLE_TYPES
         draggedComponentSet: setOf draggedComps
@@ -460,10 +467,19 @@ jQuery ($) ->
         kicker: best.comp
         
         peers: _(kicker.parent.children).select (c) -> c.type in TABLE_TYPES and not inSet c, draggedComponentSet
-        _(peers).sortBy (c) -> c.location.y
+        peers: _(peers).sortBy (c) -> c.location.y
+        kickerIndex: _(peers).indexOf kicker
         
-        below: _(peers).select (c) -> cr: rectOf c; cr.y + cr.h/2 > r.y
-        below = _(below).sortBy (c) -> c.location.y
+        topIndex: kickerIndex
+        while topIndex > 0 && areVerticallyAdjacent(peers[topIndex-1], peers[topIndex])
+            topIndex -= 1
+        bottomIndex: kickerIndex
+        while bottomIndex < peers.length-1 && areVerticallyAdjacent(peers[bottomIndex], peers[bottomIndex+1])
+            bottomIndex += 1
+        topmostBelowIndex: if r.y > midy(rectOf(kicker)) then kickerIndex + 1 else kickerIndex
+            
+        above: peers.slice(topIndex, topmostBelowIndex)
+        below: peers.slice(topmostBelowIndex, bottomIndex + 1)
         
         snapR: null
         if below.length > 0
