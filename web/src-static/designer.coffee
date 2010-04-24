@@ -881,16 +881,22 @@ jQuery ($) ->
         beginUndoTransaction "movement of ${friendlyComponentName c}"
         
         originalLocation: c.location
-        dragger: startDragging c, { startPt: startPt }
+        dragger: null
         
         window.status = "Dragging a component."
         
         activateMode {
             mousemove: (e) ->
-                dragger.moveTo { x: e.pageX, y: e.pageY }
+                pt: { x: e.pageX, y: e.pageY }
+                if dragger is null
+                    return if Math.abs(pt.x - startPt.x) <= 1 and Math.abs(pt.y - startPt.y) <= 1
+                    dragger: startDragging c, { startPt: startPt }
+                dragger.moveTo pt
                 
             mouseup: (e) ->
-                if dragger.dropAt { x: e.pageX, y: e.pageY }
+                if dragger is null
+                    activatePointingMode()
+                else if dragger.dropAt { x: e.pageX, y: e.pageY }
                     componentsChanged()
                     activatePointingMode()
                 else
