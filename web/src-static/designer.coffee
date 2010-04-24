@@ -983,7 +983,7 @@ jQuery ($) ->
                     
     updatePaletteVisibility: (reason) ->
         showing: $('.palette').is(':visible')
-        desired: paletteWanted && !mode.hidesPalette
+        desired: paletteWanted # && !mode.hidesPalette
         if showing and not desired
             $('.palette').hidePopOver()
         else if desired and not showing
