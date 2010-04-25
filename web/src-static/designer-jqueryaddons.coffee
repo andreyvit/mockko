@@ -88,8 +88,20 @@ window.Timeout: (defaultMS) ->
         clearTimeout value if value
         value = null
     this
+    
+window.returning: (value, func) ->
+    func(value)
+    value
 
 _.mixin {
+    find: (array, pred) ->
+        result: undefined
+        _.each array, (item) ->
+            if pred(item)
+                result: item
+                _.breakLoop()
+        return result
+    
     removeValue: (array, value) ->
         index: _.indexOf array, value
         if index >= 0

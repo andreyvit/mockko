@@ -443,7 +443,7 @@ jQuery ($) ->
     
     TABLE_TYPES = setOf ['plain-row', 'plain-header', 'grouped-row']
     
-    # discoverStacksInComponent: (c) ->
+    isContainer: (c) -> ctypes[c.type].container
     
     areVerticallyAdjacent: (c1, c2) ->
         r1: rectOf c1
@@ -452,46 +452,119 @@ jQuery ($) ->
         
     midy: (r) -> r.y + r.h / 2
     
-    findNearbyStack: (typeName, r, draggedComps) ->
-        return null unless typeName in TABLE_TYPES
-        draggedComponentSet: setOf draggedComps
-        
-        best: null
-        traverse activeScreen.rootComponent, (c) ->
-            if not inSet c, draggedComponentSet
-                if c.type in TABLE_TYPES
-                    proximity: proximityOfRectToRect r, rectOf c
-                    if best is null or proximity < best.proximity
-                        best: { proximity: proximity, comp: c }
-        
-        return null if best is null or best.proximity > 20*20
-        kicker: best.comp
-        
-        peers: _(kicker.parent.children).select (c) -> c.type in TABLE_TYPES and not inSet c, draggedComponentSet
-        peers: _(peers).sortBy (c) -> c.location.y
-        kickerIndex: _(peers).indexOf kicker
-        
-        topIndex: kickerIndex
-        while topIndex > 0 && areVerticallyAdjacent(peers[topIndex-1], peers[topIndex])
-            topIndex -= 1
-        bottomIndex: kickerIndex
-        while bottomIndex < peers.length-1 && areVerticallyAdjacent(peers[bottomIndex], peers[bottomIndex+1])
-            bottomIndex += 1
-        topmostBelowIndex: if r.y > midy(rectOf(kicker)) then kickerIndex + 1 else kickerIndex
-            
-        above: peers.slice(topIndex, topmostBelowIndex)
-        below: peers.slice(topmostBelowIndex, bottomIndex + 1)
-        
-        snapR: null
-        if below.length > 0
-            console.log("below:")
-            console.log(below)
-            snapR: cloneObj(r)
-            snapR.y = (rectOf below[0]).y
-            
-        { above: [], below: below, moveBy: r.h, snapR: snapR }
+    rectWith: (pos, size) -> { x: pos.x, y: pos.y, w: size.w, h: size.h }
     
-
+    discoverStacks: ->
+        returning [], (stacks) ->
+            traverse activeScreen.rootComponent, (c) ->
+                c.stack = null; c.previousStackSibling = null; c.nextStackSibling = null
+            
+            traverse activeScreen.rootComponent, (c) ->
+                if isContainer c
+                    discoverStacksInComponent c, stacks
+                    
+            for stack in stacks
+                prev: null
+                for cur in stack.items
+                    cur.stack = stack
+                    if prev
+                        prev.nextStackSibling = cur
+                        cur.previousStackSibling = prev
+                    prev = cur
+                        
+    discoverStacksInComponent: (container, stacks) ->
+        peers: _(container.children).select (c) -> c.type in TABLE_TYPES
+        peers: _(peers).sortBy (c) -> c.abspos.y
+        
+        contentSoFar: []
+        lastStackItem: null
+        stackMinX: INF
+        stackMaxX: -INF
+        
+        canBeStacked: (c) ->
+            minX: c.abspos.x
+            maxX: c.abspos.x + c.effsize.w
+            return no if maxX < stackMinX or minX > stackMaxX
+            return no unless lastStackItem.abspos.y + lastStackItem.effsize.h == c.abspos.y
+            yes
+        
+        flush: ->
+            rect: { x: stackMinX, w: stackMaxX - stackMinX, y: contentSoFar[0].abspos.y }
+            rect.h = lastStackItem.abspos.y + lastStackItem.effsize.h - rect.y
+            stacks.push { type: 'vertical', items: contentSoFar, rect: rect }
+            
+            contentSoFar: []
+            lastStackItem: null
+            stackMinX: INF
+            stackMaxX: -INF
+            
+        for peer in peers
+            flush() if lastStackItem isnt null and not canBeStacked(peer)
+            contentSoFar.push peer
+            lastStackItem = peer
+            stackMinX: Math.min(stackMinX, peer.abspos.x)
+            stackMaxX: Math.max(stackMaxX, peer.abspos.x + peer.effsize.w)
+        flush() if lastStackItem isnt null
+        
+    # stackSlice(from, inclFrom?, [to, inclTo?])
+    stackSlice: (from, inclFrom, to, inclTo) ->
+        res: []
+        res.push from if inclFrom
+        item: from.nextStackSibling
+        while item? and item isnt to
+            res.push item
+            item: item.nextStackSibling
+        res.push to if inclTo
+        return res
+            
+    handleStacking: (comp, rect, stacks) ->
+        return { moves: [] } unless comp.type in TABLE_TYPES
+        
+        sourceStack: comp.stack
+        targetStack: _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20
+        return { moves: [] } unless sourceStack? or targetStack?
+        
+        if sourceStack == targetStack
+            target: _(targetStack.items).min (c) -> proximityOfRectToRect rectOf(c), rect
+            if target is comp
+                return { targetRect: rectOf(comp), moves: [] }
+            else if rect.y > comp.abspos.y
+                # moving down
+                {
+                    targetRect: rectWith target.abspos, comp.effsize
+                    moves: [
+                        { comps: stackSlice(comp, no, target, yes), offset: { x: 0, y: -comp.effsize.h } }
+                    ]
+                } 
+            else
+                # moving up
+                {
+                    targetRect: rectWith target.abspos, comp.effsize
+                    moves: [
+                        { comps: stackSlice(target, yes, comp, no), offset: { x: 0, y: comp.effsize.h } }
+                    ]
+                } 
+        else
+            res: { moves: [] }
+            if targetStack?
+                firstItem: _(targetStack.items).first()
+                lastItem: _(targetStack.items).last()
+                # fake components serving as placeholders
+                bofItem: {
+                    abspos: { x: firstItem.abspos.x, y: firstItem.abspos.y - comp.effsize.h }
+                    effsize: { w: comp.effsize.w, h: comp.effsize.h }
+                }
+                eofItem: {
+                    abspos: { x: lastItem.abspos.x, y: lastItem.abspos.y + lastItem.effsize.h }
+                    effsize: { w: comp.effsize.w, h: comp.effsize.h }
+                }
+                target: _(targetStack.items.concat([bofItem, eofItem])).min (c) -> proximityOfRectToRect rectOf(c), rect
+                res.targetRect = rectWith target.abspos, comp.effsize
+                if target isnt eofItem and target isnt bofItem
+                    res.moves.push { comps: stackSlice(target, yes), offset: { x: 0, y: comp.effsize.h } }
+            if sourceStack?
+                res.moves.push { comps: stackSlice(comp, no), offset: { x: 0, y: -comp.effsize.h } }
+            return res
 
     ##########################################################################################################
     #  hover panel
@@ -704,11 +777,12 @@ jQuery ($) ->
             $(c.node).addClass 'stackable'
 
         {
-            moveComponents: (comps, amount) ->
-                for c in comps
-                    if inSet c, excludedSet
-                        throw "Component ${c.id} cannot be moved because it has been excluded!"
-                componentSet: setOf comps
+            moveComponents: (moves) ->
+                componentSet: setOf _.flatten(m.comps for m in moves)
+                for m in moves
+                    for c in m.comps
+                        if inSet c, excludedSet
+                            throw "Component ${c.id} cannot be moved because it has been excluded!"
                 traverse activeScreen.rootComponent, (c) ->
                     if inSet c, excludedSet
                         return skipTraversingChildren
@@ -717,10 +791,11 @@ jQuery ($) ->
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedWhileDragging c
                 
-                for c in comps
-                    $(c.node).addClass 'stacked'
-                    c.dragpos = { x: c.location.x + amount.x; y: c.location.y + amount.y }
-                    componentPositionChangedWhileDragging c
+                for m in moves
+                    for c in m.comps
+                        $(c.node).addClass 'stacked'
+                        c.dragpos = { x: c.location.x + m.offset.x; y: c.location.y + m.offset.y }
+                        componentPositionChangedWhileDragging c
                     
             rollback: ->
                 traverse activeScreen.rootComponent, (c) ->
@@ -767,6 +842,8 @@ jQuery ($) ->
         wasAnchored: no
         anchoredTransitionChangeTimeout: new Timeout 200
         
+        stacks: discoverStacks()
+        
         $(c.node).addClass 'dragging'
         
         updateRectangleAndClipToArea: (pt) ->
@@ -798,18 +875,17 @@ jQuery ($) ->
             $(c.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
-                stack: findNearbyStack(c.type, r, [c]) || { below: [] }
-                liveMover.moveComponents stack.below, { x: 0, y: stack.moveBy }
+                stacking: handleStacking c, r, stacks
+                liveMover.moveComponents stacking.moves
                     
                 target: findBestTargetContainerForRect(r, [c])
                 target = activeScreen.rootComponent if c.type in TABLE_TYPES
                 
                 isAnchored: no
-                if stack.below.length > 0
+                if stacking.targetRect?
                     aps: []
-                    if stack.snapR
-                        r = stack.snapR
-                        isAnchored: yes
+                    r = stacking.targetRect
+                    isAnchored: yes
                 else
                     aps: _(computeAllSnappingPositions(target)).reject (a) -> c == a.c
                     aa: _.flatten(computeSnappings(ap, r) for ap in aps)
