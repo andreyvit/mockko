@@ -823,7 +823,7 @@ jQuery ($) ->
     
     activateMode: (m) ->
         mode: m
-        updatePaletteVisibility('mode')
+        # updatePaletteVisibility('mode')
     
     activatePointingMode: ->
         window.status = "Hover a component for options. Click to edit. Drag to move."
@@ -1360,6 +1360,7 @@ jQuery ($) ->
         $(".screen").hide()
         $('#design-screen').show()
         activatePointingMode()
+        adjustDeviceImagePosition()
 
     switchToDashboard: ->
         $(".screen").hide()
@@ -1381,7 +1382,28 @@ jQuery ($) ->
         $('#welcome-screen').fadeOut()
         false
         
-    $(window).resize -> resizePalette()
+    adjustDeviceImagePosition: ->
+        deviceOffset: $('#device-panel').offset()
+        contentOffset: $('#design-area').offset()
+        deviceSize: { w: $('#device-panel').outerWidth(), h: $('#device-panel').outerHeight() }
+        paneSize: { w: $('#design-pane').outerWidth(), h: $('#design-pane').outerHeight() }
+        contentSize: { w: $('#design-area').outerWidth(), h: $('#design-area').outerHeight() }
+        deviceInsets: { x: contentOffset.left - deviceOffset.left, y: contentOffset.top - deviceOffset.top }
+        
+        devicePos: {
+            x: (paneSize.w - deviceSize.w) / 2
+        }
+        if deviceSize.h >= paneSize.h
+            contentY: (paneSize.h - contentSize.h) / 2
+            devicePos.y: contentY - deviceInsets.y
+        else
+            devicePos.y: (paneSize.h - deviceSize.h) / 2
+        
+        $('#device-panel').css({ left: devicePos.x, top: devicePos.y })
+        
+    $(window).resize ->
+        # resizePalette()
+        adjustDeviceImagePosition()
     
     if window.location.href.match /^file:/
         loadDesigner { status: 'local' }
