@@ -432,7 +432,11 @@ jQuery ($) ->
             ordered: _(comp.children).sortBy (c) -> r: rectOf c; -r.w * r.h
             _.each ordered, (c, i) -> $(c.node).css('z-index', i)
 
-    renderComponentText: (c, cn) -> $(cn || c.node).html(c.text) if c.text?
+    renderComponentText: (c, cn) ->
+        ct: ctypes[c.type]
+        $n: $(cn || c.node)
+        if ct.textSelector then $n: $(ct.textSelector, $n)
+        $n.html(c.text) if c.text?
     
     renderComponentVisualProperties: (c, cn) ->
         renderComponentText(c, cn)
@@ -696,13 +700,17 @@ jQuery ($) ->
         
         componentBeingDoubleClickEdited = c
         $(c.node).addClass 'editing'
-        c.node.contentEditable = true
-        c.node.focus()
+        
+        $editable: $(c.node)
+        if ct.textSelector then $editable: $(ct.textSelector, $editable)
+        
+        $editable[0].contentEditable = true
+        $editable[0].focus()
         
         originalText: c.text
         
-        $(c.node).blur -> finishDoubleClickEditing() if c is componentBeingDoubleClickEdited
-        $(c.node).keydown (e) ->
+        $editable.blur -> finishDoubleClickEditing() if c is componentBeingDoubleClickEdited
+        $editable.keydown (e) ->
             if e.keyCode == 13 then finishDoubleClickEditing(); false
             if e.keyCode == 27 then finishDoubleClickEditing(originalText); false
         
@@ -719,19 +727,23 @@ jQuery ($) ->
         
         c:  componentBeingDoubleClickEdited
 
+        ct: ctypes[c.type]
+        $editable: $(c.node)
+        if ct.textSelector then $editable: $(ct.textSelector, $editable)
+
         beginUndoTransaction "text change in ${friendlyComponentName c}"
         
         $(c.node).removeClass 'editing'
-        c.node.contentEditable = false
+        $editable[0].contentEditable = false
         
-        $(c.node).unbind 'blur'
-        $(c.node).unbind 'keydown'
+        $editable.unbind 'blur'
+        $editable.unbind 'keydown'
         
-        c.text = overrideText || $(c.node).text()
+        c.text = overrideText || $($editable).text()
         renderComponentVisualProperties c
         componentsChanged()
         
-        $(c.node).blur()
+        $editable.blur()
         componentBeingDoubleClickEdited = null
         activatePointingMode()
     

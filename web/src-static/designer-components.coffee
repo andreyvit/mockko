@@ -100,6 +100,16 @@ window.MakeApp.paletteDefinition: [
                 container: yes
             }
             {
+                type: 'tab-bar-item'
+                label: 'Tab Bar Item'
+                defaultText: 'My Tab'
+                widthPolicy: { fixedSize: 60 }
+                heightPolicy: { fixedSize: 44 }
+                container: yes
+                html: '<div><div class="icon"></div><div class="label"></div></div>'
+                textSelector: '.label'
+            }
+            {
                 type: 'navBar'
                 label: 'Navigation Bar'
                 widthPolicy: { autoSize: 'fill' }
