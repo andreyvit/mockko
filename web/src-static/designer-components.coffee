@@ -287,7 +287,7 @@ window.MakeApp.paletteDefinition: [
                 label: 'Header'
                 defaultText: "Cities"
                 widthPolicy: { autoSize: 'fill' }
-                heightPolicy: { userSize: true, fixedSize: 44 }
+                heightPolicy: { userSize: true, fixedSize: 20 }
             }
             {
                 type: 'roundrect-row'
