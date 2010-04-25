@@ -1328,7 +1328,8 @@ jQuery ($) ->
     initPalette()
     
     createNewApplicationName: ->
-        adjs = ['Best-Selling', 'Great', 'Glorious', 'Stunning', 'Gorgeous']
+        adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
+            'Amazing', 'Awesome', 'Fantastic', 'Beautiful', 'Unbelievable', 'Remarkable']
         i = Math.floor(Math.random() * adjs.length)
         return "My ${adjs[i]} App"
         
