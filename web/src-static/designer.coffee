@@ -3,6 +3,7 @@ jQuery ($) ->
 
     CONF_SNAPPING_DISTANCE = 5
     CONF_DESIGNAREA_PUSHBACK_DISTANCE = 100
+    STACKED_COMP_TRANSITION_DURATION = 200
 
     ##########################################################################################################
     #  constants
@@ -308,6 +309,13 @@ jQuery ($) ->
     deleteComponent: (rootc) ->
         beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
 
+        stacks: discoverStacks()
+        stacking: handleStacking rootc, null, stacks
+        
+        liveMover: newLiveMover [rootc]
+        liveMover.moveComponents stacking.moves
+        liveMover.commit(STACKED_COMP_TRANSITION_DURATION)
+
         _(rootc.parent.children).removeValue rootc
         $(rootc.node).hide 'drop', { direction: 'down' }, 'normal', -> $(rootc.node).remove()
         componentsChanged()
@@ -521,7 +529,7 @@ jQuery ($) ->
         return { moves: [] } unless comp.type in TABLE_TYPES
         
         sourceStack: comp.stack
-        targetStack: _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20
+        targetStack: if rect? then _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20 else null
         return { moves: [] } unless sourceStack? or targetStack?
         
         if sourceStack == targetStack
@@ -810,7 +818,6 @@ jQuery ($) ->
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedWhileDragging c
                     
-            commit: ->
                 traverse activeScreen.rootComponent, (c) ->
                     if not _.include excluded, c
                         $(c.node).removeClass 'stackable'
@@ -823,6 +830,19 @@ jQuery ($) ->
                         c.dragpos = null
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedPernamently c
+                    
+            commit: (delay) ->
+                traverse activeScreen.rootComponent, (c) ->
+                    if c.dragpos
+                        c.location = {
+                            x: c.dragpos.x - c.parent.abspos.x
+                            y: c.dragpos.y - c.parent.abspos.y
+                        }
+                        c.dragpos = null
+                        componentPositionChangedPernamently c
+
+                cleanup: -> $('.component').removeClass 'stackable'
+                if delay? then setTimeout(cleanup, delay) else cleanup()
         }
     
     startDragging: (c, options) ->
@@ -840,7 +860,7 @@ jQuery ($) ->
         hotspot: options.hotspot || computeHotSpot(options.startPt)
         liveMover: newLiveMover [c]
         wasAnchored: no
-        anchoredTransitionChangeTimeout: new Timeout 200
+        anchoredTransitionChangeTimeout: new Timeout STACKED_COMP_TRANSITION_DURATION
         
         stacks: discoverStacks()
         
