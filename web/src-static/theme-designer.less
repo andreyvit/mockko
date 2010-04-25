@@ -158,21 +158,19 @@
     display: block;
 }
 
-.palette {
-    .popover;
-    
+#palette {
+    position: absolute;
+    right: 0;
+    top: 44px;
+    bottom: 50px;
     width: 360px;
-    height: 600px;
-    top: 55px;
     
-    display: none;
+    padding: 5px 5px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    background: url("images/background-striped.png");
     
-    .content {
-        padding: 5px 5px;
-        overflow-x: hidden;
-        overflow-y: scroll;
-        background: url("images/background-striped.png");
-    }
+    border-left: 1px solid #666;
     
     .group {
         .clearfix;

@@ -1151,26 +1151,24 @@ jQuery ($) ->
                     # group.append item
                     bindPaletteItem n, ct, style
                     
-    updatePaletteVisibility: (reason) ->
-        showing: $('.palette').is(':visible')
-        desired: paletteWanted # && !mode.hidesPalette
-        if showing and not desired
-            $('.palette').hidePopOver()
-        else if desired and not showing
-            anim: if reason is 'mode' then 'fadein' else 'popin'
-            $('.palette').showPopOverPointingTo $('#add-button'), anim
+    # updatePaletteVisibility: (reason) ->
+    #     showing: $('.palette').is(':visible')
+    #     desired: paletteWanted # && !mode.hidesPalette
+    #     if showing and not desired
+    #         $('.palette').hidePopOver()
+    #     else if desired and not showing
+    #         anim: if reason is 'mode' then 'fadein' else 'popin'
+    #         $('.palette').showPopOverPointingTo $('#add-button'), anim
             
-    resizePalette: ->
-        maxPopOverSize: $(window).height() - 44 - 20
-        $('.palette').css 'height', Math.min(maxPopOverSize, 600)
-        if $('.palette').is(':visible')
-            $('.palette').repositionPopOver $('#add-button')
+    # resizePalette: ->
+    #     maxPopOverSize: $(window).height() - 44 - 20
+    #     $('.palette').css 'height', Math.min(maxPopOverSize, 600)
+    #     if $('.palette').is(':visible')
+    #         $('.palette').repositionPopOver $('#add-button')
         
-    $('#add-button').click -> paletteWanted = !paletteWanted; updatePaletteVisibility('wanted')
-    
     initPalette: ->
         fillPalette()
-        resizePalette()
+        # resizePalette()
         
     
     ##########################################################################################################

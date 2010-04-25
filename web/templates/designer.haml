@@ -52,7 +52,6 @@
             Undo
         .right
           %a#logout-button.logout-button(href="#") Sign Out
-          %a#add-button(href="#") +
           %a#share-button(href="#") Share
         %h1#app-name
         
@@ -73,12 +72,8 @@
               .handle.duplicate-handle
                 .tip duplicate
 
-      .palette
-        .tip
-        .top
-          %h1 Drag To Add
-        .content
-          #palette-container
+      #palette
+        #palette-container
 
       #share-popover
         .tip
