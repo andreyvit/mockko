@@ -17,6 +17,7 @@ jQuery ($) ->
     mode: null
     allowedArea: null
     componentBeingDoubleClickEdited: null
+    allStacks: null
     
     # our very own idea of infinity
     INF: 100000
@@ -231,6 +232,8 @@ jQuery ($) ->
             updateSharePopover()
             
         reassignZIndexes()
+        
+        allStacks: discoverStacks()
     
     ##########################################################################################################
     #  geometry
@@ -309,8 +312,7 @@ jQuery ($) ->
     deleteComponent: (rootc) ->
         beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
 
-        stacks: discoverStacks()
-        stacking: handleStacking rootc, null, stacks
+        stacking: handleStacking rootc, null, allStacks
         
         liveMover: newLiveMover [rootc]
         liveMover.moveComponents stacking.moves
@@ -323,10 +325,9 @@ jQuery ($) ->
     duplicateComponent: (comp) ->
         beginUndoTransaction "duplicate ${friendlyComponentName comp}"
 
-        stacks: discoverStacks()
         rect: rectOf comp
         rect.y += rect.h
-        stacking: handleStacking comp, rect, stacks, 'duplicate'
+        stacking: handleStacking comp, rect, allStacks, 'duplicate'
         
         newComp: internalizeComponent(externalizeComponent(comp))
         newComp.id: null  # make sure it is reassigned
@@ -391,7 +392,7 @@ jQuery ($) ->
     
     createNodeForComponent: (c) ->
         ct: ctypes[c.type]
-        $("<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c)[0]
+        $(ct.html || "<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c)[0]
         
     _renderComponentHierarchy: (c, storeFunc) ->
         n: storeFunc c, createNodeForComponent(c)
@@ -491,7 +492,7 @@ jQuery ($) ->
     ##########################################################################################################
     #  stacking
     
-    TABLE_TYPES = setOf ['plain-row', 'plain-header', 'grouped-row']
+    TABLE_TYPES = setOf ['plain-row', 'plain-header', 'roundrect-row', 'roundrect-header']
     
     isContainer: (c) -> ctypes[c.type].container
     
@@ -513,14 +514,33 @@ jQuery ($) ->
                 if isContainer c
                     discoverStacksInComponent c, stacks
                     
+            $('.component').removeClass('in-stack first-in-stack last-in-stack odd-in-stack even-in-stack first-in-group last-in-group odd-in-group even-in-group')
             for stack in stacks
                 prev: null
+                index: 1
+                indexInGroup: 1
+                prevGroupName: null
+                $(stack.items[0].node).addClass('first-in-stack')
                 for cur in stack.items
+                    groupName: ctypes[cur.type].group || 'default'
+                    if groupName != prevGroupName
+                        $(cur.node).addClass('first-in-group')
+                        $(prev.node).addClass('last-in-group') if prev
+                        indexInGroup: 1
+                    prevGroupName: groupName
+                    
+                    $(cur.node).addClass("in-stack ${if index % 2 is 0 then 'even' else 'odd'}-in-stack")
+                    $(cur.node).addClass("${if indexInGroup % 2 is 0 then 'even' else 'odd'}-in-group")
+                    index += 1
+                    indexInGroup += 1
+                    
                     cur.stack = stack
                     if prev
                         prev.nextStackSibling = cur
                         cur.previousStackSibling = prev
                     prev = cur
+                $(prev.node).addClass('last-in-group') if prev
+                $(prev.node).addClass('last-in-stack') if prev
                         
     discoverStacksInComponent: (container, stacks) ->
         peers: _(container.children).select (c) -> c.type in TABLE_TYPES
@@ -907,8 +927,6 @@ jQuery ($) ->
         wasAnchored: no
         anchoredTransitionChangeTimeout: new Timeout STACKED_COMP_TRANSITION_DURATION
         
-        stacks: discoverStacks()
-        
         $(c.node).addClass 'dragging'
         
         updateRectangleAndClipToArea: (pt) ->
@@ -940,7 +958,7 @@ jQuery ($) ->
             $(c.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
-                stacking: handleStacking c, r, stacks
+                stacking: handleStacking c, r, allStacks
                 liveMover.moveComponents stacking.moves
                     
                 target: findBestTargetContainerForRect(r, [c])

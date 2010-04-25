@@ -54,6 +54,10 @@ window.MakeApp.paletteDefinition: [
                         label: 'for White Row'
                     }
                     {
+                        styleName: 'row-roundrect-white'
+                        label: 'for White Rounded-Rectangle Row'
+                    }
+                    {
                         styleName: 'row-dark'
                         label: 'for Dark Row'
                     }
@@ -286,8 +290,27 @@ window.MakeApp.paletteDefinition: [
                 heightPolicy: { userSize: true, fixedSize: 44 }
             }
             {
-                type: 'grouped-row'
+                type: 'roundrect-row'
+                group: 'roundrect-rows'
                 label: 'Rounded Rect Row'
+                widthPolicy: { autoSize: 'fill' }
+                heightPolicy: { userSize: true, fixedSize: 44 }
+                html: '<div><div class="inner"></div></div>'
+                topInset: 17  # not handled currently
+                children: [
+                    {
+                        type: 'text'
+                        styleName: 'row-roundrect-white'
+                        text: "Some text"
+                        location: { x: 20, y: 13 }
+                        size: { width: null, height: null }
+                    }
+                ]
+            }
+            {
+                type: 'roundrect-header'
+                label: 'Header'
+                defaultText: "Header"
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { userSize: true, fixedSize: 44 }
             }
