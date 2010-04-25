@@ -454,12 +454,14 @@ jQuery ($) ->
         renderComponentPosition c
         if c is hoveredComponent
             updateHoverPanelPosition()
+            updatePositionInspector()
     
     componentPositionChangedPernamently: (c) ->
         renderComponentPosition c
         updateAbsolutePositions c
         if c is hoveredComponent
             updateHoverPanelPosition()
+            updatePositionInspector()
 
 
     ##########################################################################################################
@@ -660,11 +662,13 @@ jQuery ($) ->
         $('#hover-panel').fadeIn(100) if hoveredComponent is null
         hoveredComponent = c
         updateHoverPanelPosition()
+        updateInspector()
         
     componentUnhovered: ->
         return if hoveredComponent is null
         hoveredComponent = null
         $('#hover-panel').hide()
+        updateInspector()
         
     $('#hover-panel').hide()
     $('#hover-panel .delete-handle').click ->
@@ -1284,6 +1288,36 @@ jQuery ($) ->
     
     for event in ['change', 'blur', 'keydown', 'keyup', 'keypress', 'focus', 'mouseover', 'mouseout', 'paste', 'input']
         $('#share-popover textarea').bind event, checkApplicationLoading
+
+    ##########################################################################################################
+    # inspector
+    
+    $('.tab').click ->
+        $('.tab').removeClass 'active'
+        $(this).addClass 'active'
+        $('.pane').removeClass 'active'
+        $('#' + this.id.replace('-tab', '-pane')).addClass 'active'
+        false
+    $('#insp-position-tab').trigger 'click'
+    
+    updateInspector: ->
+        updatePositionInspector()
+        
+    updatePositionInspector: ->
+        if hoveredComponent is null
+            $('#insp-rel-pos').html "&mdash;"
+            $('#insp-abs-pos').html "&mdash;"
+            $('#insp-size').html "&mdash;"
+        else
+            c: hoveredComponent
+            abspos: c.dragpos || c.abspos
+            relpos: { x: abspos.x - c.parent.abspos.x, y: abspos.y - c.parent.abspos.y } if c.parent?
+            $('#insp-rel-pos').html(if c.parent? then "(${relpos.x}, ${relpos.y})" else "&mdash;")
+            $('#insp-abs-pos').html "(${abspos.x}, ${abspos.y})"
+            $('#insp-size').html "${c.effsize.w}x${c.effsize.h}"
+            
+    updateInspector()
+        
         
     ##########################################################################################################
     

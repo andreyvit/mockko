@@ -422,3 +422,97 @@
     }
     
 }
+
+#inspector {
+    position: absolute;
+    bottom: 0px;
+    left: 100px;
+    right: 0px;
+    height: 70px;
+    
+    @tab-border-color: #666;
+    
+    .tabs {
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        top: 0px;
+        height: 20px;
+        
+        font-size: 11px;
+        border-bottom: 1px solid @tab-border-color;
+        padding-left: 20px;
+        
+        .tab {
+            float: left;
+            margin-left: -1px;
+            cursor: pointer;
+            
+            height: 16px;
+            margin-top: 4px;
+            line-height: 16px;
+            background: #eee;
+            
+            padding-left: 10px;
+            padding-right: 10px;
+            
+            border: 1px solid @tab-border-color;
+            
+            :hover {
+                background: #f7f7f7
+            }
+        }
+        
+        .tab.active {
+            cursor: default;
+            background: #fff;
+            border-bottom: none;
+            margin-top: 0px;
+            line-height: 20px;
+            height: 20px;
+
+            font-weight: bold;
+            
+            :hover {
+                background: #fff;
+            }
+        }
+    }
+    
+    .pane {
+        display: none;
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        top: 20px;
+        bottom: 0px;
+
+        background: #fff;
+        overflow: hidden;
+    }
+    
+    .pane.active {
+        display: block;
+    }
+}
+
+#insp-position-pane {
+    font-size: 12px;
+    line-height: 50px;
+    padding: 0px 0px 0px 20px;
+    ul, li {
+        display: inline;
+    }
+    li {
+        position: absolute;
+    }
+    #insp-rel-pos-li {
+        left: 20px;
+    }
+    #insp-abs-pos-li {
+        left: 140px;
+    }
+    #insp-size-li {
+        left: 270px;
+    }
+}

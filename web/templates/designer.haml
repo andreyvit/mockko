@@ -86,6 +86,27 @@
           %h1 Copy or paste JSON data
         .content
           %textarea
+          
+      #inspector
+        .tabs
+          #insp-backgrounds-tab.tab Backgrounds
+          #insp-text-tab.tab Text
+          #insp-position-tab.tab Position
+        #insp-backgrounds-pane.pane
+          Backgrounds!
+        #insp-text-pane.pane
+          aA 17px Shadow on
+        #insp-position-pane.pane
+          %ul
+            %li#insp-rel-pos-li
+              In parent:
+              %span#insp-rel-pos (10, 100)
+            %li#insp-abs-pos-li
+              On screen:
+              %span#insp-abs-pos (10, 230)
+            %li#insp-size-li
+              Size:
+              %span#insp-size 150x30
 
     #welcome-screen.screen
       #welcome-popup
