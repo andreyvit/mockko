@@ -2,7 +2,18 @@
 @import "theme-mixins";
 
 #design-screen {
-    background: url(images/background-designer.png) repeat;
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0, 0, 0, 0.0)), to(rgba(0, 0, 0, 0.0))), url(images/background-designer.png) repeat;
+    
+    #screens-list {
+    	background: rgba(255, 255, 255, 0.5);
+    	border-right: 3px solid rgba(0, 0, 0, 0.3);
+    }
+    
+    #palette {
+    	background: rgba(255, 255, 255, 0.5);
+    	border-left: 3px solid rgba(0, 0, 0, 0.4);
+    }
+    
     .left-pane {
     }
     #device-panel {
@@ -170,9 +181,6 @@
     padding: 5px 5px;
     overflow-x: hidden;
     overflow-y: scroll;
-    background: url("images/background-striped.png");
-    
-    border-left: 1px solid #666;
     
     .group {
         .clearfix;
@@ -290,19 +298,25 @@
 }
 
 #screens-list {
+    position: absolute;
+    width: 100px;
+    top: 44px;
+    bottom: 50px;
+	color: #656C73;
     padding-top: 5px;
+	text-shadow: rgba(255, 255, 255, 0.746094) 0px 1px 0px;
 }
 
 .app-screen {
     
     padding: 5px 0px 0px 0px;
     cursor: pointer;
-    width: 80px + 10px + 10px;
+    width: 80px + 10px + 10px - 3px;
     height: 120px + 10px + 16px + 5px;
 
     .content {
         opacity: 0.9;
-        margin: 0px 5px;
+        margin: 0px 6px 0px 4px;
         width: 90px;
         height: 130px;
         padding: 5px;
@@ -328,7 +342,7 @@
 }
 
 .app-screen.active {
-    background: rgba(0, 0, 255, 0.25);
+    background: rgba(0, 0, 0, 0.2);
     .content {
 /*        -webkit-box-shadow: 0 3px 6px rgba(255,255,255,0.5);*/
     }
@@ -337,11 +351,22 @@
     }
 }
 
+#add-screen-pane {
+    position: absolute;
+    left: 0px;
+    width: 100px;
+    bottom: 0px;
+    height: 51px;
+    background: url(images/background-inspector.png) repeat-x;
+    border-top: 1px solid @tab-border-color;
+}
+
 #add-screen-button {
     .silver-bar-button;
     cursor: pointer;
     position: absolute;
-    bottom: 0px;
+    z-index: 1000;
+    bottom: 5px;
     height: 30px;
     text-align: center;
     line-height: 30px;
@@ -423,6 +448,7 @@
     
 }
 
+@tab-border-color: #666;
 #inspector {
     position: absolute;
     bottom: 0px;
@@ -430,7 +456,6 @@
     right: 0px;
     height: 70px;
     
-    @tab-border-color: #666;
     
     .tabs {
         position: absolute;
@@ -465,7 +490,7 @@
         
         .tab.active {
             cursor: default;
-            background: #fff;
+            background: #f5f6f7;
             border-bottom: none;
             margin-top: 0px;
             line-height: 20px;
@@ -474,7 +499,7 @@
             font-weight: bold;
             
             :hover {
-                background: #fff;
+                background: #f5f6f7;
             }
         }
     }
@@ -487,7 +512,7 @@
         top: 20px;
         bottom: 0px;
 
-        background: #fff;
+        background: url(images/background-inspector.png) repeat-x;
         overflow: hidden;
     }
     
@@ -499,7 +524,7 @@
 #insp-position-pane {
     font-size: 12px;
     line-height: 50px;
-    padding: 0px 0px 0px 20px;
+    padding: 0px 0px 0px 120px;
     ul, li {
         display: inline;
     }
