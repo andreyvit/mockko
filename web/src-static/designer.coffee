@@ -319,6 +319,48 @@ jQuery ($) ->
         _(rootc.parent.children).removeValue rootc
         $(rootc.node).hide 'drop', { direction: 'down' }, 'normal', -> $(rootc.node).remove()
         componentsChanged()
+
+    duplicateComponent: (comp) ->
+        beginUndoTransaction "duplicate ${friendlyComponentName comp}"
+
+        stacks: discoverStacks()
+        rect: rectOf comp
+        rect.y += rect.h
+        stacking: handleStacking comp, rect, stacks, 'duplicate'
+        
+        newComp: internalizeComponent(externalizeComponent(comp))
+        newComp.id: null  # make sure it is reassigned
+        newComp.parent: comp.parent
+        
+        
+        if stacking.targetRect
+            # part of stack, so add directly below
+            liveMover: newLiveMover [comp]
+            liveMover.moveComponents stacking.moves
+            liveMover.commit(STACKED_COMP_TRANSITION_DURATION)
+            
+            newComp.location: {
+                x: stacking.targetRect.x - newComp.parent.abspos.x
+                y: stacking.targetRect.y - newComp.parent.abspos.y
+            }
+        else
+            if comp.abspos.x + 2*comp.effsize.w + 5 + 5 <= 320
+                newComp.location: {
+                    x: comp.location.x + comp.effsize.w + 5
+                    y: comp.location.y
+                }
+            else
+                newComp.location: {
+                    x: comp.location.x
+                    y: comp.location.y + comp.effsize.h + 5
+                }
+
+        comp.parent.children.push newComp
+        $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
+        updateAbsolutePositions newComp
+        traverse newComp, (c) -> updateEffectiveSize c
+
+        componentsChanged()
         
     # findParent: (c) -> c.parent
     #     # a parent is a covering component of minimal area
@@ -525,10 +567,10 @@ jQuery ($) ->
         res.push to if inclTo
         return res
             
-    handleStacking: (comp, rect, stacks) ->
+    handleStacking: (comp, rect, stacks, action) ->
         return { moves: [] } unless comp.type in TABLE_TYPES
         
-        sourceStack: comp.stack
+        sourceStack: if action == 'duplicate' then null else comp.stack
         targetStack: if rect? then _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20 else null
         return { moves: [] } unless sourceStack? or targetStack?
         
@@ -610,7 +652,10 @@ jQuery ($) ->
             $('#hover-panel').hide()
             deleteComponent hoveredComponent 
             hoveredComponent = null
-    
+
+    $('#hover-panel .duplicate-handle').click ->
+        if hoveredComponent isnt null
+            duplicateComponent hoveredComponent 
         
     # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredComponent isnt null
     # resumeHoverPanel: -> updateHoverPanelPosition $('#hover-panel').fadeIn(100) if hoveredComponent isnt null
