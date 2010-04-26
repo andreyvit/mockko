@@ -205,7 +205,8 @@
     .items {
         @scale: 1;
         width: 320px / @scale;
-        -webkit-transform-origin: 0% 0%;
+        -webkit-transform-origin-x: 0%;
+        -webkit-transform-origin-y: 0%;
         -webkit-transform: scale(@scale);
     }
     
@@ -333,7 +334,8 @@
         overflow: hidden;
         
         .rendered {
-            -webkit-transform-origin: 0% 0%;
+            -webkit-transform-origin-x: 0%;
+            -webkit-transform-origin-y: 0%;
             -webkit-transform: scale(0.25);
         }
     }
