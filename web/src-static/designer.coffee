@@ -23,7 +23,7 @@ jQuery ($) ->
     INF: 100000
     
     DEFAULT_TEXT_STYLES: {
-        textSize: 17
+        fontSize: 17
         textColor: '#fff'
         fontBold: no
         fontItalic: no
@@ -164,8 +164,15 @@ jQuery ($) ->
             children: (internalizeComponent(child) for child in c.children || [])
             inDocument: yes
         }
+        ct: ctypes[rc.type]
+        if rc.styleName and ct.styles
+            st: _(ct.styles).find (s) -> s.styleName is rc.styleName
+            if st and st.style
+                rc.style: $.extend({}, st.style, rc.style)
         if isTextStyleEditable rc
             rc.style: $.extend({}, DEFAULT_TEXT_STYLES, rc.style)
+        console.log "internalizeComponent:"
+        console.log rc
         rc
         
     externalizeScreen: (screen) ->
@@ -327,7 +334,19 @@ jQuery ($) ->
         c.effsize: { w: null; h: null }
         c.location: { x: 0, y: 0 }
         c.text = ct.defaultText if ct.defaultText?
-        c.children = if ct.children then (internalizeComponent(child) for child in ct.children) else []
+        
+        children: if ct.children then (cloneObj(child) for child in ct.children) else []
+        for child in children
+            if child.styleRef?
+                if cs: style.childrenStyles[child.styleRef]
+                    cs: cloneObj cs
+                    if cs.styleName?
+                        child.styleName: cs.styleName
+                        delete cs.styleName
+                    child.style: $.extend({}, child.style || {}, cs)
+                else
+                    console.log "!! Missing style-ref '${child.styleRef}' for child of ${ct.type} with style ${style.styleName}"
+        c.children = (internalizeComponent(child) for child in children)
         c.style: $.extend({}, style.style || {}, ct.style || {})
         if isTextStyleEditable c
             c.style: $.extend({}, DEFAULT_TEXT_STYLES, c.style)

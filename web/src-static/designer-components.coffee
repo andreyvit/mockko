@@ -93,7 +93,7 @@ window.MakeApp.paletteDefinition: [
                             fontSize: 20
                             fontBold: yes
                             textColor: '#fff'
-                            textShadowStyleName: 'light-below'
+                            textShadowStyleName: 'dark-above'
                         }
                     }
                 ]
@@ -300,24 +300,44 @@ window.MakeApp.paletteDefinition: [
                     {
                         styleName: 'white'
                         label: 'White Edge-To-Edge'
+                        childrenStyles: {
+                            'main-label': {
+                                styleName: 'row-white'
+                            }
+                        }
                     }
                     {
                         styleName: 'dark'
                         label: 'Dark Edge-To-Edge'
+                        childrenStyles: {
+                            'main-label': {
+                                styleName: 'row-dark'
+                            }
+                        }
                     }
                     {
                         styleName: 'metal'
                         label: 'Metal Edge-To-Edge'
+                        childrenStyles: {
+                            'main-label': {
+                                styleName: 'row-metal'
+                            }
+                        }
                     }
                     {
                         styleName: 'plastic'
                         label: 'Plastic Edge-To-Edge'
+                        childrenStyles: {
+                            'main-label': {
+                                styleName: 'row-dark'
+                            }
+                        }
                     }
                 ]
                 children: [
                     {
                         type: 'text'
-                        styleName: 'row-metal'
+                        styleRef: 'main-label'
                         text: "Some text"
                         location: { x: 8, y: 12 }
                         size: { width: null, height: null }
