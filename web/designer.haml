@@ -1,0 +1,147 @@
+!!! 5
+%html
+  %head
+    %link(rel="stylesheet" href="./static/lib/animations.css" type="text/css" media="screen" title="no title" charset="utf-8")
+    %link(rel="stylesheet" href="./static/theme/theme-common.css" type="text/css" media="screen" title="no title" charset="utf-8")
+    %link(rel="stylesheet" href="./static/theme/theme-designer.css" type="text/css" media="screen" title="no title" charset="utf-8")
+    %link(rel="stylesheet" href="./static/theme/theme-dashboard.css" type="text/css" media="screen" title="no title" charset="utf-8")
+    %link(rel="stylesheet" href="./static/iphone/iphone.css" type="text/css" media="screen" title="no title" charset="utf-8")
+    %script(src="./static/lib/jquery-1.4.2.js" type="text/javascript" charset="utf-8")
+    %script(src="./static/lib/jquery-ui-1.8.custom.min.js" type="text/javascript" charset="utf-8")
+    %script(src="./static/lib/underscore.js" type="text/javascript" charset="utf-8")
+    %script(src="./static/designer-jqueryaddons.js" type="text/javascript" charset="utf-8")
+    %script(src="./static/designer-components.js" type="text/javascript" charset="utf-8")
+    %script(src="./static/designer-templates.js" type="text/javascript" charset="utf-8")
+    %script(src="./static/designer.js" type="text/javascript" charset="utf-8")
+    %title
+      Make-App: The Mobile Application Designer
+  %body
+    #dashboard-screen.screen
+      .toolbar
+        .left
+          %a#new-app-button(href="#") New Application
+        .right
+          %a#logout-button.logout-button(href="#") Sign Out
+        %h1 My Applications
+        
+      #apps-list
+        #app-template.app.template
+          .pile1
+          .pile2
+          .content
+            .rendered
+          .caption
+            My Frickin' App
+            
+      #dashboard-logo
+        .title Make-App
+        .subtitle The Mobile Application Designer
+        
+
+    #design-screen.screen
+
+      #designer-logo
+        .title Make-App
+        .subtitle The Mobile Application Designer
+
+      .toolbar
+        .left
+          %a#login-button.login-button(href="#") Sign In To Continue
+          %a#dashboard-button(href="#myapps") My Applications
+          %a#undo-button(href="#undo")
+            #undo-hint
+              %span Undo something...
+            Undo
+        .right
+          %a#logout-button.logout-button(href="#") Sign Out
+          %a#share-button(href="#") Share
+        %h1#app-name
+        
+      #screens-pane.left-pane
+        #screens-list
+          #app-screen-template.app-screen.template
+            .content
+              .rendered
+            .caption
+      #add-screen-pane
+        #add-screen-button
+      
+      #design-pane
+        #device-panel.d-iphone-po
+          #design-area
+            #hover-panel.hover-panel
+              .handle.delete-handle
+                .tip delete
+              .handle.duplicate-handle
+                .tip duplicate
+
+      #palette
+        #palette-container
+
+      #share-popover
+        .tip
+        .top
+          %h1 Copy or paste JSON data
+        .content
+          %textarea
+          
+      #inspector
+        .tabs
+          #insp-backgrounds-tab.tab Backgrounds
+          #insp-text-tab.tab Text
+          #insp-position-tab.tab Position
+        #insp-backgrounds-pane.pane
+          Backgrounds!
+        #insp-text-pane.pane
+          %ul#text-size-group
+            %li#make-size-smaller A
+            %li#make-size-bigger A
+            #pixel-size-label
+          %ul#text-style-group
+            %li#text-bold B
+            %li#text-italic I
+          %ul#shadow-style-group
+            .descr Shadow:
+            %li#shadow-none(title="None") N
+            %li#shadow-dark-above(title="Dark, above object") A
+            %li#shadow-light-below(title="Light, below object") B
+        #insp-position-pane.pane
+          %ul
+            %li#insp-rel-pos-li
+              In parent:
+              %span#insp-rel-pos (10, 100)
+            %li#insp-abs-pos-li
+              On screen:
+              %span#insp-abs-pos (10, 230)
+            %li#insp-size-li
+              Size:
+              %span#insp-size 150x30
+
+    #welcome-screen.screen
+      #welcome-popup
+        %h1 Here's our approach to mobile application design.
+        
+        %p
+          1. Super-fast pixel-perfect design with <b>every popular style built-in</b>.
+          You don't spend hours moving pixels around because Make-App knows all about:
+          %small
+            tinted navigation bars, App Store-style listings, plastic lists with a full-height images,
+            Stopwatch colored buttons, Contacts colored buttons, Tweetie reload controls,
+            customized maps, tab bar icon effects, — and 72 more things.
+          
+        %p
+          2. A <b>fully working prototype</b> is a click away: run it on a real device or in your browser.
+          Share one with your colleagues, clients and bosses, they won't even need an account.
+        
+        %p
+          3. Don't throw your prototype away — export an <b>Xcode project</b> or an <b>HTML5 web application</b> instead.
+          
+        %p
+          Make-App only targets the iPhone for now, with iPad and Android support coming soon.
+      
+        
+        .buttons
+          %a#welcome-login-link.login-button(href='#') Sign In
+          or
+          %a#welcome-continue-link(href='#') Try Make-App Anonymously
+          

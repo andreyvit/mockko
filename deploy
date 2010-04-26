@@ -1,0 +1,3 @@
+#! /bin/bash
+./build
+cat ~/.andreyvit_passwd | appcfg.py -e andreyvit@gmail.com --passin update web

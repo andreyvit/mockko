@@ -16,12 +16,6 @@ class HomeHandler(RequestHandler):
   
     def get(self, **kwargs):
         return redirect_to('designer')
-
-class DesignerHandler(RequestHandler):
-
-    def get(self, **kwargs):
-        context = {}
-        return render_response('designer.html', **context)
         
 class GetUserDataHandler(RequestHandler):
     

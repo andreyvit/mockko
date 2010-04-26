@@ -11,9 +11,66 @@ handlers:
 - url: /robots.txt
   static_files: static/robots.txt
   upload: static/robots.txt
+  
+- url: /static/designer\.min\.[a-f0-9]{40}\.js
+  static_files: minified/designer.min.js
+  upload: minified/designer.min.js
+  expiration: "3650d"
+  
+- url: /static/designer((?:-.*)?)\.js
+  static_files: static/designer\1.js
+  upload: static/designer(-.*)?\.js
+  login: admin
+  
+- url: /static/theme/theme\.min\.[a-f0-9]{40}\.css
+  static_files: minified/theme.min.css
+  upload: minified/theme.min.css
+  expiration: "3650d"
+  
+- url: /static/iphone/iphone\.min\.[a-f0-9]{40}\.css
+  static_files: minified/iphone.min.css
+  upload: minified/iphone.min.css
+  expiration: "3650d"
 
-- url: /static
-  static_dir: static
+- url: /static/theme/theme(-.*).css
+  static_files: static/theme/theme\1.css
+  upload: static/theme/theme-.*.css
+  login: admin
+  
+- url: /static/iphone/iphone.css
+  static_files: static/iphone/iphone.css
+  upload: static/iphone/iphone.css
+  login: admin
+  
+- url: /dev
+  static_files: designer.html
+  upload: designer.html
+  login: admin
+
+- url: /
+  static_files: minified/designer.min.html
+  upload: minified/designer.min.html
+
+- url: /static/lib
+  static_dir: static/lib
+
+- url: /static/iphone/images\.[a-f0-9]{40}/(.*)
+  static_files: static/iphone/images/\1
+  upload: static/iphone/images/.*
+  expiration: "3650d"
+
+- url: /static/theme/images\.[a-f0-9]{40}/(.*)
+  static_files: static/theme/images/\1
+  upload: static/theme/images/.*
+  expiration: "3650d"
+
+- url: /static/iphone/images
+  static_dir: static/iphone/images
+  login: admin
+
+- url: /static/theme/images
+  static_dir: static/theme/images
+  login: admin
 
 - url: /remote_api
   script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py

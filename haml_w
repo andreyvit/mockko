@@ -4,7 +4,8 @@ require 'fssm'
 
 def rebuild_site(relative)
   puts ">>> Change Detected to: #{relative} <<<"
-  output = relative.gsub('.haml', '.html')
+  output = relative.gsub('.haml', '.html').gsub('src-', '')
+  puts "haml #{relative} #{output}"
   IO.popen("haml #{relative} #{output}") do |io|
     print(io.readpartial(512)) until io.eof?
   end

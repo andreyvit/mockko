@@ -1,0 +1,33 @@
+#! /bin/bash
+closure=java\ -jar\ scripts/closure-compiler/compiler.jar
+yui=java\ -jar\ scripts/yuicompressor-2.4.2.jar
+
+# SIMPLE_OPTIMIZATIONS | ADVANCED_OPTIMIZATIONS
+# --externs VAL
+# pp="--formatting PRETTY_PRINT"
+
+rm -rf web/minified
+
+echo "Hashing images..."
+mkdir -p web/minified
+IPHONE_IMAGES_SHA="$( (for i in web/static/iphone/images/*.png; do cat $i; done) | openssl sha1)"
+THEME_IMAGES_SHA="$( (for i in web/static/theme/images/*.{png,jpg}; do cat $i; done) | openssl sha1)"
+
+echo "Closure Compiler running..."
+$closure --compilation_level SIMPLE_OPTIMIZATIONS $pp --js web/static/designer-jqueryaddons.js --js web/static/designer-components.js --js web/static/designer-templates.js --js web/static/designer.js --js_output_file web/minified/designer.premin.js
+cat web/static/lib/jquery-1.4.2.min.js web/static/lib/jquery-ui-1.8.custom.min.js web/static/lib/underscore.min.js web/minified/designer.premin.js >web/minified/designer.min.js
+
+echo "YUI CSS Compressor running..."
+($yui web/static/lib/animations.css; $yui web/static/theme/theme-common.css; $yui web/static/theme/theme-dashboard.css; $yui web/static/theme/theme-designer.css) | perl -pe "s,images/,images.${THEME_IMAGES_SHA}/,g" >web/minified/theme.min.css
+$yui web/static/iphone/iphone.css | perl -pe "s,images/,images.${IPHONE_IMAGES_SHA}/,g" >web/minified/iphone.min.css
+
+echo "Generating HTML..." 
+JSSHA=$(openssl sha1 <web/minified/designer.min.js)
+THEMESHA=$(openssl sha1 <web/minified/theme.min.css)
+IPHONESHA=$(openssl sha1 <web/minified/iphone.min.css)
+cat web/designer.html | grep -v 'designer-.*\.js\|lib/.*\.js\|animations.css\|theme-designer.css\|theme-dashboard.css' | perl -pe "s/designer\.js/designer.min.$JSSHA.js/g; s/iphone.css/iphone.min.$IPHONESHA.css/g; s/theme-common.css/theme.min.$THEMESHA.css/g" >web/minified/designer.min.html
+
+MASTER_SHA=$(echo "$JSSHA:$THEMESHA:$IPHONESHA" | openssl sha1)
+
+echo "App version hash: ${MASTER_SHA}."
+echo "Build done."

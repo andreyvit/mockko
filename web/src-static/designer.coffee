@@ -776,8 +776,9 @@ jQuery ($) ->
         
         $editable.blur -> finishDoubleClickEditing() if c is componentBeingDoubleClickEdited
         $editable.keydown (e) ->
-            if e.keyCode == 13 then finishDoubleClickEditing(); false
-            if e.keyCode == 27 then finishDoubleClickEditing(originalText); false
+            switch e.keyCode
+                when 13 then finishDoubleClickEditing(); false
+                when 27 then finishDoubleClickEditing(originalText); false
         
         baseMode = mode
         mode: $.extend({}, baseMode, {
