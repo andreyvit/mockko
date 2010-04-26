@@ -129,6 +129,20 @@ window.MakeApp.paletteDefinition: [
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { fixedSize: 49 }
                 container: yes
+                children: [
+                    {
+                        type: 'tab-bar-item'
+                        text: "Tab 1"
+                        location: { x: 100, y: 2 }
+                        size: { width: null, height: null }
+                    }
+                    {
+                        type: 'tab-bar-item'
+                        text: "Tab 2"
+                        location: { x: 162, y: 2 }
+                        size: { width: null, height: null }
+                    }
+                ]
             }
             {
                 type: 'tab-bar-item'
@@ -151,14 +165,38 @@ window.MakeApp.paletteDefinition: [
                     {
                         styleName: 'grey'
                         label: 'Grey Navigation Bar'
+                        childrenStyles: {
+                            'backButton': {
+                                styleName: 'normal'
+                            }
+                            'barButton': {
+                                styleName: 'normal'
+                            }
+                        }
                     }
                     {
                         styleName: 'black-opaque'
                         label: 'Black Opaque Navigation Bar'
+                        childrenStyles: {
+                            'backButton': {
+                                styleName: 'black'
+                            }
+                            'barButton': {
+                                styleName: 'black'
+                            }
+                        }
                     }
                     {
                         styleName: 'black-translucent'
                         label: 'Black Translucent Navigation Bar'
+                        childrenStyles: {
+                            'backButton': {
+                                styleName: 'black'
+                            }
+                            'barButton': {
+                                styleName: 'black'
+                            }
+                        }
                     }
                 ]
                 children: [
@@ -182,6 +220,58 @@ window.MakeApp.paletteDefinition: [
                         text: "Edit"
                         location: { x: 262, y: 7 }
                         size: { width: null, height: null }
+                    }
+                ]
+            }
+            {
+                type: 'backButton'
+                label: 'Back Button'
+                genericLabel: 'Button'
+                defaultText: "Back"
+                widthPolicy: { userSize: true, autoSize: 'browser' }
+                heightPolicy: { fixedSize: { portrait: 30, landscape: 30 } }
+                style: {
+                	textColor: '#fff'
+                	textShadowStyleName: 'dark-above'
+                	fontSize: 12
+                	fontBold: yes
+                }
+                styles: [
+                    {
+                        styleName: 'normal'
+                        label: 'Grey Back Button'
+                    }
+                    {
+                        styleName: 'black'
+                        label: 'Black Back Button'
+                    }
+                ]
+            }
+            {
+                type: 'barButton'
+                label: 'Bar Button'
+                genericLabel: 'Button'
+                defaultText: "Edit"
+                widthPolicy: { userSize: true, autoSize: 'browser' }
+                heightPolicy: { fixedSize: { portrait: 30, landscape: 30 } }
+                style: {
+                	textColor: '#fff'
+                	textShadowStyleName: 'dark-above'
+                	fontSize: 12
+                	fontBold: yes
+                }
+                styles: [
+                    {
+                        styleName: 'normal'
+                        label: 'Bar Button'
+                    }
+                    {
+                        styleName: 'done'
+                        label: 'Bar Button (Done)'
+                    }
+                    {
+                        styleName: 'black'
+                        label: 'Black Bar Button'
                     }
                 ]
             }
@@ -212,38 +302,16 @@ window.MakeApp.paletteDefinition: [
         name: "Buttons"
         ctypes: [
             {
-                type: 'backButton'
-                label: 'Back Button'
-                genericLabel: 'Button'
-                defaultText: "Back"
-                widthPolicy: { userSize: true, autoSize: 'browser' }
-                heightPolicy: { fixedSize: { portrait: 30, landscape: 30 } }
-            }
-            {
-                type: 'barButton'
-                label: 'Bar Button'
-                genericLabel: 'Button'
-                defaultText: "Edit"
-                widthPolicy: { userSize: true, autoSize: 'browser' }
-                heightPolicy: { fixedSize: { portrait: 30, landscape: 30 } }
-                styles: [
-                    {
-                        styleName: 'normal'
-                        label: 'Bar Button'
-                    }
-                    {
-                        styleName: 'done'
-                        label: 'Bar Button (Done)'
-                    }
-                ]
-            }
-            {
                 type: 'roundedButton'
                 label: 'Rounded Button'
                 genericLabel: 'Button'
                 defaultText: "Call"
                 widthPolicy: { userSize: true, autoSize: 'browser' }
                 heightPolicy: { userSize: true, fixedSize: 44 }
+                style: {
+                    textColor: '#516691'
+                    fontBold: yes
+                }
             }
             {
                 type: 'coloredButton'
@@ -252,18 +320,33 @@ window.MakeApp.paletteDefinition: [
                 defaultText: "Delete Contact"
                 widthPolicy: { userSize: true, autoSize: 'browser' }
                 heightPolicy: { userSize: true, fixedSize: 44 }
+                style: {
+                    fontBold: yes
+                    fontSize: 20
+                }
                 styles: [
                     {
                         styleName: 'red'
                         label: 'Red Button'
+                        style: {
+                            textColor: '#fff'
+                            textShadowStyleName: 'dark-above'
+                        }
                     }
                     {
                         styleName: 'gray'
                         label: 'Gray Button'
+                        style: {
+                            textColor: '#fff'
+                        }
                     }
                     {
                         styleName: 'white'
                         label: 'White Button'
+                        style: {
+                            textColor: '#000'
+                            textShadowStyleName: 'light-below'
+                        }
                     }
                 ]
             }
@@ -274,6 +357,11 @@ window.MakeApp.paletteDefinition: [
                 defaultText: "BUY NOW"
                 widthPolicy: { userSize: true, fixedSize: 80 } #autoSize: 'browser'
                 heightPolicy: { userSize: true, fixedSize: 25 }
+                style: {
+                    fontSize: 12
+                    textColor: '#fff'
+                    textShadowStyleName: 'dark-above'
+                }
                 styles: [
                     {
                         styleName: 'green'
@@ -350,6 +438,24 @@ window.MakeApp.paletteDefinition: [
                 defaultText: "Cities"
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { userSize: true, fixedSize: 20 }
+                style: {
+                    textColor: '#3e9ac3'
+                    fontSize: 16
+                    textShadowStyleName: 'dark-above'
+                }
+            }
+            {
+                type: 'roundrect-header'
+                label: 'Header'
+                defaultText: "Header"
+                widthPolicy: { autoSize: 'fill' }
+                heightPolicy: { userSize: true, fixedSize: 44 }
+                style: {
+                    fontSize: 17
+                    textShadowStyleName: 'light-below'
+                    fontBold: yes
+                    textColor: '#4c566c'
+                }
             }
             {
                 type: 'roundrect-row'
@@ -368,19 +474,6 @@ window.MakeApp.paletteDefinition: [
                         size: { width: null, height: null }
                     }
                 ]
-            }
-            {
-                type: 'roundrect-header'
-                label: 'Header'
-                defaultText: "Header"
-                widthPolicy: { autoSize: 'fill' }
-                heightPolicy: { userSize: true, fixedSize: 44 }
-                style: {
-                    fontSize: 17
-                    textShadowStyleName: 'light-below'
-                    fontBold: yes
-                    textColor: '#4c566c'
-                }
             }
         ]
     }

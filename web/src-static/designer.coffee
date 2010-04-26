@@ -165,6 +165,8 @@ jQuery ($) ->
             inDocument: yes
         }
         ct: ctypes[rc.type]
+        if ct.style
+            rc.style: $.extend({}, ct.style, rc.style)
         if rc.styleName and ct.styles
             st: _(ct.styles).find (s) -> s.styleName is rc.styleName
             if st and st.style
@@ -337,6 +339,8 @@ jQuery ($) ->
         
         children: if ct.children then (cloneObj(child) for child in ct.children) else []
         for child in children
+            if not child.styleRef? and style.childrenStyles and style.childrenStyles[child.type]
+                child.styleRef: child.type
             if child.styleRef?
                 if cs: style.childrenStyles[child.styleRef]
                     cs: cloneObj cs
