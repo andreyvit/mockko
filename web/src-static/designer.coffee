@@ -22,6 +22,13 @@ jQuery ($) ->
     # our very own idea of infinity
     INF: 100000
     
+    DEFAULT_TEXT_STYLES: {
+        textSize: 17
+        textColor: '#fff'
+        fontBold: no
+        fontItalic: no
+    }
+    
     DEFAULT_ROOT_COMPONENT: {
         type: "background"
         styleName: "striped"
@@ -107,6 +114,13 @@ jQuery ($) ->
 
 
     ##########################################################################################################
+    #  classification
+        
+    isTextStyleEditable: (c) -> isComponentTypeTextStyleEditable ctypes[c.type]
+    isComponentTypeTextStyleEditable: (ct) -> ct.defaultText? && (ct.textStyleEditable or not ct.textStyleEditable?)
+
+
+    ##########################################################################################################
     #  DOM templates
     
     domTemplates = {}
@@ -132,22 +146,27 @@ jQuery ($) ->
             effsize: cloneObj c.effsize
             size: cloneObj c.size
             styleName: c.styleName
+            style: cloneObj c.style
             text: c.text
             children: (externalizeComponent(child) for child in c.children || [])
         }
         
     internalizeComponent: (c) ->
-        {
+        rc: {
             type: c.type
             location: cloneObj c.location
             # we'll recompute the effective size anyway
             # effsize: cloneObj c.effsize
             size: cloneObj c.size
             styleName: c.styleName
+            style: cloneObj(c.style || {})
             text: c.text
             children: (internalizeComponent(child) for child in c.children || [])
             inDocument: yes
         }
+        if isTextStyleEditable rc
+            rc.style: $.extend({}, DEFAULT_TEXT_STYLES, rc.style)
+        rc
         
     externalizeScreen: (screen) ->
         {
@@ -193,6 +212,8 @@ jQuery ($) ->
             console.log "Make-App Internal Warning: implicitly closing an unclosed undo change: ${lastChange.name}"
         lastChange: { memento: createApplicationMemento(), name: changeName }
         
+    setCurrentChangeName: (changeName) -> lastChange.name: changeName
+        
     endUndoTransaction: ->
         return if lastChange is null
         if lastChange.memento != createApplicationMemento()
@@ -234,6 +255,8 @@ jQuery ($) ->
         reassignZIndexes()
         
         allStacks: discoverStacks()
+        
+        updateInspector()
     
     ##########################################################################################################
     #  geometry
@@ -277,6 +300,7 @@ jQuery ($) ->
     
     storeAndBindComponentNode: (c, cn) ->
         c.node = cn
+        $(cn).click -> selectComponent c; false
         $(cn).dblclick -> startDoubleClickEditing c; false
     
     skipTraversingChildren: {}
@@ -304,6 +328,9 @@ jQuery ($) ->
         c.location: { x: 0, y: 0 }
         c.text = ct.defaultText if ct.defaultText?
         c.children = if ct.children then (internalizeComponent(child) for child in ct.children) else []
+        c.style: $.extend({}, style.style || {}, ct.style || {})
+        if isTextStyleEditable c
+            c.style: $.extend({}, DEFAULT_TEXT_STYLES, c.style)
         traverse c, (comp) -> comp.inDocument: no
         c.parent: null
         assignParentsToChildrenOf c
@@ -431,15 +458,33 @@ jQuery ($) ->
         traverse activeScreen.rootComponent, (comp) ->
             ordered: _(comp.children).sortBy (c) -> r: rectOf c; -r.w * r.h
             _.each ordered, (c, i) -> $(c.node).css('z-index', i)
+            
+    textNodeOfComponent: (c, cn) ->
+        cn ||= c.node
+        ct: ctypes[c.type]
+        return null unless ct.defaultText?
+        if ct.textSelector then $(ct.textSelector, cn)[0] else cn
 
     renderComponentText: (c, cn) ->
-        ct: ctypes[c.type]
-        $n: $(cn || c.node)
-        if ct.textSelector then $n: $(ct.textSelector, $n)
-        $n.html(c.text) if c.text?
+        $(textNodeOfComponent c, cn).html(c.text) if c.text?
+
+    renderComponentTextStyle: (c, cn) ->
+        style: c.stylePreview || c.style || {}
+        css: {}
+        css.fontSize: style.fontSize if style.fontSize?
+        css.color: style.textColor if style.textColor?
+        css.fontWeight: (if style.fontBold then 'bold' else 'normal') if style.fontBold?
+        css.fontStyle: (if style.fontItalic then 'italic' else 'normal') if style.fontItalic?
+        
+        if style.textShadowStyleName?
+            for k, v of MakeApp.textShadowStyles[style.textShadowStyleName].css
+                css[k] = v
+        
+        $(textNodeOfComponent c, cn).css css
     
     renderComponentVisualProperties: (c, cn) ->
         renderComponentText(c, cn)
+        renderComponentTextStyle c, cn
         if cn?
             renderComponentSize c, cn
         else
@@ -466,6 +511,9 @@ jQuery ($) ->
         if c is hoveredComponent
             updateHoverPanelPosition()
             updatePositionInspector()
+            
+    componentStyleChanged: (c) ->
+        renderComponentTextStyle c
 
 
     ##########################################################################################################
@@ -685,9 +733,27 @@ jQuery ($) ->
         if hoveredComponent isnt null
             duplicateComponent hoveredComponent 
         
-    # pauseHoverPanel: -> $('#hover-panel').fadeOut(100) if hoveredComponent isnt null
-    # resumeHoverPanel: -> updateHoverPanelPosition $('#hover-panel').fadeIn(100) if hoveredComponent isnt null
+
+    ##########################################################################################################
+    #  selection
     
+    selectedComponent: null
+    
+    selectComponent: (comp) ->
+        return if comp is selectedComponent
+        deselectComponent()
+        selectedComponent: comp
+        $(selectedComponent.node).addClass 'selected'
+        updateInspector()
+        
+    deselectComponent: ->
+        return if selectedComponent is null
+        $(selectedComponent.node).removeClass 'selected'
+        selectedComponent: null
+        updateInspector()
+        
+    componentToActUpon: -> selectedComponent || hoveredComponent
+        
 
     ##########################################################################################################
     #  double-click editing
@@ -701,8 +767,7 @@ jQuery ($) ->
         componentBeingDoubleClickEdited = c
         $(c.node).addClass 'editing'
         
-        $editable: $(c.node)
-        if ct.textSelector then $editable: $(ct.textSelector, $editable)
+        $editable: $(textNodeOfComponent c)
         
         $editable[0].contentEditable = true
         $editable[0].focus()
@@ -727,9 +792,7 @@ jQuery ($) ->
         
         c:  componentBeingDoubleClickEdited
 
-        ct: ctypes[c.type]
-        $editable: $(c.node)
-        if ct.textSelector then $editable: $(ct.textSelector, $editable)
+        $editable: $(textNodeOfComponent c)
 
         beginUndoTransaction "text change in ${friendlyComponentName c}"
         
@@ -842,8 +905,11 @@ jQuery ($) ->
         activateMode {
             mousedown: (e, c) ->
                 if c
+                    selectComponent c
                     activateExistingComponentDragging c, { x: e.pageX, y: e.pageY }
-                    true
+                else
+                    deselectComponent()
+                true
 
             mousemove: (e, c) ->
                 if c
@@ -1054,8 +1120,6 @@ jQuery ($) ->
         { moveTo: moveTo, dropAt: dropAt }
         
     activateExistingComponentDragging: (c, startPt) ->
-        beginUndoTransaction "movement of ${friendlyComponentName c}"
-        
         originalLocation: c.location
         dragger: null
         
@@ -1066,18 +1130,18 @@ jQuery ($) ->
                 pt: { x: e.pageX, y: e.pageY }
                 if dragger is null
                     return if Math.abs(pt.x - startPt.x) <= 1 and Math.abs(pt.y - startPt.y) <= 1
+                    beginUndoTransaction "movement of ${friendlyComponentName c}"
                     dragger: startDragging c, { startPt: startPt }
                 dragger.moveTo pt
                 
             mouseup: (e) ->
-                if dragger is null
-                    activatePointingMode()
-                else if dragger.dropAt { x: e.pageX, y: e.pageY }
-                    componentsChanged()
-                    activatePointingMode()
-                else
-                    deleteComponent c
-                    activatePointingMode()
+                if dragger isnt null
+                    if dragger.dropAt { x: e.pageX, y: e.pageY }
+                        componentsChanged()
+                        activatePointingMode()
+                    else
+                        deleteComponent c
+                activatePointingMode()
                 
             hidesPalette: yes
         }
@@ -1308,23 +1372,104 @@ jQuery ($) ->
         $('.pane').removeClass 'active'
         $('#' + this.id.replace('-tab', '-pane')).addClass 'active'
         false
-    $('#insp-position-tab').trigger 'click'
+    $('#insp-text-tab').trigger 'click'
     
     updateInspector: ->
         updatePositionInspector()
+        updateTextInspector()
         
     updatePositionInspector: ->
-        if hoveredComponent is null
-            $('#insp-rel-pos').html "&mdash;"
-            $('#insp-abs-pos').html "&mdash;"
-            $('#insp-size').html "&mdash;"
-        else
-            c: hoveredComponent
+        if c: componentToActUpon()
             abspos: c.dragpos || c.abspos
             relpos: { x: abspos.x - c.parent.abspos.x, y: abspos.y - c.parent.abspos.y } if c.parent?
             $('#insp-rel-pos').html(if c.parent? then "(${relpos.x}, ${relpos.y})" else "&mdash;")
             $('#insp-abs-pos').html "(${abspos.x}, ${abspos.y})"
             $('#insp-size').html "${c.effsize.w}x${c.effsize.h}"
+        else
+            $('#insp-rel-pos').html "&mdash;"
+            $('#insp-abs-pos').html "&mdash;"
+            $('#insp-size').html "&mdash;"
+            
+    updateTextInspector: ->
+        pixelSize: null
+        textStyleEditable: no
+        bold: no
+        italic: no
+        if c: componentToActUpon()
+            tn: textNodeOfComponent c
+            if tn
+                cs: getComputedStyle(tn, null)
+                pixelSize: parseInt cs.fontSize
+                bold: cs.fontWeight is 'bold'
+                italic: cs.fontStyle is 'italic'
+            textStyleEditable: isTextStyleEditable c
+        $('#pixel-size-label').html(if pixelSize then "${pixelSize} px" else "")
+        $('#insp-text-pane li')[if textStyleEditable then 'removeClass' else 'addClass']('disabled')
+        $('#text-bold')[if bold then 'addClass' else 'removeClass']('active')
+        $('#text-italic')[if italic then 'addClass' else 'removeClass']('active')
+        
+    bindStyleChangeButton: (button, func) ->
+        savedComponent: null
+        cancelStyle: ->
+            if savedComponent
+                savedComponent.stylePreview: null
+                componentStyleChanged savedComponent
+                savedComponent: null
+
+        $(button).bind {
+            mouseover: ->
+                cancelStyle()
+                return if $(button).is('.disabled')
+                if c: savedComponent: componentToActUpon()
+                    c.stylePreview: cloneObj(c.style)
+                    func(c, c.stylePreview)
+                    componentStyleChanged c
+
+            mouseout: cancelStyle
+
+            click: ->
+                cancelStyle()
+                return if $(button).is('.disabled')
+                if c: componentToActUpon()
+                    c.stylePreview: null
+                    beginUndoTransaction "changing style of ${friendlyComponentName c}"
+                    s: func(c, c.style)
+                    if s && s.constructor == String
+                        setCurrentChangeName s.replace(/\bcomp\b/, friendlyComponentName(c))
+                    componentStyleChanged c
+                    componentsChanged()
+        }
+        
+    bindStyleChangeButton $('#make-size-smaller'), (c, style) ->
+        if tn: textNodeOfComponent c
+            currentSize: c.style.fontSize || parseInt getComputedStyle(tn, null).fontSize
+            style.fontSize: currentSize - 1
+            "decreasing font size of comp to ${style.fontSize} px"
+    bindStyleChangeButton $('#make-size-bigger'), (c, style) ->
+        if tn: textNodeOfComponent c
+            currentSize: c.style.fontSize || parseInt getComputedStyle(tn, null).fontSize
+            style.fontSize: currentSize + 1
+            "increasing font size of comp to ${style.fontSize} px"
+
+    bindStyleChangeButton $('#text-bold'), (c, style) ->
+        if tn: textNodeOfComponent c
+            currentState: if c.style.fontBold? then c.style.fontBold else getComputedStyle(tn, null).fontWeight is 'bold'
+            style.fontBold: not currentState
+            if style.fontBold then "making comp bold" else "making comp non-bold"
+
+    bindStyleChangeButton $('#text-italic'), (c, style) ->
+        if tn: textNodeOfComponent c
+            currentState: if c.style.fontItalic? then c.style.fontItalic else getComputedStyle(tn, null).fontStyle is 'italic'
+            style.fontItalic: not currentState
+            if style.fontItalic then "making comp italic" else "making comp non-italic"
+            
+    updateShadowStyle: (shadowStyleName, c, style) ->
+        style.textShadowStyleName: shadowStyleName
+        "changing text shadow of comp to ${MakeApp.textShadowStyles[shadowStyleName].label}"
+
+    bindStyleChangeButton $('#shadow-none'), (c, style) -> updateShadowStyle 'none', c, style
+    bindStyleChangeButton $('#shadow-dark-above'), (c, style) -> updateShadowStyle 'dark-above', c, style
+    bindStyleChangeButton $('#shadow-light-below'), (c, style) -> updateShadowStyle 'light-below', c, style
             
     updateInspector()
         
@@ -1428,6 +1573,12 @@ jQuery ($) ->
                 alert "Failed to load the application: ${status} - ${e}"
                 # TODO ERROR HANDLING!
         }
+        
+    $('body').keydown (e) ->
+        return if componentBeingDoubleClickEdited isnt null
+        switch e.which
+            when $.KEY_ESC then deselectComponent(); false
+    
         
     # Make-App Dump
     window.mad: ->

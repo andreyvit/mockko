@@ -107,3 +107,21 @@ _.mixin {
         if index >= 0
             array.splice index, 1
 }
+
+$.extend $, {
+    KEY_ENTER:       13
+    KEY_BACKSPACE:   8
+    KEY_TAB:         9
+    KEY_ESC:         27
+    KEY_PAGEUP:      33
+    KEY_PAGEDOWN:    34
+    KEY_END:         35
+    KEY_HOME:        36
+    KEY_ARROWLEFT:   37
+    KEY_ARROWUP:     38
+    KEY_ARROWRIGHT:  39
+    KEY_ARROWDOWN:   40
+    KEY_INSERT:      45
+    KEY_DELETE:      46
+    KEY_F1:          112
+}

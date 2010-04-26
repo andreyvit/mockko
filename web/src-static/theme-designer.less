@@ -65,6 +65,12 @@
 .component.leaf {
 }
 
+.component.selected {
+    outline: 1px dotted blue;
+    z-index: 900;
+    -webkit-box-shadow: black 0px 0px 10px;
+}
+
 .hover-panel {
     position: absolute;
     z-index: 100;
@@ -366,14 +372,14 @@
     cursor: pointer;
     position: absolute;
     z-index: 1000;
-    bottom: 5px;
+    bottom: 10px;
     height: 30px;
     text-align: center;
     line-height: 30px;
     width: 90px;
 	font-size: 12px;
 	font-weight: bold;
-	margin: 0px 5px 5px 5px;
+	margin: 0px 5px 0px 5px;
 /*    font-size: 14px;
     background: black;
     color: white;
@@ -513,6 +519,9 @@
 
         background: url(images/background-inspector.png) repeat-x;
         overflow: hidden;
+        
+        color: #000;
+        text-shadow: 0px 1px #fff;
     }
     
     .pane.active {
@@ -539,4 +548,91 @@
     #insp-size-li {
         left: 270px;
     }
+}
+
+#insp-text-pane {
+    ul {
+        display: block;
+        position: absolute;
+        bottom: 10px;
+        width: auto;
+    }
+    
+    li, .descr, #pixel-size-label {
+        display: block;
+        float: left;
+    	line-height: 30px;
+    	height: 30px;
+    	font-size: 12px;
+    }
+    li {
+    	width: 35px;
+    	text-align: center;
+    	font-weight: bold;
+    	margin-right: 3px;
+    	cursor: pointer;
+        
+    	.silver-bar-button;
+    	
+    	padding-left: 7px;
+    	padding-right: 7px;
+    }
+    li.disabled {
+        opacity: 0.9;
+        color: #ccc;
+        cursor: default;
+    }
+    .descr {
+    	margin-right: 10px;
+    }
+    
+    ul#text-size-group {
+        left: 20px;
+    }
+    ul#text-style-group {
+        left: 160px;
+    }
+    ul#shadow-style-group {
+        left: 260px;
+    }
+
+    #pixel-size-label {
+        margin-left: 10px;
+    }
+    
+    #make-size-bigger {
+        font-size: 14px;
+    }
+    #make-size-smaller {
+        font-size: 11px;
+    }
+    
+    #text-bold {
+        font-weight: extra-bold;
+    }
+    #text-italic {
+        font-style: italic;
+    }
+    #text-style-group li.active {
+        color: #f77;
+    }
+    
+    #shadow-none {
+        text-shadow: none;
+    }
+    #shadow-dark-above {
+        color: #fff;
+        text-shadow: 0px -1px #000;
+    }
+    #shadow-light-below {
+        color: #000;
+        text-shadow: 0px 1px #fff;
+    }
+    #shadow-dark-above.disabled {
+        color: #ccc;
+    }
+    #shadow-light-below.disabled {
+        color: #666;
+    }
+    
 }

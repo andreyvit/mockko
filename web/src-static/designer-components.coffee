@@ -44,26 +44,57 @@ window.MakeApp.paletteDefinition: [
                     {
                         styleName: 'plain'
                         label: 'Plain'
+                        style: {
+                            fontSize: 17
+                            textColor: '#000'
+                        }
                     }
                     {
                         styleName: 'bar-title'
                         label: 'Bar Title'
+                        style: {
+                        	fontSize: 20
+                        	fontBold: yes
+                        	textColor: '#fff'
+                        	textShadowStyleName: 'dark-above'
+                        }
                     }
                     {
                         styleName: 'row-white'
                         label: 'for White Row'
+                        style: {
+                            fontBold: yes
+                            fontSize: 20
+                            textColor: '#000'
+                        }
                     }
                     {
                         styleName: 'row-roundrect-white'
                         label: 'for White Rounded-Rectangle Row'
+                        style: {
+                            fontSize: 17
+                            fontBold: yes
+                            textColor: '#000'
+                        }
                     }
                     {
                         styleName: 'row-dark'
                         label: 'for Dark Row'
+                        style: {
+                            fontSize: 20
+                            fontBold: yes
+                            textColor: '#fff'
+                        }
                     }
                     {
                         styleName: 'row-metal'
                         label: 'for Metal Row'
+                        style: {
+                            fontSize: 20
+                            fontBold: yes
+                            textColor: '#fff'
+                            textShadowStyleName: 'light-below'
+                        }
                     }
                 ]
             }
@@ -108,6 +139,7 @@ window.MakeApp.paletteDefinition: [
                 container: yes
                 html: '<div><div class="icon"></div><div class="label"></div></div>'
                 textSelector: '.label'
+                textStyleEditable: no
             }
             {
                 type: 'navBar'
@@ -323,6 +355,12 @@ window.MakeApp.paletteDefinition: [
                 defaultText: "Header"
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { userSize: true, fixedSize: 44 }
+                style: {
+                    fontSize: 17
+                    textShadowStyleName: 'light-below'
+                    fontBold: yes
+                    textColor: '#4c566c'
+                }
             }
         ]
     }
@@ -408,3 +446,25 @@ window.MakeApp.paletteDefinition: [
         ]
     }
 ]
+
+MakeApp.textShadowStyles: {
+    none: {
+        label: 'none'
+        css: {
+            'text-shadow': 'none'
+        }
+    }
+    'dark-above': {
+        label: 'dark (above the object)'
+        css: {
+            'text-shadow': '0px -1px rgba(0,0,0,0.5)'
+        }
+    }
+    'light-below': {
+        label: 'light (below the object)'
+        css: {
+            'text-shadow': '0px 1px rgba(255,255,255,0.5)'
+        }
+    }
+	
+}

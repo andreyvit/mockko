@@ -93,7 +93,18 @@
         #insp-backgrounds-pane.pane
           Backgrounds!
         #insp-text-pane.pane
-          aA 17px Shadow on
+          %ul#text-size-group
+            %li#make-size-smaller A
+            %li#make-size-bigger A
+            #pixel-size-label
+          %ul#text-style-group
+            %li#text-bold B
+            %li#text-italic I
+          %ul#shadow-style-group
+            .descr Shadow:
+            %li#shadow-none(title="None") N
+            %li#shadow-dark-above(title="Dark, above object") A
+            %li#shadow-light-below(title="Light, below object") B
         #insp-position-pane.pane
           %ul
             %li#insp-rel-pos-li
