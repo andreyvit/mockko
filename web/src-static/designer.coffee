@@ -111,6 +111,12 @@ jQuery ($) ->
                 callback { apps: [ { id: 42, body: MakeApp.appTemplates.basic } ] }
         }
     }
+    
+    BACKGROUND_STYLES: {}
+    (->
+        for bg in MakeApp.backgroundStyles
+            BACKGROUND_STYLES[bg.name]: bg
+    )()
 
 
     ##########################################################################################################
@@ -491,7 +497,7 @@ jQuery ($) ->
     renderComponentText: (c, cn) ->
         $(textNodeOfComponent c, cn).html(c.text) if c.text?
 
-    renderComponentTextStyle: (c, cn) ->
+    renderComponentStyle: (c, cn) ->
         style: c.stylePreview || c.style || {}
         css: {}
         css.fontSize: style.fontSize if style.fontSize?
@@ -504,10 +510,19 @@ jQuery ($) ->
                 css[k] = v
         
         $(textNodeOfComponent c, cn).css css
+        
+        if style.background?
+            if not BACKGROUND_STYLES[style.background]
+                console.log "!! Unknown backgrond style ${style.background} for ${c.type}"
+            bgn: cn || c.node
+            if bgsel: ctypes[c.type].backgroundSelector
+                bgn: $(bgn).find(bgsel)[0]
+            bgn.className: _((bgn.className || '').trim().split(/\s+/)).reject((n) -> n.match(/^bg-/)).
+                concat(["bg-${style.background}"]).join(" ")
     
     renderComponentVisualProperties: (c, cn) ->
         renderComponentText(c, cn)
-        renderComponentTextStyle c, cn
+        renderComponentStyle c, cn
         if cn?
             renderComponentSize c, cn
         else
@@ -536,7 +551,7 @@ jQuery ($) ->
             updatePositionInspector()
             
     componentStyleChanged: (c) ->
-        renderComponentTextStyle c
+        renderComponentStyle c
 
 
     ##########################################################################################################
@@ -1396,11 +1411,37 @@ jQuery ($) ->
         $('.pane').removeClass 'active'
         $('#' + this.id.replace('-tab', '-pane')).addClass 'active'
         false
-    $('#insp-text-tab').trigger 'click'
+    $('#insp-backgrounds-tab').trigger 'click'
+
+    fillInspector: ->
+        fillBackgroundsInspector()
     
     updateInspector: ->
+        updateBackgroundsInspector()
         updatePositionInspector()
         updateTextInspector()
+
+    bindBackground: (swatch, bg) ->
+        bindStyleChangeButton swatch, (c, style) ->
+            style.background: bg.name
+            "setting background of comp to ${bg.label}"
+
+    fillBackgroundsInspector: ->
+        $pal: $('#backgrounds-palette')
+        for bg in MakeApp.backgroundStyles
+            node: domTemplate('background-swatch-template')
+            $(node).attr({'id': "bg-${bg.name}", 'title': bg.label}).addClass("bg-${bg.name}").appendTo($pal)
+            bindBackground node, bg
+     
+    updateBackgroundsInspector: ->
+        enabled: no
+        $('#insp-backgrounds-pane li').removeClass 'active'
+        if c: componentToActUpon()
+            enabled: ctypes[c.type].supportsBackground
+            if enabled
+                if active: c.style.background || ''
+                    $("#bg-${active}").addClass 'active'
+        $('#insp-backgrounds-pane li').alterClass 'disabled', !enabled
         
     updatePositionInspector: ->
         if c: componentToActUpon()
@@ -1495,6 +1536,7 @@ jQuery ($) ->
     bindStyleChangeButton $('#shadow-dark-above'), (c, style) -> updateShadowStyle 'dark-above', c, style
     bindStyleChangeButton $('#shadow-light-below'), (c, style) -> updateShadowStyle 'light-below', c, style
             
+    fillInspector()
     updateInspector()
         
         
@@ -1503,6 +1545,9 @@ jQuery ($) ->
     initComponentTypes: ->
         for ctg in MakeApp.paletteDefinition
             for ct in ctg.ctypes
+                ct.style ||= {}
+                if not ct.supportsBackground?
+                    ct.supportsBackground: 'background' in ct.style
                 ctypes[ct.type] = ct
 
     initComponentTypes()

@@ -5,19 +5,32 @@
 
 /* backgrounds */
 
-.c-background {
-}
-
-.c-background-striped {
+.bg-striped {
     background: url("images/background-striped.png");
 }
 
-.c-background-white {
+.bg-white {
     background: white;
 }
 
-.c-background-black {
+.bg-black {
     background: black;
+}
+
+.bg-dark {
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#1e1f21), to(#272729));
+}
+
+.bg-plastic {
+    background: #17181a;
+}
+
+.bg-plastic.odd-in-group {
+    background-color: #1c1c1f;
+}
+
+.bg-metal {
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(238,238,238,1)), to(rgba(156,158,160,1)));
 }
 
 /* texts */
@@ -145,19 +158,16 @@
 }
 
 .c-plain-row-white {
-    background: white;
+/*    background: white;*/
     border-bottom: 1px solid #d9d9d9;
 }
 
 .c-plain-row-dark {
-    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#1e1f21), to(#272729));
     border-bottom: 2px solid #000;
     border-top: 1px solid #4a4b4d;
 }
 
 .c-plain-row-plastic {
-    background: #17181a;
-    /* odd children should get background-color: #1c1c1f; */
     border-width: 1px 0;
     border-style: solid;
     border-top-color: #222;
@@ -167,7 +177,6 @@
 .c-plain-row-metal {
     border-top: 1px solid #fff;
     border-bottom: 1px solid #666;
-    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(238,238,238,1)), to(rgba(156,158,160,1)));
     /* font: 26px; */
 }
 
@@ -191,7 +200,7 @@
         bottom: 0px;
         left: 10px;
         right: 10px;
-        background: white;
+/*        background: white;*/
         border: 1px solid #d9d9d9;
         -webkit-border-radius: @roundrect-row-radius;
     }    

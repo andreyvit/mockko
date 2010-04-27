@@ -37,6 +37,11 @@ jQuery.fn.togglePopOver: (tipControl) ->
 jQuery.fn.setdata: (id, newData) -> $.data(this[0], id, newData); this
 jQuery.fn.getdata: (id) -> $.data(this[0], id)
 
+$.extend $.fn, {
+    alterClass: (className, state) ->
+        this[if state then 'addClass' else 'removeClass'](className)
+}
+
 window.stringSetWith: (list) ->
     set: {}
     for item in list

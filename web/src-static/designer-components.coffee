@@ -10,6 +10,7 @@ window.MakeApp.paletteDefinition: [
                 container: yes
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { autoSize: 'fill' }
+                supportsBackground: yes
                 
                 palettePresentation: 'tile'
                 
@@ -17,14 +18,23 @@ window.MakeApp.paletteDefinition: [
                     {
                         styleName: 'striped'
                         label: 'Striped'
+                        style: {
+                            background: 'striped'
+                        }
                     }
                     {
                         styleName: 'white'
                         label: 'White'
+                        style: {
+                            background: 'white'
+                        }
                     }
                     {
                         styleName: 'black'
                         label: 'Black'
+                        style: {
+                            background: 'black'
+                        }
                     }
                 ]
             }
@@ -384,10 +394,14 @@ window.MakeApp.paletteDefinition: [
                 container: yes
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { userSize: true, fixedSize: 44 }
+                supportsBackground: yes
                 styles: [
                     {
                         styleName: 'white'
                         label: 'White Edge-To-Edge'
+                        style: {
+                            background: 'white'
+                        }
                         childrenStyles: {
                             'main-label': {
                                 styleName: 'row-white'
@@ -397,6 +411,9 @@ window.MakeApp.paletteDefinition: [
                     {
                         styleName: 'dark'
                         label: 'Dark Edge-To-Edge'
+                        style: {
+                            background: 'dark'
+                        }
                         childrenStyles: {
                             'main-label': {
                                 styleName: 'row-dark'
@@ -406,6 +423,9 @@ window.MakeApp.paletteDefinition: [
                     {
                         styleName: 'metal'
                         label: 'Metal Edge-To-Edge'
+                        style: {
+                            background: 'metal'
+                        }
                         childrenStyles: {
                             'main-label': {
                                 styleName: 'row-metal'
@@ -415,6 +435,9 @@ window.MakeApp.paletteDefinition: [
                     {
                         styleName: 'plastic'
                         label: 'Plastic Edge-To-Edge'
+                        style: {
+                            background: 'plastic'
+                        }
                         childrenStyles: {
                             'main-label': {
                                 styleName: 'row-dark'
@@ -465,6 +488,11 @@ window.MakeApp.paletteDefinition: [
                 heightPolicy: { userSize: true, fixedSize: 44 }
                 html: '<div><div class="inner"></div></div>'
                 topInset: 17  # not handled currently
+                supportsBackground: yes
+                style: {
+                    background: 'white'
+                }
+                backgroundSelector: '.inner'
                 children: [
                     {
                         type: 'text'
@@ -581,3 +609,31 @@ MakeApp.textShadowStyles: {
     }
 	
 }
+
+MakeApp.backgroundStyles: [
+    {
+        name: "striped"
+        label: "Striped"
+    }
+    {
+        name: "white"
+        label: "White"
+    }
+    {
+        name: "black"
+        label: "Black"
+    }
+    {
+        name: "metal"
+        label: "Metal"
+    }
+    {
+        name: "plastic"
+        label: "Plastic"
+    }
+    {
+        name: "dark"
+        label: "Dark"
+    }
+]
+
