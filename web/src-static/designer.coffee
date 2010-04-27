@@ -327,7 +327,7 @@ jQuery ($) ->
     
     storeAndBindComponentNode: (c, cn) ->
         c.node = cn
-        $(cn).click -> selectComponent c; false
+        $(cn).bind 'contextmenu', -> false
         $(cn).dblclick -> startDoubleClickEditing c; false
     
     skipTraversingChildren: {}
@@ -866,6 +866,34 @@ jQuery ($) ->
         $editable.blur()
         componentBeingDoubleClickEdited = null
         activatePointingMode()
+
+
+    ##########################################################################################################
+    #  context menu
+
+    showComponentContextMenu: (comp, pt) ->
+        $menu: $('#component-context-menu')
+
+        $('#component-context-menu li').unbind('click')
+        $menu.css({ left: pt.x, top: pt.y }).fadeIn(150)
+
+        dismiss: ->
+            $menu.fadeOut(75)
+            document.removeEventListener 'keydown', dismissOnEvent, true
+            document.removeEventListener 'mousedown', dismissOnMouse, true
+            $('#component-context-menu li').unbind('click')
+        dismissOnEvent: (e) -> dismiss(); e.stopPropagation(); e.preventDefault(); false
+        dismissOnMouse: (e) -> dismissOnEvent(e) unless $(e.target).closest('ul')[0] is $menu[0]
+
+        document.addEventListener 'keydown', dismissOnEvent, true
+        document.addEventListener 'mousedown', dismissOnMouse, true
+
+        $('#delete-component-menu-item').click ->
+            dismiss()
+            deleteComponent comp
+        $('#duplicate-component-menu-item').click ->
+            dismiss()
+            duplicateComponent comp
     
     
     ##########################################################################################################
@@ -976,7 +1004,10 @@ jQuery ($) ->
                 else
                     componentUnhovered()
                     
-            mouseup: (e) -> #
+            mouseup: (e, c) ->
+                if e.button == 2
+                    if c
+                        showComponentContextMenu c, { x: e.pageX, y: e.pageY }
             
             hidesPalette: no
         }

@@ -669,3 +669,47 @@
     }
     
 }
+
+.context-menu {
+	position: absolute;
+	z-index: 99999;
+	background: rgba(255, 255, 255, 0.97);
+	padding: 5px 0px;
+	margin: 0px;
+	-webkit-border-radius: 5px;
+	display: none;
+	-webkit-box-shadow: rgba(0, 0, 0, 0.3) 0px 5px 15px;
+	
+	li {
+    	display: block;
+    	list-style: none;
+    	cursor: default;
+    	
+    	padding: 0px 20px;
+    	margin: 0px;
+    	
+    	color: #000;
+    	line-height: 20px;
+    	height: 20px;
+    	outline: none;
+    	font-size: 15px;
+	}
+	
+	li:hover {
+    	color: #fff;
+    	background-color: #597fee;
+	}
+	
+	li.disabled {
+    	color: #aaa;
+    	cursor: default;
+	}
+	
+	li:hover.disabled {
+    	background-color: transparent;
+	}
+	
+	li.separator {
+    	border-top: solid 1px #CCC;
+	}
+}
