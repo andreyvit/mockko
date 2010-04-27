@@ -13,7 +13,20 @@ jQuery ($) ->
     applicationId: null
     application: null
     activeScreen: null
-    ctypes: {}
+    ctypes: {
+        'background': {
+            type: 'background'
+            label: 'Background'
+            container: yes
+            widthPolicy: { autoSize: 'fill' }
+            heightPolicy: { autoSize: 'fill' }
+            supportsBackground: yes
+            style: {
+                background: 'striped'
+            }
+        }
+        
+    }
     mode: null
     allowedArea: null
     componentBeingDoubleClickEdited: null
@@ -31,7 +44,6 @@ jQuery ($) ->
     
     DEFAULT_ROOT_COMPONENT: {
         type: "background"
-        styleName: "striped"
         size: { width: 320, height: 480 }
         location: { x: 0, y: 0 }
         id: "root"
@@ -448,7 +460,7 @@ jQuery ($) ->
     
     createNodeForComponent: (c) ->
         ct: ctypes[c.type]
-        $(ct.html || "<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c)[0]
+        $(ct.html || "<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c)[0]
         
     _renderComponentHierarchy: (c, storeFunc) ->
         n: storeFunc c, createNodeForComponent(c)

@@ -2,45 +2,6 @@
 window.MakeApp: {} unless window.MakeApp?
 window.MakeApp.paletteDefinition: [
     {
-        name: "Backgrounds"
-        ctypes: [
-            {
-                type: 'background'
-                label: 'Background'
-                container: yes
-                widthPolicy: { autoSize: 'fill' }
-                heightPolicy: { autoSize: 'fill' }
-                supportsBackground: yes
-                
-                palettePresentation: 'tile'
-                
-                styles: [
-                    {
-                        styleName: 'striped'
-                        label: 'Striped'
-                        style: {
-                            background: 'striped'
-                        }
-                    }
-                    {
-                        styleName: 'white'
-                        label: 'White'
-                        style: {
-                            background: 'white'
-                        }
-                    }
-                    {
-                        styleName: 'black'
-                        label: 'Black'
-                        style: {
-                            background: 'black'
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-    {
         name: "Text"
         ctypes: [
             {
