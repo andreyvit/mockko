@@ -24,7 +24,7 @@ class GetUserDataHandler(RequestHandler):
         if user is None:
             return render_json_response({
                 'status': 'anonymous',
-                'login_url': users.create_login_url(url_for('designer')),
+                'login_url': users.create_login_url('/'),
             })
         else:
             return render_json_response({
