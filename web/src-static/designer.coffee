@@ -696,6 +696,12 @@ jQuery ($) ->
         
         sourceStack: if action == 'duplicate' then null else comp.stack
         targetStack: if rect? then _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20 else null
+
+        if sourceStack && sourceStack.items.length == 1
+            if targetStack is sourceStack
+                targetStack: null
+            sourceStack: null
+
         return { moves: [] } unless sourceStack? or targetStack?
         
         if sourceStack == targetStack
