@@ -1344,10 +1344,10 @@ jQuery ($) ->
         $(node).append(cn)
     
     renderScreen: (screen) ->
-        sn: domTemplate('app-screen-template')
-        $('.caption', sn).html("Screen ${screen.userIndex}")
+        sn: domTemplate 'app-screen-template'
+        $('.caption', sn).html "Screen ${screen.userIndex}"
         $(sn).attr 'id', "app-screen-${screen.sid}"
-        renderScreenComponents(screen, $('.content .rendered', sn))
+        renderScreenComponents screen, $('.content .rendered', sn)
         return sn
         
     bindScreen: (screen, sn) ->
