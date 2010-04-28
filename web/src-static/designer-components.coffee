@@ -106,12 +106,14 @@ window.MakeApp.paletteDefinition: [
                         text: "Tab 1"
                         location: { x: 100, y: 3 }
                         size: { width: null, height: null }
+                        state: on
                     }
                     {
                         type: 'tab-bar-item'
                         text: "Tab 2"
                         location: { x: 162, y: 3 }
                         size: { width: null, height: null }
+                        state: off
                     }
                 ]
             }
@@ -125,6 +127,7 @@ window.MakeApp.paletteDefinition: [
                 html: '<div><div class="icon"></div><div class="label"></div></div>'
                 textSelector: '.label'
                 textStyleEditable: no
+                state: off
             }
             {
                 type: 'navBar'
@@ -474,6 +477,7 @@ window.MakeApp.paletteDefinition: [
                 label: 'On/Off Switch'
                 widthPolicy: { fixedSize: 94 }
                 heightPolicy: { fixedSize: 27 }
+                state: on
             }
             {
                 type: 'slider'

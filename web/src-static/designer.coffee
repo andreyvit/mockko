@@ -158,7 +158,7 @@ jQuery ($) ->
     #  external representation
     
     externalizeComponent: (c) ->
-        {
+        rc: {
             type: c.type
             location: cloneObj c.location
             effsize: cloneObj c.effsize
@@ -168,6 +168,8 @@ jQuery ($) ->
             text: c.text
             children: (externalizeComponent(child) for child in c.children || [])
         }
+        rc.state: c.state if c.state?
+        rc
         
     internalizeComponent: (c) ->
         rc: {
@@ -182,6 +184,7 @@ jQuery ($) ->
             children: (internalizeComponent(child) for child in c.children || [])
             inDocument: yes
         }
+        rc.state: c.state if c.state?
         ct: ctypes[rc.type]
         if ct.style
             rc.style: $.extend({}, ct.style, rc.style)
@@ -328,7 +331,7 @@ jQuery ($) ->
     storeAndBindComponentNode: (c, cn) ->
         c.node = cn
         $(cn).bind 'contextmenu', -> false
-        $(cn).dblclick -> startDoubleClickEditing c; false
+        $(cn).dblclick -> handleComponentDoubleClick c; false
     
     skipTraversingChildren: {}
     # traverse(comp-or-array-of-comps, [parent], func)
@@ -354,6 +357,7 @@ jQuery ($) ->
         c.effsize: { w: null; h: null }
         c.location: { x: 0, y: 0 }
         c.text = ct.defaultText if ct.defaultText?
+        c.state: ct.state if ct.state?
         
         children: if ct.children then (cloneObj(child) for child in ct.children) else []
         for child in children
@@ -531,10 +535,15 @@ jQuery ($) ->
                 bgn: $(bgn).find(bgsel)[0]
             bgn.className: _((bgn.className || '').trim().split(/\s+/)).reject((n) -> n.match(/^bg-/)).
                 concat(["bg-${style.background}"]).join(" ")
+
+    renderComponentState: (c, cn) ->
+        if c.state?
+            $(cn || c.node).removeClass('state-on state-off').addClass("state-${c.state && 'on' || 'off'}")
     
     renderComponentVisualProperties: (c, cn) ->
         renderComponentText(c, cn)
         renderComponentStyle c, cn
+        renderComponentState c, cn
         if cn?
             renderComponentSize c, cn
         else
@@ -814,6 +823,25 @@ jQuery ($) ->
     ##########################################################################################################
     #  double-click editing
     
+    handleComponentDoubleClick: (c) ->
+        switch c.type
+            when 'tab-bar-item'
+                beginUndoTransaction "activation of ${friendlyComponentName c}"
+                _(c.parent.children).each (child) ->
+                    newState: if c is child then on else off
+                    if child.state isnt newState
+                        child.state: newState
+                        renderComponentState child
+                componentsChanged()
+            when 'switch'
+                c.state: ctypes[c.type].state unless c.state?
+                newStateDesc: if c.state then 'off' else 'on'
+                beginUndoTransaction "undo turning ${friendlyComponentName c} ${newStateDesc}"
+                c.state: !c.state
+                renderComponentState c
+                componentsChanged()
+        startDoubleClickEditing c
+
     startDoubleClickEditing: (c) ->
         activatePointingMode()
         

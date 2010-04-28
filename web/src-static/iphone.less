@@ -251,7 +251,7 @@
 }
 
 .c-tab-bar-item {
-    -webkit-border-image: url(images/navbar-item-active-bg.png) 3 3 3 3;
+    -webkit-border-image: url(images/tabbar-item-inactive-bg.png) 3 3 3 3;
     border-width: 3px 3px;
     -webkit-border-radius: 3px;
     
@@ -277,6 +277,9 @@
         color: #fff;
     }
 }
+.c-tab-bar-item.state-on {
+    -webkit-border-image: url(images/tabbar-item-active-bg.png) 3 3 3 3;
+}
 
 .c-navBar-grey {
     background: url(images/navbar-grey-po.png) repeat-x;
@@ -294,6 +297,9 @@
 
 .c-switch {
     background-image: url(images/switch.png);
+}
+.c-switch.state-on {
+    background-position: 0px -27px;
 }
 
 #device-panel.d-iphone-po {
