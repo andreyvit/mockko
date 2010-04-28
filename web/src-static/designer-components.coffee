@@ -72,7 +72,7 @@ window.MakeApp.paletteDefinition: [
         ]
     }
     {
-        name: "Bars"
+        name: "Status Bar"
         ctypes: [
             {
                 type: 'statusBar'
@@ -94,6 +94,11 @@ window.MakeApp.paletteDefinition: [
                     }
                 ]
             }
+        ]
+    }
+    {
+        name: "Tab Bar"
+        ctypes: [
             {
                 type: 'tabBar'
                 label: 'Tab Bar'
@@ -129,6 +134,11 @@ window.MakeApp.paletteDefinition: [
                 textStyleEditable: no
                 state: off
             }
+        ]
+    }
+    {
+        name: "Navigation Bar"
+        ctypes: [
             {
                 type: 'navBar'
                 label: 'Navigation Bar'
@@ -249,6 +259,11 @@ window.MakeApp.paletteDefinition: [
                     }
                 ]
             }
+        ]
+    }
+    {
+        name: "Toolbar"
+        ctypes: [
             {
                 type: 'toolbar'
                 label: 'Toolbar'
@@ -374,8 +389,21 @@ window.MakeApp.paletteDefinition: [
         ]
     }
     {
-        name: "Table/List Rows"
+        name: "Edge-to-Edge List"
         ctypes: [
+            {
+                type: 'plain-header'
+                label: 'Header'
+                defaultText: "B"
+                widthPolicy: { autoSize: 'fill' }
+                heightPolicy: { userSize: true, fixedSize: 20 }
+                style: {
+                    textColor: '#fff'
+                    fontSize: 16
+                    fontBold: yes
+                    textShadowStyleName: 'dark-below'
+                }
+            }
             {
                 type: 'plain-row'
                 label: 'Edge-to-Edge Row'
@@ -443,19 +471,11 @@ window.MakeApp.paletteDefinition: [
                     }
                 ]
             }
-            {
-                type: 'plain-header'
-                label: 'Header'
-                defaultText: "Cities"
-                widthPolicy: { autoSize: 'fill' }
-                heightPolicy: { userSize: true, fixedSize: 20 }
-                style: {
-                    textColor: '#fff'
-                    fontSize: 16
-                    fontBold: yes
-                    textShadowStyleName: 'dark-below'
-                }
-            }
+        ]
+    }
+    {
+        name: "Rounded-Rectangle List"
+        ctypes: [
             {
                 type: 'roundrect-header'
                 label: 'Header'
