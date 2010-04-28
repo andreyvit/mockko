@@ -426,9 +426,10 @@ window.MakeApp.paletteDefinition: [
                 widthPolicy: { autoSize: 'fill' }
                 heightPolicy: { userSize: true, fixedSize: 20 }
                 style: {
-                    textColor: '#3e9ac3'
+                    textColor: '#fff'
                     fontSize: 16
-                    textShadowStyleName: 'dark-above'
+                    fontBold: yes
+                    textShadowStyleName: 'dark-below'
                 }
             }
             {
@@ -570,6 +571,12 @@ MakeApp.textShadowStyles: {
         label: 'light (below the object)'
         css: {
             'text-shadow': '0px 1px rgba(255,255,255,0.5)'
+        }
+    }
+    'dark-below': {
+        label: 'dark (below the object)'
+        css: {
+            'text-shadow': '0px 1px rgba(0,0,0,0.75)'
         }
     }
 	
