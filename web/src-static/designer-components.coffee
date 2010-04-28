@@ -259,14 +259,38 @@ window.MakeApp.paletteDefinition: [
                     {
                         styleName: 'grey'
                         label: 'Grey Toolbar'
+                        childrenStyles: {
+                            'normal-button': {
+                                styleName: 'normal'
+                            }
+                        }
                     }
                     {
                         styleName: 'black-opaque'
                         label: 'Black Opaque Toolbar'
+                        childrenStyles: {
+                            'normal-button': {
+                                styleName: 'black'
+                            }
+                        }
                     }
                     {
                         styleName: 'black-translucent'
                         label: 'Black Translucent Toolbar'
+                        childrenStyles: {
+                            'normal-button': {
+                                styleName: 'black'
+                            }
+                        }
+                    }
+                ]
+                children: [
+                    {
+                        type: 'barButton'
+                        styleRef: 'normal-button'
+                        text: "Do something"
+                        location: { x: 108.5, y: 7 }
+                        size: { width: null, height: null }
                     }
                 ]
             }
