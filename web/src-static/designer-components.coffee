@@ -104,13 +104,13 @@ window.MakeApp.paletteDefinition: [
                     {
                         type: 'tab-bar-item'
                         text: "Tab 1"
-                        location: { x: 100, y: 2 }
+                        location: { x: 100, y: 3 }
                         size: { width: null, height: null }
                     }
                     {
                         type: 'tab-bar-item'
                         text: "Tab 2"
-                        location: { x: 162, y: 2 }
+                        location: { x: 162, y: 3 }
                         size: { width: null, height: null }
                     }
                 ]

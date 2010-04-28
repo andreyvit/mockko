@@ -251,12 +251,13 @@
 }
 
 .c-tab-bar-item {
-    background: rgba(255, 255, 255, 0.2);
+    -webkit-border-image: url(images/navbar-item-active-bg.png) 3 3 3 3;
+    border-width: 3px 3px;
     -webkit-border-radius: 3px;
     
     .icon {
         position: absolute;
-        top: 0px;
+        top: -3px;
         left: 50%;
         margin-left: -17px;
         width: 35px;
@@ -266,7 +267,7 @@
     
     .label {
         position: absolute;
-        bottom: 0px;
+        bottom: -3px;
         left: 0px;
         right: 0px;
         height: 12px;
