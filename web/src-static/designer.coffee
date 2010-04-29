@@ -287,6 +287,7 @@ jQuery ($) ->
         allStacks: discoverStacks()
         
         updateInspector()
+        updateScreenPreview(activeScreen)
     
     ##########################################################################################################
     #  geometry
@@ -1373,10 +1374,14 @@ jQuery ($) ->
     
     renderScreen: (screen) ->
         sn: domTemplate 'app-screen-template'
-        $('.caption', sn).html "Screen ${screen.userIndex}"
-        $(sn).attr 'id', "app-screen-${screen.sid}"
-        renderScreenComponents screen, $('.content .rendered', sn)
+        $(sn).setdata('makeapp.screen', screen).attr('id', "app-screen-${screen.sid}")
+        rerenderScreenContent screen, sn
         return sn
+    
+    rerenderScreenContent: (screen, sn) ->
+        $(screen).find('.component').remove()
+        $('.caption', sn).html "Screen ${screen.userIndex}"
+        renderScreenComponents screen, $('.content .rendered', sn)
         
     bindScreen: (screen, sn) ->
         $(sn).click ->
@@ -1391,9 +1396,12 @@ jQuery ($) ->
             appendRenderedScreenFor screen
             
     appendRenderedScreenFor: (screen) ->
-        sn: renderScreen screen
+        sn: screen.node: renderScreen screen
         $('#screens-list').append(sn)
         bindScreen screen, sn
+        
+    updateScreenPreview: (screen) ->
+        rerenderScreenContent screen, screen.node
             
     setActiveScreen: (screen) ->
         $('#screens-list > .app-screen').removeClass('active')
