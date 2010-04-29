@@ -20,6 +20,7 @@ jQuery ($) ->
             container: yes
             widthPolicy: { autoSize: 'fill' }
             heightPolicy: { autoSize: 'fill' }
+            unmovable: yes
             supportsBackground: yes
             style: {
                 background: 'striped'
@@ -383,6 +384,7 @@ jQuery ($) ->
         return c
     
     deleteComponent: (rootc) ->
+        return if ctypes[rootc.type].unmovable
         beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
 
         stacking: handleStacking rootc, null, allStacks
@@ -396,6 +398,7 @@ jQuery ($) ->
         componentsChanged()
 
     duplicateComponent: (comp) ->
+        return if ctypes[comp.type].unmovable
         beginUndoTransaction "duplicate ${friendlyComponentName comp}"
 
         rect: rectOf comp
@@ -465,7 +468,8 @@ jQuery ($) ->
     
     createNodeForComponent: (c) ->
         ct: ctypes[c.type]
-        $(ct.html || "<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c)[0]
+        movability: if ct.unmovable then "unmovable" else "movable"
+        $(ct.html || "<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c).addClass(movability)[0]
         
     _renderComponentHierarchy: (c, storeFunc) ->
         n: storeFunc c, createNodeForComponent(c)
@@ -771,6 +775,9 @@ jQuery ($) ->
     componentHovered: (c) ->
         return unless c.node?  # the component is being deleted right now
         return if hoveredComponent is c
+        if ctypes[c.type].unmovable
+            componentUnhovered()
+            return
         
         ct: ctypes[c.type]
         if ct.container
@@ -904,6 +911,12 @@ jQuery ($) ->
         $menu: $('#component-context-menu')
 
         $('#component-context-menu li').unbind('click')
+        
+        canDelete: canDuplicate: not ctypes[comp.type].unmovable
+        $('#delete-component-menu-item').alterClass 'disabled', !canDelete
+        $('#duplicate-component-menu-item').alterClass 'disabled', !canDuplicate
+        return if not (canDuplicate or canDelete)
+
         $menu.css({ left: pt.x, top: pt.y }).fadeIn(150)
 
         dismiss: ->
@@ -1020,7 +1033,8 @@ jQuery ($) ->
             mousedown: (e, c) ->
                 if c
                     selectComponent c
-                    activateExistingComponentDragging c, { x: e.pageX, y: e.pageY }
+                    if not ctypes[c.type].unmovable
+                        activateExistingComponentDragging c, { x: e.pageX, y: e.pageY }
                 else
                     deselectComponent()
                 true
