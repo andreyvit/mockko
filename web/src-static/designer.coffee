@@ -455,9 +455,10 @@ jQuery ($) ->
                         bestHere = res
 
             if bestHere is null
-                area: areaOfIntersection r, rectOf comp
-                if area > 0
-                    bestHere: { comp: comp, area: area }
+                rc: rectOf comp
+                if isRectInsideRect r, rc
+                    if (area: areaOfIntersection r, rc) > 0
+                        bestHere: { comp: comp, area: area }
             else
                 bestHere
         
