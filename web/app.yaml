@@ -64,12 +64,21 @@ handlers:
   upload: static/theme/images/.*
   expiration: "3650d"
 
+- url: /static/stock\.[a-f0-9]{40}/(.*)
+  static_files: static/stock/\1
+  upload: static/stock/.*
+  expiration: "3650d"
+
 - url: /static/iphone/images
   static_dir: static/iphone/images
   login: admin
 
 - url: /static/theme/images
   static_dir: static/theme/images
+  login: admin
+
+- url: /static/stock
+  static_dir: static/stock
   login: admin
 
 - url: /remote_api

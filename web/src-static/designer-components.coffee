@@ -653,3 +653,17 @@ MakeApp.backgroundStyles: [
     }
 ]
 
+MakeApp.stockImageGroups: [
+    {
+        name: "glyphish-icons"
+        label: "Glyphish Nav Bar Icons"
+        size: '30x30'
+        path: 'glyphish/icons'
+    }
+    {
+        name: "glyphish-mini-icons"
+        label: "Glyphish Toolbar Icons"
+        size: '20x20'
+        path: 'glyphish/mini-icons'
+    }
+]

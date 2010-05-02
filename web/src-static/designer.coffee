@@ -26,6 +26,12 @@ jQuery ($) ->
                 background: 'striped'
             }
         }
+        'image': {
+            type: 'image'
+            label: 'Image'
+            widthPolicy: { fixedSize: 30 }
+            heightPolicy: { fixedSize: 30 }
+        }
         
     }
     mode: null
@@ -35,6 +41,8 @@ jQuery ($) ->
     
     # our very own idea of infinity
     INF: 100000
+
+    STOCK_DIR: 'static/stock/'
     
     DEFAULT_TEXT_STYLES: {
         fontSize: 17
@@ -170,6 +178,7 @@ jQuery ($) ->
             children: (externalizeComponent(child) for child in c.children || [])
         }
         rc.state: c.state if c.state?
+        rc.image: c.image if c.image?
         rc
         
     internalizeComponent: (c) ->
@@ -186,6 +195,7 @@ jQuery ($) ->
             inDocument: yes
         }
         rc.state: c.state if c.state?
+        rc.image: c.image if c.image?
         ct: ctypes[rc.type]
         if ct.style
             rc.style: $.extend({}, ct.style, rc.style)
@@ -360,6 +370,7 @@ jQuery ($) ->
         c.location: { x: 0, y: 0 }
         c.text = ct.defaultText if ct.defaultText?
         c.state: ct.state if ct.state?
+        c.image: ct.image if ct.image?
         
         children: if ct.children then (cloneObj(child) for child in ct.children) else []
         for child in children
@@ -543,8 +554,11 @@ jQuery ($) ->
                 concat(["bg-${style.background}"]).join(" ")
 
     renderComponentState: (c, cn) ->
+        cn ||= c.node
         if c.state?
-            $(cn || c.node).removeClass('state-on state-off').addClass("state-${c.state && 'on' || 'off'}")
+            $(cn).removeClass('state-on state-off').addClass("state-${c.state && 'on' || 'off'}")
+        if c.image?
+            $(cn).css { backgroundImage: "url(${c.image})"}
     
     renderComponentVisualProperties: (c, cn) ->
         renderComponentText(c, cn)
@@ -1336,6 +1350,18 @@ jQuery ($) ->
             activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
     
     fillPalette: ->
+        for grp in MakeApp.stockImageGroups
+            items: for fileData in MakeApp.imageDirectories[grp.path]
+                path: "${STOCK_DIR}${grp.path}/${fileData.f}"
+                {
+                    type: 'image'
+                    label: fileData.f.replace(/\.png$/, '')
+                    image: path
+                    widthPolicy: { fixedSize: 30 }
+                    heightPolicy: { fixedSize: 30 }
+                }
+            MakeApp.paletteDefinition.push { name: grp.label, ctypes: items }
+        
         $content: $('#palette-container')
         for ctg in MakeApp.paletteDefinition
             group: $('<div />').addClass('group').appendTo($content)
