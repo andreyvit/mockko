@@ -1,6 +1,11 @@
-#! /bin/bash
-closure=java\ -jar\ scripts/closure-compiler/compiler.jar
-yui=java\ -jar\ scripts/yuicompressor-2.4.2.jar
+#! /bin/zsh
+closure() {
+  java -jar scripts/closure-compiler/compiler.jar "$@"
+}
+
+yui() {
+  java -jar scripts/yuicompressor-2.4.2.jar "$@"
+}
 
 # SIMPLE_OPTIMIZATIONS | ADVANCED_OPTIMIZATIONS
 # --externs VAL
@@ -15,7 +20,7 @@ THEME_IMAGES_SHA="$( (for i in web/static/theme/images/**/*.{png,jpg}; do cat $i
 STOCK_IMAGES_SHA="$( (for i in web/static/stock/**/*.png; do cat $i; done) | openssl sha1)"
 
 echo "Closure Compiler running..."
-$closure --compilation_level SIMPLE_OPTIMIZATIONS $pp --js web/static/designer-jqueryaddons.js --js web/static/designer-components.js --js web/static/designer-templates.js --js web/static/designer-image-directories.js --js web/static/designer.js --js_output_file web/minified/designer.premin.js
+closure --compilation_level SIMPLE_OPTIMIZATIONS $pp --js web/static/designer-jqueryaddons.js --js web/static/designer-components.js --js web/static/designer-templates.js --js web/static/designer-image-directories.js --js web/static/designer.js --js_output_file web/minified/designer.premin.js
 cat web/static/lib/jquery-1.4.2.min.js web/static/lib/jquery-ui-1.8.custom.min.js web/static/lib/underscore.min.js web/minified/designer.premin.js | perl -pe "s,stock/,stock.${STOCK_IMAGES_SHA}/,g" >web/minified/designer.min.js
 
 echo "YUI CSS Compressor running..."
