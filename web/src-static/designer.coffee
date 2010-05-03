@@ -557,6 +557,7 @@ jQuery ($) ->
         cn ||= c.node
         if c.state?
             $(cn).removeClass('state-on state-off').addClass("state-${c.state && 'on' || 'off'}")
+        console.log c
         if c.image?
             $(cn).css { backgroundImage: "url(${c.image})"}
     
@@ -1342,17 +1343,47 @@ jQuery ($) ->
     #  palette
     
     paletteWanted: on
+    customImagesPaletteCategory: { name: 'Custom Images (drop your image files here)', ctypes: [] }
+    customImagesPaletteGroup: null
+    customImages: []
+    # { id, width, height, fileName }
 
     bindPaletteItem: (item, ct, style) ->
         $(item).mousedown (e) ->
             e.preventDefault()
             c: createNewComponent ct, style
             activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
+            
+    renderPaletteGroupContent: (ctg, group) ->
+        $('<div />').addClass('header').html(ctg.name).appendTo(group)
+        items: $('<div />').addClass('items').appendTo(group)
+        for ct in ctg.ctypes
+            styles: ct.styles || [{ styleName: 'plain', label: ct.label }]
+            for style in styles
+                c: createNewComponent ct, style
+                switch ct.palettePresentation || 'as-is'
+                    when 'tile' then c.size = { width: 70; height: 50 }
+                    
+                n: renderStaticComponentHierarchy c
+                switch ct.palettePresentation || 'as-is'
+                    when 'tile' then $(n).addClass('palette-tile')
+                $(n).attr('title', style.label)
+                $(n).addClass('item').appendTo(items)
+                # item: $('<div />').addClass('item')
+                # $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
+                # caption: $('<div />').addClass('caption').html(style.label).appendTo(item)
+                # group.append item
+                bindPaletteItem n, ct, style
+
+    renderPaletteGroup: (ctg) ->
+        group: $('<div />').addClass('group').appendTo($('#palette-container'))
+        renderPaletteGroupContent ctg, group
+        group
     
     fillPalette: ->
         for grp in MakeApp.stockImageGroups
             items: for fileData in MakeApp.imageDirectories[grp.path]
-                path: "${STOCK_DIR}${grp.path}/${fileData.f}"
+                path: "${STOCK_DIR}${grp.path}/${encodeURIComponent fileData.f}"
                 {
                     type: 'image'
                     label: fileData.f.replace(/\.png$/, '')
@@ -1362,28 +1393,22 @@ jQuery ($) ->
                 }
             MakeApp.paletteDefinition.push { name: grp.label, ctypes: items }
         
-        $content: $('#palette-container')
         for ctg in MakeApp.paletteDefinition
-            group: $('<div />').addClass('group').appendTo($content)
-            $('<div />').addClass('header').html(ctg.name).appendTo(group)
-            items: $('<div />').addClass('items').appendTo(group)
-            for ct in ctg.ctypes
-                styles: ct.styles || [{ styleName: 'plain', label: ct.label }]
-                for style in styles
-                    c: createNewComponent ct, style
-                    switch ct.palettePresentation || 'as-is'
-                        when 'tile' then c.size = { width: 70; height: 50 }
-                        
-                    n: renderStaticComponentHierarchy c
-                    switch ct.palettePresentation || 'as-is'
-                        when 'tile' then $(n).addClass('palette-tile')
-                    $(n).attr('title', style.label)
-                    $(n).addClass('item').appendTo(items)
-                    # item: $('<div />').addClass('item')
-                    # $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
-                    # caption: $('<div />').addClass('caption').html(style.label).appendTo(item)
-                    # group.append item
-                    bindPaletteItem n, ct, style
+            renderPaletteGroup ctg
+            
+        customImagesPaletteGroup: renderPaletteGroup customImagesPaletteCategory
+        
+    updateCustomImagesPalette: ->
+        $(customImagesPaletteGroup).find("*").remove()
+        customImagesPaletteCategory.ctypes: for image in customImages
+            {
+                type: 'image'
+                label: image.fileName
+                image: "images/${encodeURIComponent image.id}"
+                widthPolicy: { fixedSize: image.width }
+                heightPolicy: { fixedSize: image.height }
+            }
+        renderPaletteGroupContent customImagesPaletteCategory, customImagesPaletteGroup
                     
     # updatePaletteVisibility: (reason) ->
     #     showing: $('.palette').is(':visible')
@@ -1664,6 +1689,71 @@ jQuery ($) ->
             
     fillInspector()
     updateInspector()
+
+
+    ##########################################################################################################
+    #  Image Upload
+    
+    uploadImageFile: (file) ->
+        console.log "Uploading ${file.fileName} of size ${file.fileSize}"
+        $.ajax {
+            type: 'POST'
+            url: '/images/'
+            data: file
+            processData: no
+            beforeSend: (xhr) -> xhr.setRequestHeader("X-File-Name", file.fileName)
+            contentType: 'application/octet-stream'
+            dataType: 'json'
+            success: (r) ->
+                if r.error
+                    switch r.error
+                        when 'signed-out'
+                            alert "Cannot save your changes because you were logged out. Please sign in again."
+                        else
+                            alert "Other error: ${r.error}"
+                else
+                    updateCustomImages()
+            error: (xhr, status, e) ->
+                alert "Failed to save the image: ${status} - ${e}"
+                # TODO ERROR HANDLING!
+        }
+    
+    updateCustomImages: ->
+        $.ajax {
+            type: 'GET'
+            url: '/images/'
+            dataType: 'json'
+            success: (r) ->
+                if r.error
+                    switch r.error
+                        when 'signed-out'
+                            alert "Cannot save your changes because you were logged out. Please sign in again."
+                        else
+                            alert "Other error: ${r.error}"
+                else
+                    customImages: r.images
+                    updateCustomImagesPalette()
+            error: (xhr, status, e) ->
+                alert "Failed to retrieve a list of images: ${status} - ${e}"
+                # TODO ERROR HANDLING!
+        }
+    
+    $('body').each ->
+        this.ondragenter: (e) ->
+            console.log "dragenter"
+            e.preventDefault()
+            e.dataTransfer.dropEffect: 'copy'
+            false
+        this.ondragover: (e) ->
+            console.log "dragover"
+            e.preventDefault()
+            e.dataTransfer.dropEffect: 'copy'
+            false
+        this.ondrop: (e) ->
+            console.log "drop"
+            e.preventDefault()
+            for file in e.dataTransfer.files
+                uploadImageFile file
         
         
     ##########################################################################################################
@@ -1678,6 +1768,7 @@ jQuery ($) ->
 
     initComponentTypes()
     initPalette()
+    updateCustomImages()
     
     createNewApplicationName: ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
