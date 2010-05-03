@@ -1403,7 +1403,7 @@ jQuery ($) ->
         customImagesPaletteCategory.ctypes: for image in customImages
             {
                 type: 'image'
-                label: image.fileName
+                label: "${image.fileName} ${image.width}x${image.height}"
                 image: "images/${encodeURIComponent image.id}"
                 widthPolicy: { fixedSize: image.width }
                 heightPolicy: { fixedSize: image.height }
