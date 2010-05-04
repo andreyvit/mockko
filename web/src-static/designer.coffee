@@ -33,7 +33,7 @@ jQuery ($) ->
     DEFAULT_ROOT_COMPONENT: {
         type: "background"
         size: { width: 320, height: 480 }
-        location: { x: 0, y: 0 }
+        abspos: { x: 0, y: 0 }
         id: "root"
     }
     
@@ -137,11 +137,17 @@ jQuery ($) ->
 
     ##########################################################################################################
     #  external representation
-    
-    internalizeLocation: (location) ->
+
+    internalizeLocation: (location, parent) ->
         {
-            x: location?.x || 0
-            y: location?.y || 0
+            x: (location?.x || 0) + (parent?.abspos?.x || 0)
+            y: (location?.y || 0) + (parent?.abspos?.y || 0)
+        }
+
+    externalizeLocation: (abspos, parent) ->
+        {
+            x: abspos.x - (parent?.abspos?.x || 0)
+            y: abspos.y - (parent?.abspos?.y || 0)
         }
     
     internalizeSize: (size) ->
@@ -153,7 +159,7 @@ jQuery ($) ->
     externalizeComponent: (c) ->
         rc: {
             type: c.type.name
-            location: cloneObj c.location
+            location: externalizeLocation c.abspos, c.parent
             effsize: cloneObj c.effsize
             size: cloneObj c.size
             styleName: c.styleName
@@ -165,17 +171,16 @@ jQuery ($) ->
         rc.image: c.image if c.image?
         rc
         
-    internalizeComponent: (c) ->
+    internalizeComponent: (c, parent) ->
         rc: {
             type: MakeApp.componentTypes[c.type]
-            location: internalizeLocation c.location
-            # we'll recompute the effective size anyway
-            # effsize: cloneObj c.effsize
+            abspos: internalizeLocation c.location, parent
             size: internalizeSize c.size
             styleName: c.styleName
-            children: (internalizeComponent(child) for child in c.children || [])
             inDocument: yes
+            parent: parent
         }
+        rc.children: (internalizeComponent(child, rc) for child in c.children || [])
         if not rc.type
             console.log "Missing type for component:"
             console.log c
@@ -184,8 +189,6 @@ jQuery ($) ->
         rc.image: c.image if c.image?
         rc.style: $.extend({}, (if rc.type.textStyleEditable then DEFAULT_TEXT_STYLES else {}), rc.type.style || {}, c.style || {})
         rc.text: c.text || rc.type.defaultText if rc.type.supportsText
-        console.log "internalizeComponent:"
-        console.log rc
         rc
         
     externalizeScreen: (screen) ->
@@ -194,8 +197,7 @@ jQuery ($) ->
         }
         
     internalizeScreen: (screen) ->
-        rootComponent: internalizeComponent(screen.rootComponent || DEFAULT_ROOT_COMPONENT)
-        assignParentsToChildrenOf rootComponent
+        rootComponent: internalizeComponent(screen.rootComponent || DEFAULT_ROOT_COMPONENT, null)
         screen: {
             rootComponent: rootComponent
             nextId: 1
@@ -313,6 +315,9 @@ jQuery ($) ->
             dx: Math.min(Math.abs(a.x - b.x), Math.abs(a2.x - b.x), Math.abs(a.x - b2.x), Math.abs(a2.x - b2.x))
             dy: Math.min(Math.abs(a.y - b.y), Math.abs(a2.y - b.y), Math.abs(a.y - b2.y), Math.abs(a2.y - b2.y))
             dy*dy
+
+    ptDiff: (a, b) -> { x: a.x - b.x, y: a.y - b.y }
+    ptSum: (a, b) -> { x: a.x + b.x, y: a.y + b.y }
     
     ##########################################################################################################
     #  component management
@@ -340,13 +345,9 @@ jQuery ($) ->
                     traverse child, comp, func
         null
         
-    assignParentsToChildrenOf: (c) -> traverse c.children, c, (child, parent) -> child.parent = parent
-    
     cloneTemplateComponent: (compTemplate) ->
-        c: internalizeComponent compTemplate
+        c: internalizeComponent compTemplate, null
         traverse c, (comp) -> comp.inDocument: no
-        c.parent: null
-        assignParentsToChildrenOf c
         return c
     
     deleteComponent: (rootc) ->
@@ -371,9 +372,8 @@ jQuery ($) ->
         rect.y += rect.h
         stacking: handleStacking comp, rect, allStacks, 'duplicate'
         
-        newComp: internalizeComponent(externalizeComponent(comp))
-        newComp.id: null  # make sure it is reassigned
-        newComp.parent: comp.parent
+        newComp: internalizeComponent(externalizeComponent(comp), comp.parent)
+        traverse newComp, (c) -> c.id: null  # make sure all ids are reassigned
         
         
         if stacking.targetRect
@@ -382,25 +382,21 @@ jQuery ($) ->
             liveMover.moveComponents stacking.moves
             liveMover.commit(STACKED_COMP_TRANSITION_DURATION)
             
-            newComp.location: {
-                x: stacking.targetRect.x - newComp.parent.abspos.x
-                y: stacking.targetRect.y - newComp.parent.abspos.y
-            }
+            newComp.abspos: { x: stacking.targetRect.x, y: stacking.targetRect.y }
         else
             if comp.abspos.x + 2*comp.effsize.w + 5 + 5 <= 320
-                newComp.location: {
-                    x: comp.location.x + comp.effsize.w + 5
-                    y: comp.location.y
+                newComp.abspos: {
+                    x: comp.abspos.x + comp.effsize.w + 5
+                    y: comp.abspos.y
                 }
             else
-                newComp.location: {
-                    x: comp.location.x
-                    y: comp.location.y + comp.effsize.h + 5
+                newComp.abspos: {
+                    x: comp.abspos.x
+                    y: comp.abspos.y + comp.effsize.h + 5
                 }
 
         comp.parent.children.push newComp
         $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
-        updateAbsolutePositions newComp
         traverse newComp, (c) -> updateEffectiveSize c
 
         componentsChanged()
@@ -463,12 +459,11 @@ jQuery ($) ->
         
     renderComponentPosition: (c, cn) ->
         ct: c.type
-        location: c.dragpos || c.location
+        relpos: if c.dragpos then externalizeLocation(c.dragpos, c.dragParent) else externalizeLocation(c.abspos, c.parent)
         
-        console.log "Move ${c.id} to (${location.x}, ${location.y})"
         $(cn || c.node).css({
-            left:   "${location.x}px"
-            top:    "${location.y}px"
+            left:   "${relpos.x}px"
+            top:    "${relpos.y}px"
         })
     
     reassignZIndexes: ->
@@ -527,13 +522,6 @@ jQuery ($) ->
     
     renderComponentProperties: (c, cn) -> renderComponentPosition(c, cn); renderComponentVisualProperties(c, cn)
     
-    updateAbsolutePositions: (comp) ->
-        trav: (c, parentPos) ->
-            c.abspos: { x: c.location.x + parentPos.x, y: c.location.y + parentPos.y }
-            for child in c.children
-                trav child, c.abspos
-        trav(comp, (if comp.parent then comp.parent.abspos else { x: 0, y: 0 }))
-    
     componentPositionChangedWhileDragging: (c) ->
         renderComponentPosition c
         if c is hoveredComponent
@@ -542,7 +530,6 @@ jQuery ($) ->
     
     componentPositionChangedPernamently: (c) ->
         renderComponentPosition c
-        updateAbsolutePositions c
         if c is hoveredComponent
             updateHoverPanelPosition()
             updatePositionInspector()
@@ -1044,14 +1031,16 @@ jQuery ($) ->
                     if inSet c, excludedSet
                         return skipTraversingChildren
                     if c.dragpos and not inSet c, componentSet
-                        c.dragpos = null
+                        c.dragpos: null
+                        c.dragParent: null
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedWhileDragging c
                 
                 for m in moves
                     for c in m.comps
                         $(c.node).addClass 'stacked'
-                        c.dragpos = { x: c.location.x + m.offset.x; y: c.location.y + m.offset.y }
+                        c.dragpos: { x: c.abspos.x + m.offset.x; y: c.abspos.y + m.offset.y }
+                        c.dragParent: c.parent
                         componentPositionChangedWhileDragging c
                     
             rollback: ->
@@ -1063,31 +1052,17 @@ jQuery ($) ->
                     if inSet c, excludedSet
                         return skipTraversingChildren
                     if c.dragpos
-                        c.dragpos = null
+                        c.dragpos: null
+                        c.dragParent: null
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedWhileDragging c
-                    
-                traverse activeScreen.rootComponent, (c) ->
-                    if not _.include excluded, c
-                        $(c.node).removeClass 'stackable'
-                traverse activeScreen.rootComponent, (c) ->
-                    if c.dragpos
-                        c.location = {
-                            x: c.dragpos.x - c.parent.abspos.x
-                            y: c.dragpos.y - c.parent.abspos.y
-                        }
-                        c.dragpos = null
-                        $(c.node).removeClass 'stacked'
-                        componentPositionChangedPernamently c
                     
             commit: (delay) ->
                 traverse activeScreen.rootComponent, (c) ->
                     if c.dragpos
-                        c.location = {
-                            x: c.dragpos.x - c.parent.abspos.x
-                            y: c.dragpos.y - c.parent.abspos.y
-                        }
-                        c.dragpos = null
+                        c.abspos = c.dragpos
+                        c.dragpos: null
+                        c.dragParent: null
                         componentPositionChangedPernamently c
 
                 cleanup: -> $('.component').removeClass 'stackable'
@@ -1172,6 +1147,7 @@ jQuery ($) ->
                     # isAnchored: xa or ya
             
             c.dragpos = { x: r.x, y: r.y }
+            c.dragParent: null
             
             if wasAnchored and not isAnchored
                 anchoredTransitionChangeTimeout.set -> $(c.node).removeClass 'anchored'
@@ -1196,12 +1172,11 @@ jQuery ($) ->
                 if c.node.parentNode
                     c.node.parentNode.removeChild(c.node)
                 c.parent.node.appendChild(c.node)
-                    
-                c.location = {
-                    x: c.dragpos.x - c.parent.abspos.x
-                    y: c.dragpos.y - c.parent.abspos.y
-                }
-                c.dragpos = null
+
+                shift: ptDiff c.dragpos, c.abspos
+                traverse c, (cc) -> cc.abspos: ptSum cc.abspos, shift
+                c.dragpos: null
+                c.dragParent: null
                     
                 c.inDocument = yes
                 componentPositionChangedPernamently c
@@ -1222,7 +1197,6 @@ jQuery ($) ->
         { moveTo: moveTo, dropAt: dropAt }
         
     activateExistingComponentDragging: (c, startPt) ->
-        originalLocation: c.location
         dragger: null
         
         window.status = "Dragging a component."
@@ -1424,7 +1398,6 @@ jQuery ($) ->
         activeScreen.nextId ||= 1
         
         $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
-        updateAbsolutePositions activeScreen.rootComponent
         traverse activeScreen.rootComponent, (c) -> updateEffectiveSize c
         
         devicePanel: $('#device-panel')[0]
