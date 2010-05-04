@@ -13,7 +13,6 @@ jQuery ($) ->
     applicationId: null
     application: null
     activeScreen: null
-    ctypes: MakeApp.componentTypes
     mode: null
     allowedArea: null
     componentBeingDoubleClickEdited: null
@@ -153,7 +152,7 @@ jQuery ($) ->
     
     externalizeComponent: (c) ->
         rc: {
-            type: c.type
+            type: c.type.name
             location: cloneObj c.location
             effsize: cloneObj c.effsize
             size: cloneObj c.size
@@ -168,7 +167,7 @@ jQuery ($) ->
         
     internalizeComponent: (c) ->
         rc: {
-            type: c.type
+            type: MakeApp.componentTypes[c.type]
             location: internalizeLocation c.location
             # we'll recompute the effective size anyway
             # effsize: cloneObj c.effsize
@@ -177,15 +176,14 @@ jQuery ($) ->
             children: (internalizeComponent(child) for child in c.children || [])
             inDocument: yes
         }
-        ct: ctypes[rc.type]
-        if not ct
+        if not rc.type
             console.log "Missing type for component:"
             console.log c
             throw "Missing type: ${c.type}"
         rc.state: c.state if c.state?
         rc.image: c.image if c.image?
-        rc.style: $.extend({}, (if ct.textStyleEditable then DEFAULT_TEXT_STYLES else {}), ct.style || {}, c.style || {})
-        rc.text: c.text || ct.defaultText if ct.supportsText
+        rc.style: $.extend({}, (if rc.type.textStyleEditable then DEFAULT_TEXT_STYLES else {}), rc.type.style || {}, c.style || {})
+        rc.text: c.text || rc.type.defaultText if rc.type.supportsText
         console.log "internalizeComponent:"
         console.log rc
         rc
@@ -225,7 +223,7 @@ jQuery ($) ->
     lastChange: null
     
     friendlyComponentName: (c) ->
-        ct: ctypes[c.type]
+        ct: c.type
         label: (ct.genericLabel || ct.label).toLowerCase()
         if c.text then "the “${c.text}” ${label}" else aOrAn label
     
@@ -345,14 +343,14 @@ jQuery ($) ->
     assignParentsToChildrenOf: (c) -> traverse c.children, c, (child, parent) -> child.parent = parent
     
     cloneTemplateComponent: (compTemplate) ->
-        c: internalizeComponent externalizeComponent compTemplate
+        c: internalizeComponent compTemplate
         traverse c, (comp) -> comp.inDocument: no
         c.parent: null
         assignParentsToChildrenOf c
         return c
     
     deleteComponent: (rootc) ->
-        return if ctypes[rootc.type].unmovable
+        return if rootc.type.unmovable
         beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
 
         stacking: handleStacking rootc, null, allStacks
@@ -366,7 +364,7 @@ jQuery ($) ->
         componentsChanged()
 
     duplicateComponent: (comp) ->
-        return if ctypes[comp.type].unmovable
+        return if comp.type.unmovable
         beginUndoTransaction "duplicate ${friendlyComponentName comp}"
 
         rect: rectOf comp
@@ -436,9 +434,9 @@ jQuery ($) ->
     #  DOM rendering
     
     createNodeForComponent: (c) ->
-        ct: ctypes[c.type]
+        ct: c.type
         movability: if ct.unmovable then "unmovable" else "movable"
-        $(ct.html || "<div />").addClass("component c-${c.type} c-${c.type}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c).addClass(movability)[0]
+        $(ct.html || "<div />").addClass("component c-${c.type.name} c-${c.type.name}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c).addClass(movability)[0]
         
     _renderComponentHierarchy: (c, storeFunc) ->
         n: storeFunc c, createNodeForComponent(c)
@@ -464,7 +462,7 @@ jQuery ($) ->
     findComponentOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-comp')
         
     renderComponentPosition: (c, cn) ->
-        ct: ctypes[c.type]
+        ct: c.type
         location: c.dragpos || c.location
         
         console.log "Move ${c.id} to (${location.x}, ${location.y})"
@@ -480,7 +478,7 @@ jQuery ($) ->
             
     textNodeOfComponent: (c, cn) ->
         cn ||= c.node
-        ct: ctypes[c.type]
+        ct: c.type
         return null unless ct.supportsText
         if ct.textSelector then $(ct.textSelector, cn)[0] else cn
 
@@ -503,9 +501,9 @@ jQuery ($) ->
         
         if style.background?
             if not BACKGROUND_STYLES[style.background]
-                console.log "!! Unknown backgrond style ${style.background} for ${c.type}"
+                console.log "!! Unknown backgrond style ${style.background} for ${c.type.name}"
             bgn: cn || c.node
-            if bgsel: ctypes[c.type].backgroundSelector
+            if bgsel: c.type.backgroundSelector
                 bgn: $(bgn).find(bgsel)[0]
             bgn.className: _((bgn.className || '').trim().split(/\s+/)).reject((n) -> n.match(/^bg-/)).
                 concat(["bg-${style.background}"]).join(" ")
@@ -565,7 +563,7 @@ jQuery ($) ->
         if v then "${v}px" else 'auto'
         
     renderComponentSize: (c, cn) ->
-        ct: ctypes[c.type]
+        ct: c.type
         effsize: {
             w: recomputeEffectiveSizeInDimension c.size.width, ct.widthPolicy, 320
             h: recomputeEffectiveSizeInDimension c.size.height, ct.heightPolicy, 460
@@ -585,7 +583,7 @@ jQuery ($) ->
     
     TABLE_TYPES = setOf ['plain-row', 'plain-header', 'roundrect-row', 'roundrect-header']
     
-    isContainer: (c) -> ctypes[c.type].container
+    isContainer: (c) -> c.type.container
     
     areVerticallyAdjacent: (c1, c2) ->
         r1: rectOf c1
@@ -613,7 +611,7 @@ jQuery ($) ->
                 prevGroupName: null
                 $(stack.items[0].node).addClass('first-in-stack')
                 for cur in stack.items
-                    groupName: ctypes[cur.type].group || 'default'
+                    groupName: cur.type.group || 'default'
                     if groupName != prevGroupName
                         $(cur.node).addClass('first-in-group')
                         $(prev.node).addClass('last-in-group') if prev
@@ -634,7 +632,7 @@ jQuery ($) ->
                 $(prev.node).addClass('last-in-stack') if prev
                         
     discoverStacksInComponent: (container, stacks) ->
-        peers: _(container.children).select (c) -> c.type in TABLE_TYPES
+        peers: _(container.children).select (c) -> c.type.name in TABLE_TYPES
         peers: _(peers).sortBy (c) -> c.abspos.y
         
         contentSoFar: []
@@ -679,7 +677,7 @@ jQuery ($) ->
         return res
             
     handleStacking: (comp, rect, stacks, action) ->
-        return { moves: [] } unless comp.type in TABLE_TYPES
+        return { moves: [] } unless comp.type.name in TABLE_TYPES
         
         sourceStack: if action == 'duplicate' then null else comp.stack
         targetStack: if rect? then _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20 else null
@@ -748,11 +746,11 @@ jQuery ($) ->
     componentHovered: (c) ->
         return unless c.node?  # the component is being deleted right now
         return if hoveredComponent is c
-        if ctypes[c.type].unmovable
+        if c.type.unmovable
             componentUnhovered()
             return
         
-        ct: ctypes[c.type]
+        ct: c.type
         if ct.container
             $('#hover-panel').addClass('container').removeClass('leaf')
         else
@@ -805,7 +803,7 @@ jQuery ($) ->
     #  double-click editing
     
     handleComponentDoubleClick: (c) ->
-        switch c.type
+        switch c.type.name
             when 'tab-bar-item'
                 beginUndoTransaction "activation of ${friendlyComponentName c}"
                 _(c.parent.children).each (child) ->
@@ -815,7 +813,7 @@ jQuery ($) ->
                         renderComponentState child
                 componentsChanged()
             when 'switch'
-                c.state: ctypes[c.type].state unless c.state?
+                c.state: c.type.state unless c.state?
                 newStateDesc: if c.state then 'off' else 'on'
                 beginUndoTransaction "undo turning ${friendlyComponentName c} ${newStateDesc}"
                 c.state: !c.state
@@ -826,7 +824,7 @@ jQuery ($) ->
     startDoubleClickEditing: (c) ->
         activatePointingMode()
         
-        ct: ctypes[c.type]
+        ct: c.type
         return unless ct.supportsText
         
         componentBeingDoubleClickEdited = c
@@ -885,7 +883,7 @@ jQuery ($) ->
 
         $('#component-context-menu li').unbind('click')
         
-        canDelete: canDuplicate: not ctypes[comp.type].unmovable
+        canDelete: canDuplicate: not comp.type.unmovable
         $('#delete-component-menu-item').alterClass 'disabled', !canDelete
         $('#duplicate-component-menu-item').alterClass 'disabled', !canDuplicate
         return if not (canDuplicate or canDelete)
@@ -1006,7 +1004,7 @@ jQuery ($) ->
             mousedown: (e, c) ->
                 if c
                     selectComponent c
-                    if not ctypes[c.type].unmovable
+                    if not c.type.unmovable
                         activateExistingComponentDragging c, { x: e.pageX, y: e.pageY }
                 else
                     deselectComponent()
@@ -1148,7 +1146,7 @@ jQuery ($) ->
                 liveMover.moveComponents stacking.moves
                     
                 target: findBestTargetContainerForRect(r, [c])
-                target = activeScreen.rootComponent if c.type in TABLE_TYPES
+                target = activeScreen.rootComponent if c.type.name in TABLE_TYPES
                 
                 isAnchored: no
                 if stacking.targetRect?
@@ -1317,7 +1315,7 @@ jQuery ($) ->
         for compTemplate in ctg.items
             c: cloneTemplateComponent compTemplate
             n: renderStaticComponentHierarchy c
-            $(n).attr('title', c.label || ctypes[c.type].label)
+            $(n).attr('title', c.label || c.type.label)
             $(n).addClass('item').appendTo(items)
             bindPaletteItem n, compTemplate
 
@@ -1453,7 +1451,6 @@ jQuery ($) ->
         
     
     loadApplication: (app, appId) ->
-        app = internalizeApplication(app)
         app.name = createNewApplicationName() unless app.name
         application = app
         applicationId = appId
@@ -1491,7 +1488,7 @@ jQuery ($) ->
                 app: JSON.parse(v)
             catch e
                 good: no
-            loadApplication app, applicationId if app
+            loadApplication internalizeApplication(app), applicationId if app
         $('#share-popover textarea').css('background-color', if good then 'white' else '#ffeeee')
     
     for event in ['change', 'blur', 'keydown', 'keyup', 'keypress', 'focus', 'mouseover', 'mouseout', 'paste', 'input']
@@ -1532,7 +1529,7 @@ jQuery ($) ->
         enabled: no
         $('#insp-backgrounds-pane li').removeClass 'active'
         if c: componentToActUpon()
-            enabled: ctypes[c.type].supportsBackground
+            enabled: c.type.supportsBackground
             if enabled
                 if active: c.style.background || ''
                     $("#bg-${active}").addClass 'active'
@@ -1562,7 +1559,7 @@ jQuery ($) ->
                 pixelSize: parseInt cs.fontSize
                 bold: cs.fontWeight is 'bold'
                 italic: cs.fontStyle is 'italic'
-            textStyleEditable: ctypes[c.type].textStyleEditable
+            textStyleEditable: c.type.textStyleEditable
         $('#pixel-size-label').html(if pixelSize then "${pixelSize} px" else "")
         $('#insp-text-pane li')[if textStyleEditable then 'removeClass' else 'addClass']('disabled')
         $('#text-bold')[if bold then 'addClass' else 'removeClass']('active')
@@ -1703,7 +1700,8 @@ jQuery ($) ->
     ##########################################################################################################
     
     initComponentTypes: ->
-        for typeName, ct of ctypes
+        for typeName, ct of MakeApp.componentTypes
+            ct.name: typeName
             ct.style ||= {}
             if not ct.supportsBackground?
                 ct.supportsBackground: 'background' in ct.style
@@ -1722,7 +1720,7 @@ jQuery ($) ->
         return "My ${adjs[i]} App"
         
     createNewApplication: ->
-        loadApplication MakeApp.appTemplates.basic, null
+        loadApplication internalizeApplication(MakeApp.appTemplates.basic), null
         switchToDesign()
         
     bindApplication: (app, appId, an) ->
