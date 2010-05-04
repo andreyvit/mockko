@@ -317,7 +317,8 @@ jQuery ($) ->
             dy*dy
 
     ptDiff: (a, b) -> { x: a.x - b.x, y: a.y - b.y }
-    ptSum: (a, b) -> { x: a.x + b.x, y: a.y + b.y }
+    ptSum:  (a, b) -> { x: a.x + b.x, y: a.y + b.y }
+    ptMul:  (p, r) -> { x: p.x * r,   y: p.y * r   }
     
     ##########################################################################################################
     #  component management
@@ -362,6 +363,12 @@ jQuery ($) ->
 
         _(rootc.parent.children).removeValue rootc
         $(rootc.node).hide 'drop', { direction: 'down' }, 'normal', -> $(rootc.node).remove()
+        componentsChanged()
+
+    moveComponent: (comp, offset) ->
+        beginUndoTransaction "keyboard moving of ${friendlyComponentName comp}"
+        traverse comp, (c) -> c.abspos: ptSum(c.abspos, offset)
+        traverse comp, componentPositionChangedPernamently
         componentsChanged()
 
     duplicateComponent: (comp) ->
@@ -1668,7 +1675,47 @@ jQuery ($) ->
             e.preventDefault()
             for file in e.dataTransfer.files
                 uploadImageFile file
-        
+
+    ##########################################################################################################
+    #  keyboard shortcuts
+
+    KB_MOVE_DIRS: {
+        up: {
+            offset: { x: 0, y: -1 }
+        }
+        down: {
+            offset: { x: 0, y:  1 }
+        }
+        left: {
+            offset: { x: -1, y: 0 }
+        }
+        right: {
+            offset: { x:  1, y: 0 }
+        }
+    }
+
+    moveComponentByKeyboard: (comp, e, movement) ->
+        if e.ctrlKey
+            # TODO: duplicate
+        else
+            # TODO: detect if part of stack
+            amount: if e.shiftKey then 10 else 1
+            moveComponent comp, ptMul(movement.offset, amount)
+
+    hookKeyboardShortcuts: ->
+        $('body').keydown (e) ->
+            return if componentBeingDoubleClickEdited isnt null
+            act: componentToActUpon()
+            switch e.which
+                when $.KEY_ESC then deselectComponent(); false
+                when $.KEY_DELETE then deleteComponent(act) if act
+                when $.KEY_ARROWUP    then moveComponentByKeyboard act, e, KB_MOVE_DIRS.up    if act
+                when $.KEY_ARROWDOWN  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.down  if act
+                when $.KEY_ARROWLEFT  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.left  if act
+                when $.KEY_ARROWRIGHT then moveComponentByKeyboard act, e, KB_MOVE_DIRS.right if act
+                when 'D'.charCodeAt(0) then duplicateComponent(act) if act and (e.ctrlKey or e.metaKey)
+                # else console.log("Skipping key ${e.which}")
+
         
     ##########################################################################################################
     
@@ -1685,6 +1732,7 @@ jQuery ($) ->
     initComponentTypes()
     initPalette()
     updateCustomImages()
+    hookKeyboardShortcuts()
     
     createNewApplicationName: ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
@@ -1775,13 +1823,7 @@ jQuery ($) ->
                 alert "Failed to load the application: ${status} - ${e}"
                 # TODO ERROR HANDLING!
         }
-        
-    $('body').keydown (e) ->
-        return if componentBeingDoubleClickEdited isnt null
-        switch e.which
-            when $.KEY_ESC then deselectComponent(); false
-    
-        
+
     # Make-App Dump
     window.mad: ->
         console.log(activeScreen)
