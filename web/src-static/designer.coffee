@@ -13,27 +13,7 @@ jQuery ($) ->
     applicationId: null
     application: null
     activeScreen: null
-    ctypes: {
-        'background': {
-            type: 'background'
-            label: 'Background'
-            container: yes
-            widthPolicy: { autoSize: 'fill' }
-            heightPolicy: { autoSize: 'fill' }
-            unmovable: yes
-            supportsBackground: yes
-            style: {
-                background: 'striped'
-            }
-        }
-        'image': {
-            type: 'image'
-            label: 'Image'
-            widthPolicy: { fixedSize: 30 }
-            heightPolicy: { fixedSize: 30 }
-        }
-        
-    }
+    ctypes: MakeApp.componentTypes
     mode: null
     allowedArea: null
     componentBeingDoubleClickEdited: null
@@ -141,13 +121,6 @@ jQuery ($) ->
 
 
     ##########################################################################################################
-    #  classification
-        
-    isTextStyleEditable: (c) -> isComponentTypeTextStyleEditable ctypes[c.type]
-    isComponentTypeTextStyleEditable: (ct) -> ct.defaultText? && (ct.textStyleEditable or not ct.textStyleEditable?)
-
-
-    ##########################################################################################################
     #  DOM templates
     
     domTemplates = {}
@@ -165,6 +138,18 @@ jQuery ($) ->
 
     ##########################################################################################################
     #  external representation
+    
+    internalizeLocation: (location) ->
+        {
+            x: location?.x || 0
+            y: location?.y || 0
+        }
+    
+    internalizeSize: (size) ->
+        {
+            width: size?.width || null
+            height: size?.height || null
+        }
     
     externalizeComponent: (c) ->
         rc: {
@@ -184,27 +169,23 @@ jQuery ($) ->
     internalizeComponent: (c) ->
         rc: {
             type: c.type
-            location: cloneObj c.location
+            location: internalizeLocation c.location
             # we'll recompute the effective size anyway
             # effsize: cloneObj c.effsize
-            size: cloneObj c.size
+            size: internalizeSize c.size
             styleName: c.styleName
-            style: cloneObj(c.style || {})
-            text: c.text
             children: (internalizeComponent(child) for child in c.children || [])
             inDocument: yes
         }
+        ct: ctypes[rc.type]
+        if not ct
+            console.log "Missing type for component:"
+            console.log c
+            throw "Missing type: ${c.type}"
         rc.state: c.state if c.state?
         rc.image: c.image if c.image?
-        ct: ctypes[rc.type]
-        if ct.style
-            rc.style: $.extend({}, ct.style, rc.style)
-        if rc.styleName and ct.styles
-            st: _(ct.styles).find (s) -> s.styleName is rc.styleName
-            if st and st.style
-                rc.style: $.extend({}, st.style, rc.style)
-        if isTextStyleEditable rc
-            rc.style: $.extend({}, DEFAULT_TEXT_STYLES, rc.style)
+        rc.style: $.extend({}, (if ct.textStyleEditable then DEFAULT_TEXT_STYLES else {}), ct.style || {}, c.style || {})
+        rc.text: c.text || ct.defaultText if ct.supportsText
         console.log "internalizeComponent:"
         console.log rc
         rc
@@ -363,32 +344,8 @@ jQuery ($) ->
         
     assignParentsToChildrenOf: (c) -> traverse c.children, c, (child, parent) -> child.parent = parent
     
-    createNewComponent: (ct, style) ->
-        c: { type: ct.type, styleName: style.styleName }
-        c.size: { width: null; height: null }
-        c.effsize: { w: null; h: null }
-        c.location: { x: 0, y: 0 }
-        c.text = ct.defaultText if ct.defaultText?
-        c.state: ct.state if ct.state?
-        c.image: ct.image if ct.image?
-        
-        children: if ct.children then (cloneObj(child) for child in ct.children) else []
-        for child in children
-            if not child.styleRef? and style.childrenStyles and style.childrenStyles[child.type]
-                child.styleRef: child.type
-            if child.styleRef?
-                if cs: style.childrenStyles[child.styleRef]
-                    cs: cloneObj cs
-                    if cs.styleName?
-                        child.styleName: cs.styleName
-                        delete cs.styleName
-                    child.style: $.extend({}, child.style || {}, cs)
-                else
-                    console.log "!! Missing style-ref '${child.styleRef}' for child of ${ct.type} with style ${style.styleName}"
-        c.children = (internalizeComponent(child) for child in children)
-        c.style: $.extend({}, style.style || {}, ct.style || {})
-        if isTextStyleEditable c
-            c.style: $.extend({}, DEFAULT_TEXT_STYLES, c.style)
+    cloneTemplateComponent: (compTemplate) ->
+        c: internalizeComponent externalizeComponent compTemplate
         traverse c, (comp) -> comp.inDocument: no
         c.parent: null
         assignParentsToChildrenOf c
@@ -524,7 +481,7 @@ jQuery ($) ->
     textNodeOfComponent: (c, cn) ->
         cn ||= c.node
         ct: ctypes[c.type]
-        return null unless ct.defaultText?
+        return null unless ct.supportsText
         if ct.textSelector then $(ct.textSelector, cn)[0] else cn
 
     renderComponentText: (c, cn) ->
@@ -870,7 +827,7 @@ jQuery ($) ->
         activatePointingMode()
         
         ct: ctypes[c.type]
-        return unless ct.defaultText?
+        return unless ct.supportsText
         
         componentBeingDoubleClickEdited = c
         $(c.node).addClass 'editing'
@@ -1343,37 +1300,26 @@ jQuery ($) ->
     #  palette
     
     paletteWanted: on
-    customImagesPaletteCategory: { name: 'Custom Images (drop your image files here)', ctypes: [] }
+    customImagesPaletteCategory: { name: 'Custom Images (drop your image files here)', items: [] }
     customImagesPaletteGroup: null
     customImages: []
     # { id, width, height, fileName }
 
-    bindPaletteItem: (item, ct, style) ->
+    bindPaletteItem: (item, compTemplate) ->
         $(item).mousedown (e) ->
             e.preventDefault()
-            c: createNewComponent ct, style
+            c: cloneTemplateComponent compTemplate
             activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
             
     renderPaletteGroupContent: (ctg, group) ->
         $('<div />').addClass('header').html(ctg.name).appendTo(group)
         items: $('<div />').addClass('items').appendTo(group)
-        for ct in ctg.ctypes
-            styles: ct.styles || [{ styleName: 'plain', label: ct.label }]
-            for style in styles
-                c: createNewComponent ct, style
-                switch ct.palettePresentation || 'as-is'
-                    when 'tile' then c.size = { width: 70; height: 50 }
-                    
-                n: renderStaticComponentHierarchy c
-                switch ct.palettePresentation || 'as-is'
-                    when 'tile' then $(n).addClass('palette-tile')
-                $(n).attr('title', style.label)
-                $(n).addClass('item').appendTo(items)
-                # item: $('<div />').addClass('item')
-                # $('<img />').attr('src', "../static/iphone/images/palette/button.png").appendTo(item)
-                # caption: $('<div />').addClass('caption').html(style.label).appendTo(item)
-                # group.append item
-                bindPaletteItem n, ct, style
+        for compTemplate in ctg.items
+            c: cloneTemplateComponent compTemplate
+            n: renderStaticComponentHierarchy c
+            $(n).attr('title', c.label || ctypes[c.type].label)
+            $(n).addClass('item').appendTo(items)
+            bindPaletteItem n, compTemplate
 
     renderPaletteGroup: (ctg) ->
         group: $('<div />').addClass('group').appendTo($('#palette-container'))
@@ -1388,10 +1334,9 @@ jQuery ($) ->
                     type: 'image'
                     label: fileData.f.replace(/\.png$/, '')
                     image: path
-                    widthPolicy: { fixedSize: 30 }
-                    heightPolicy: { fixedSize: 30 }
+                    size: { width: 30, height: 30 }
                 }
-            MakeApp.paletteDefinition.push { name: grp.label, ctypes: items }
+            MakeApp.paletteDefinition.push { name: grp.label, items: items }
         
         for ctg in MakeApp.paletteDefinition
             renderPaletteGroup ctg
@@ -1400,13 +1345,12 @@ jQuery ($) ->
         
     updateCustomImagesPalette: ->
         $(customImagesPaletteGroup).find("*").remove()
-        customImagesPaletteCategory.ctypes: for image in customImages
+        customImagesPaletteCategory.items: for image in customImages
             {
                 type: 'image'
                 label: "${image.fileName} ${image.width}x${image.height}"
                 image: "images/${encodeURIComponent image.id}"
-                widthPolicy: { fixedSize: image.width }
-                heightPolicy: { fixedSize: image.height }
+                size: { width: image.width, height: image.height }
             }
         renderPaletteGroupContent customImagesPaletteCategory, customImagesPaletteGroup
                     
@@ -1618,7 +1562,7 @@ jQuery ($) ->
                 pixelSize: parseInt cs.fontSize
                 bold: cs.fontWeight is 'bold'
                 italic: cs.fontStyle is 'italic'
-            textStyleEditable: isTextStyleEditable c
+            textStyleEditable: ctypes[c.type].textStyleEditable
         $('#pixel-size-label').html(if pixelSize then "${pixelSize} px" else "")
         $('#insp-text-pane li')[if textStyleEditable then 'removeClass' else 'addClass']('disabled')
         $('#text-bold')[if bold then 'addClass' else 'removeClass']('active')
@@ -1759,12 +1703,13 @@ jQuery ($) ->
     ##########################################################################################################
     
     initComponentTypes: ->
-        for ctg in MakeApp.paletteDefinition
-            for ct in ctg.ctypes
-                ct.style ||= {}
-                if not ct.supportsBackground?
-                    ct.supportsBackground: 'background' in ct.style
-                ctypes[ct.type] = ct
+        for typeName, ct of ctypes
+            ct.style ||= {}
+            if not ct.supportsBackground?
+                ct.supportsBackground: 'background' in ct.style
+            if not ct.textStyleEditable?
+                ct.textStyleEditable: ct.defaultText?
+            ct.supportsText: ct.defaultText?
 
     initComponentTypes()
     initPalette()
