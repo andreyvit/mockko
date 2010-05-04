@@ -118,6 +118,30 @@ class ServeImageHandler(RequestHandler):
             
             return Response(response=img_data.data, mimetype='image/png')
 
+class DeleteImageHandler(RequestHandler):
+
+    def delete(self, image_name):
+        user = users.get_current_user()
+        if user is None:
+            return render_json_response({ 'error': 'signed-out' })
+        else:
+            account = Account.all().filter('user', user).get()
+            if account is None:
+                raise NotFound()
+                
+            img = Image.get_by_key_name(image_name)
+            if img is None or img.account.key() != account.key():
+                raise NotFound()
+                
+            img_data = ImageData.get_by_key_name(image_name)
+            if img_data is None:
+                raise NotFound()
+                
+            img.delete()
+            img_data.delete()
+            
+            return render_json_response({ 'status': 'ok' })
+
 class SaveImageHandler(RequestHandler):
     
     def post(self, **kwargs):

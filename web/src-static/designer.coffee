@@ -872,35 +872,20 @@ jQuery ($) ->
     ##########################################################################################################
     #  context menu
 
-    showComponentContextMenu: (comp, pt) ->
-        $menu: $('#component-context-menu')
+    $('#delete-component-menu-item').bind {
+        update:   (e, comp) -> e.enabled: !comp.type.unmovable
+        selected: (e, comp) -> deleteComponent comp
+    }
+    $('#duplicate-component-menu-item').bind {
+        update:   (e, comp) -> e.enabled: !comp.type.unmovable
+        selected: (e, comp) -> duplicateComponent comp
+    }
+    showComponentContextMenu: (comp, pt) -> $('#component-context-menu').showAsContextMenuAt pt, comp
 
-        $('#component-context-menu li').unbind('click')
-        
-        canDelete: canDuplicate: not comp.type.unmovable
-        $('#delete-component-menu-item').alterClass 'disabled', !canDelete
-        $('#duplicate-component-menu-item').alterClass 'disabled', !canDuplicate
-        return if not (canDuplicate or canDelete)
-
-        $menu.css({ left: pt.x, top: pt.y }).fadeIn(150)
-
-        dismiss: ->
-            $menu.fadeOut(75)
-            document.removeEventListener 'keydown', dismissOnEvent, true
-            document.removeEventListener 'mousedown', dismissOnMouse, true
-            $('#component-context-menu li').unbind('click')
-        dismissOnEvent: (e) -> dismiss(); e.stopPropagation(); e.preventDefault(); false
-        dismissOnMouse: (e) -> dismissOnEvent(e) unless $(e.target).closest('ul')[0] is $menu[0]
-
-        document.addEventListener 'keydown', dismissOnEvent, true
-        document.addEventListener 'mousedown', dismissOnMouse, true
-
-        $('#delete-component-menu-item').click ->
-            dismiss()
-            deleteComponent comp
-        $('#duplicate-component-menu-item').click ->
-            dismiss()
-            duplicateComponent comp
+    $('#delete-custom-image-menu-item').bind {
+        selected: (e, image) -> deleteCustomImage image
+    }
+    showCustomImageContextMenu: (image, pt) -> $('#custom-image-context-menu').showAsContextMenuAt pt, image
     
     
     ##########################################################################################################
@@ -1286,19 +1271,22 @@ jQuery ($) ->
 
     bindPaletteItem: (item, compTemplate) ->
         $(item).mousedown (e) ->
-            e.preventDefault()
-            c: cloneTemplateComponent compTemplate
-            activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
+            if e.which is 1
+                e.preventDefault()
+                c: cloneTemplateComponent compTemplate
+                activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
             
-    renderPaletteGroupContent: (ctg, group) ->
+    renderPaletteGroupContent: (ctg, group, func) ->
         $('<div />').addClass('header').html(ctg.name).appendTo(group)
         items: $('<div />').addClass('items').appendTo(group)
+        func ||= ((ct, n) ->)
         for compTemplate in ctg.items
             c: cloneTemplateComponent compTemplate
             n: renderStaticComponentHierarchy c
             $(n).attr('title', c.label || c.type.label)
             $(n).addClass('item').appendTo(items)
             bindPaletteItem n, compTemplate
+            func compTemplate, n
 
     renderPaletteGroup: (ctg) ->
         group: $('<div />').addClass('group').appendTo($('#palette-container'))
@@ -1330,8 +1318,17 @@ jQuery ($) ->
                 label: "${image.fileName} ${image.width}x${image.height}"
                 image: "images/${encodeURIComponent image.id}"
                 size: { width: image.width, height: image.height }
+                imageEl: image
             }
-        renderPaletteGroupContent customImagesPaletteCategory, customImagesPaletteGroup
+        renderPaletteGroupContent customImagesPaletteCategory, customImagesPaletteGroup, (item, node) ->
+            item.imageEl.node: node
+            $(node).bind {
+                'contextmenu': -> false    
+                'mouseup': (e) ->
+                    if e.button is 2
+                        showCustomImageContextMenu item.imageEl, e
+                        false
+            }
                     
     # updatePaletteVisibility: (reason) ->
     #     showing: $('.palette').is(':visible')
@@ -1676,6 +1673,26 @@ jQuery ($) ->
             for file in e.dataTransfer.files
                 uploadImageFile file
 
+    deleteCustomImage: (image) ->
+        $.ajax {
+            type: 'DELETE'
+            url: "/images/${encodeURIComponent image.id}"
+            dataType: 'json'
+            success: (r) ->
+                if r.error
+                    switch r.error
+                        when 'signed-out'
+                            alert "Cannot save your changes because you were logged out. Please sign in again."
+                        else
+                            alert "Other error: ${r.error}"
+                else
+                    $(image.node).fadeOut(250)
+            error: (xhr, status, e) ->
+                alert "Failed to delete an image: ${status} - ${e}"
+                # TODO ERROR HANDLING!
+        }
+        
+
     ##########################################################################################################
     #  keyboard shortcuts
 
@@ -1714,7 +1731,6 @@ jQuery ($) ->
                 when $.KEY_ARROWLEFT  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.left  if act
                 when $.KEY_ARROWRIGHT then moveComponentByKeyboard act, e, KB_MOVE_DIRS.right if act
                 when 'D'.charCodeAt(0) then duplicateComponent(act) if act and (e.ctrlKey or e.metaKey)
-                # else console.log("Skipping key ${e.which}")
 
         
     ##########################################################################################################

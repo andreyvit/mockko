@@ -42,6 +42,31 @@ $.extend $.fn, {
         this[if state then 'addClass' else 'removeClass'](className)
 }
 
+$.fn.showAsContextMenuAt: (pt, context) ->
+    $menu: $(this)
+    $items: $menu.find('li')
+    $items.each ->
+        evt: jQuery.Event('update')
+        evt.enabled: true
+        $(this).trigger evt, [context]
+        $(this)[if evt.enabled then 'removeClass' else 'addClass']('disabled')
+    return unless $menu.has("li:not(.disabled)").length
+
+    $items.unbind('.contextmenu').bind 'click.contextmenu', -> dismiss(); $(this).trigger 'selected', [context]
+    $menu.css({ left: pt.x || pt.pageX, top: pt.y || pt.pageY }).fadeIn(150)
+    
+    dismiss: ->
+        $menu.fadeOut(75)
+        document.removeEventListener 'keydown', dismissOnEvent, true
+        document.removeEventListener 'mousedown', dismissOnMouse, true
+        $items.unbind('.contextmenu')
+    dismissOnEvent: (e) -> dismiss(); e.stopPropagation(); e.preventDefault(); false
+    dismissOnMouse: (e) -> dismissOnEvent(e) unless $(e.target).closest('ul')[0] is $menu[0]
+
+    document.addEventListener 'keydown', dismissOnEvent, true
+    document.addEventListener 'mousedown', dismissOnMouse, true
+
+
 window.stringSetWith: (list) ->
     set: {}
     for item in list
