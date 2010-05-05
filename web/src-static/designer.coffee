@@ -21,6 +21,8 @@ jQuery ($) ->
     # our very own idea of infinity
     INF: 100000
 
+    Types: MakeApp.componentTypes
+
     STOCK_DIR: 'static/stock/'
     
     DEFAULT_TEXT_STYLES: {
@@ -173,7 +175,7 @@ jQuery ($) ->
         
     internalizeComponent: (c, parent) ->
         rc: {
-            type: MakeApp.componentTypes[c.type]
+            type: Types[c.type]
             abspos: internalizeLocation c.location, parent
             size: internalizeSize c.size
             styleName: c.styleName
@@ -480,12 +482,13 @@ jQuery ($) ->
             
     textNodeOfComponent: (c, cn) ->
         cn ||= c.node
-        ct: c.type
-        return null unless ct.supportsText
-        if ct.textSelector then $(ct.textSelector, cn)[0] else cn
+        return null unless c.type.supportsText
+        if c.type.textSelector then $(c.type.textSelector, cn)[0] else cn
 
-    renderComponentText: (c, cn) ->
-        $(textNodeOfComponent c, cn).html(c.text) if c.text?
+    imageNodeOfComponent: (c, cn) ->
+        cn ||= c.node
+        return null unless c.type.supportsImage
+        if c.type.imageSelector then $(c.type.imageSelector, cn)[0] else cn
 
     renderComponentStyle: (c, cn) ->
         style: c.stylePreview || c.style || {}
@@ -514,12 +517,12 @@ jQuery ($) ->
         cn ||= c.node
         if c.state?
             $(cn).removeClass('state-on state-off').addClass("state-${c.state && 'on' || 'off'}")
-        console.log c
+        if c.text?
+            $(textNodeOfComponent c, cn).html(c.text)
         if c.image?
-            $(cn).css { backgroundImage: "url(${c.image})"}
+            $(imageNodeOfComponent c, cn).css { backgroundImage: "url(${c.image})"}
     
     renderComponentVisualProperties: (c, cn) ->
-        renderComponentText(c, cn)
         renderComponentStyle c, cn
         renderComponentState c, cn
         if cn?
@@ -1072,6 +1075,38 @@ jQuery ($) ->
                 cleanup: -> $('.component').removeClass 'stackable'
                 if delay? then setTimeout(cleanup, delay) else cleanup()
         }
+
+    newDropOnTargetEffect: (c, target) ->
+        {
+            apply: ->
+                if c.parent != target
+                    _(c.parent.children).removeValue c  if c.parent
+                    c.parent = target
+                    c.parent.children.push c
+
+                if c.node.parentNode
+                    c.node.parentNode.removeChild(c.node)
+                c.parent.node.appendChild(c.node)
+
+                shift: ptDiff c.dragpos, c.abspos
+                traverse c, (cc) -> cc.abspos: ptSum cc.abspos, shift
+                c.dragpos: null
+                c.dragParent: null
+
+                traverse c, (child) -> child.inDocument: yes
+                traverse c, (child) -> assignNameIfStillUnnamed child, activeScreen
+
+                componentPositionChangedPernamently c
+        }
+
+    newSetImageEffect: (target, c) ->
+        {
+            apply: ->
+                target.image: c.image
+                $(c.node).remove()
+                renderComponentVisualProperties target
+                componentsChanged()
+        }
     
     startDragging: (c, options) ->
         origin: $('#design-area').offset()
@@ -1168,23 +1203,13 @@ jQuery ($) ->
             $(c.node).removeClass 'dragging'
             
             if res: moveTo pt
-                if c.parent != res.target
-                    _(c.parent.children).removeValue c  if c.parent
-                    c.parent = res.target
-                    c.parent.children.push c
-
-                if c.node.parentNode
-                    c.node.parentNode.removeChild(c.node)
-                c.parent.node.appendChild(c.node)
-
-                shift: ptDiff c.dragpos, c.abspos
-                traverse c, (cc) -> cc.abspos: ptSum cc.abspos, shift
-                c.dragpos: null
-                c.dragParent: null
-                    
-                c.inDocument = yes
-                componentPositionChangedPernamently c
-
+                effects: []
+                if c.type is Types.image and res.target.type.supportsImageReplacement
+                    effects.push newSetImageEffect(res.target, c)
+                else
+                    effects.push newDropOnTargetEffect(c, res.target)
+                for e in effects
+                    e.apply()
                 liveMover.commit()
                 true
             else
@@ -1241,7 +1266,6 @@ jQuery ($) ->
             mouseup: (e) ->
                 ok: dragger.dropAt { x: e.pageX, y: e.pageY }
                 if ok
-                    traverse c, (child) -> assignNameIfStillUnnamed child, activeScreen
                     componentsChanged()
                     activatePointingMode()
                 else
@@ -1778,7 +1802,7 @@ jQuery ($) ->
     ##########################################################################################################
     
     initComponentTypes: ->
-        for typeName, ct of MakeApp.componentTypes
+        for typeName, ct of Types
             ct.name: typeName
             ct.style ||= {}
             if not ct.supportsBackground?

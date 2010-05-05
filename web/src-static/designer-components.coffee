@@ -17,6 +17,8 @@
         label: 'Image'
         widthPolicy: { fixedSize: 30 }
         heightPolicy: { fixedSize: 30 }
+        supportsImage: yes
+        supportsImageReplacement: no
     }
     'text': {
         label: 'Text'
@@ -44,6 +46,9 @@
         html: '<div><div class="icon"></div><div class="label"></div></div>'
         textSelector: '.label'
         textStyleEditable: no
+        imageSelector: '.icon'
+        supportsImage: yes
+        supportsImageReplacement: yes
         state: off
     }
     'navBar': {
