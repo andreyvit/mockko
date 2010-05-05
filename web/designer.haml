@@ -56,6 +56,7 @@
         .right
           %a#logout-button.logout-button(href="#") Sign Out
           %a#share-button(href="#") Share
+          %a#run-button(href="#") Run
         %h1#app-name
         
       #screens-pane.left-pane
@@ -146,6 +147,12 @@
           %a#welcome-login-link.login-button(href='#') Sign In
           or
           %a#welcome-continue-link(href='#') Try Make-App Anonymously
+
+    #run-screen.screen
+      #run-stop-button Back to Designer
+      #run-address-label Visit from an iPhone/iPad, or share this link: <span>http://example.com/</span>
+      %iframe#run-iframe
+      
           
     %ul#component-context-menu.context-menu
       %li#delete-component-menu-item Delete

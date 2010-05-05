@@ -196,12 +196,14 @@ jQuery ($) ->
     externalizeScreen: (screen) ->
         {
             rootComponent: externalizeComponent(screen.rootComponent)
+            html: screen.html || ''
         }
         
     internalizeScreen: (screen) ->
         rootComponent: internalizeComponent(screen.rootComponent || DEFAULT_ROOT_COMPONENT, null)
         screen: {
             rootComponent: rootComponent
+            html: screen.html || ''
             nextId: 1
         }
         traverse rootComponent, (c) -> assignNameIfStillUnnamed c, screen
@@ -240,6 +242,7 @@ jQuery ($) ->
         
     endUndoTransaction: ->
         return if lastChange is null
+        snapshotForSimulation activeScreen
         if lastChange.memento != createApplicationMemento()
             console.log "Change: ${lastChange.name}"
             undoStack.push lastChange
@@ -1808,7 +1811,24 @@ jQuery ($) ->
                 when $.KEY_ARROWRIGHT then moveComponentByKeyboard act, e, KB_MOVE_DIRS.right if act
                 when 'D'.charCodeAt(0) then duplicateComponent(act) if act and (e.ctrlKey or e.metaKey)
 
-        
+    ##########################################################################################################
+    #  Simulation (Run)
+    
+    snapshotForSimulation: (screen) ->
+        if not screen.rootComponent.node?
+            throw "This hack only works for the current screen"
+        screen.html: screen.rootComponent.node.outerHTML
+
+    $('#run-button').click ->
+        $('#run-screen').show()
+        url: window.location.href.replace(/\/dev.*$/, '/').replace(/#.*$/, '') + "R" + applicationId
+        console.log url
+        $('#run-address-label span').html(url)
+        $('#run-iframe').attr 'src', url
+
+    $('#run-stop-button').click ->
+        $('#run-screen').hide()
+
     ##########################################################################################################
     
     initComponentTypes: ->

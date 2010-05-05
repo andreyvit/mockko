@@ -324,3 +324,34 @@
     background-repeat: no-repeat;
     background-position: 50% 50%;
 }
+
+body.run {
+    overflow-x: hidden;
+    -webkit-user-select: none;
+    -webkit-text-size-adjust: none;
+    font-family: Helvetica;
+    -webkit-perspective: 800;
+    -webkit-transform-style: preserve-3d;
+	-webkit-touch-callout: none;
+	overflow: hidden;
+}
+.run .selectable, .run input, .run textarea { -webkit-user-select: auto; }
+.run, .run * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+.run a {
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+.run .component {
+    position: absolute;
+}
+.run .c-background {
+    position: absolute;
+    width: 320px;
+    height: 480px;
+    left: 0px;
+    top: 0px;
+}

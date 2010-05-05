@@ -263,3 +263,42 @@ class SaveImageHandler(RequestHandler):
             image_data.put()
             
             return render_json_response({ 'id': image.key().id()    })
+
+class RunAppHandler(RequestHandler):
+    
+    def get(self, app_id):
+        
+        # user = users.get_current_user()
+        # if user is None:
+        #     return render_json_response({ 'error': 'signed-out' })
+        # else:
+        #     account = Account.all().filter('user', user).get()
+        #     if account is None:
+        #         account = Account(user=user)
+        #         account.put()
+        app = App.get_by_id(int(app_id))
+        if app is None:
+            return render_json_response({ 'error': 'app-not-found' })
+        # if account.key() not in app.editors:
+        #     return render_json_response({ 'error': 'access-denied' })
+            
+        body_json = app.body
+        content = json.loads(body_json)
+        
+        html="""
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <link charset='utf-8' href='/static/iphone/iphone.css' media='screen' rel='stylesheet' title='no title' type='text/css' />
+            <script charset='utf-8' src='/static/lib/jquery-1.4.2.js' type='text/javascript'></script>
+            <title>
+              %(title)s
+            </title>
+          </head>
+          <body class="run">
+            %(content)s
+          </body>
+        </html>
+""" % dict(title=content['name'], content="\n".join([s['html'] for s in content['screens']]))
+        
+        return Response(html, mimetype="text/html")
