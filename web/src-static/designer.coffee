@@ -889,6 +889,9 @@ jQuery ($) ->
     $('#delete-screen-menu-item').bind {
         selected: (e, screen) -> deleteScreen screen
     }
+    $('#duplicate-screen-menu-item').bind {
+        selected: (e, screen) -> duplicateScreen screen
+    }
 
     $('#delete-application-menu-item').bind {
         selected: (e, applicationId) ->
@@ -1412,10 +1415,25 @@ jQuery ($) ->
         else
             switchToScreen(application.screens[pos] || application.screens[pos-1])
         endUndoTransaction()
+
+    duplicateScreen: (oldScreen) ->
+        pos: application.screens.indexOf(oldScreen)
+        return if pos < 0
+
+        beginUndoTransaction "duplication of a screen"
+        application.screens.splice pos+1, 0, screen: internalizeScreen externalizeScreen oldScreen
+        screen.userIndex: application.screens.length
+        screen.sid: screen.userIndex # TEMP FIXME
+        appendRenderedScreenFor screen, oldScreen.node
+        switchToScreen screen
+        endUndoTransaction()
             
-    appendRenderedScreenFor: (screen) ->
+    appendRenderedScreenFor: (screen, after) ->
         sn: screen.node: renderScreen screen
-        $('#screens-list').append(sn)
+        if after
+            $(after).after(sn)
+        else
+            $('#screens-list').append(sn)
         bindScreen screen, sn
         
     updateScreenPreview: (screen) ->
