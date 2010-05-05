@@ -885,7 +885,16 @@ jQuery ($) ->
     $('#delete-custom-image-menu-item').bind {
         selected: (e, image) -> deleteCustomImage image
     }
-    showCustomImageContextMenu: (image, pt) -> $('#custom-image-context-menu').showAsContextMenuAt pt, image
+
+    $('#delete-screen-menu-item').bind {
+        selected: (e, screen) -> deleteScreen screen
+    }
+
+    $('#delete-application-menu-item').bind {
+        selected: (e, applicationId) ->
+            return unless confirm("Are you sure you want to delete this application?")
+            deleteApplication applicationId
+    }
     
     
     ##########################################################################################################
@@ -1322,13 +1331,7 @@ jQuery ($) ->
             }
         renderPaletteGroupContent customImagesPaletteCategory, customImagesPaletteGroup, (item, node) ->
             item.imageEl.node: node
-            $(node).bind {
-                'contextmenu': -> false    
-                'mouseup': (e) ->
-                    if e.button is 2
-                        showCustomImageContextMenu item.imageEl, e
-                        false
-            }
+            $(node).bindContextMenu '#custom-image-context-menu', item.imageEl
                     
     # updatePaletteVisibility: (reason) ->
     #     showing: $('.palette').is(':visible')
@@ -1370,9 +1373,11 @@ jQuery ($) ->
         renderScreenComponents screen, $('.content .rendered', sn)
         
     bindScreen: (screen, sn) ->
-        $(sn).click ->
-            switchToScreen screen
-            false
+        $(sn).bindContextMenu '#screen-context-menu', screen
+        $(sn).click (e) ->
+            if e.which is 1
+                switchToScreen screen
+                false
         
     updateScreenList: ->
         $('#screens-list > .app-screen').remove()
@@ -1380,6 +1385,33 @@ jQuery ($) ->
             screen.userIndex: index + 1
             screen.sid: screen.userIndex # TEMP FIXME
             appendRenderedScreenFor screen
+
+    addScreenWithoutTransaction: ->
+        application.screens.push screen: internalizeScreen {
+            rootComponent: DEFAULT_ROOT_COMPONENT
+        }
+        screen.userIndex: application.screens.length
+        screen.sid: screen.userIndex # TEMP FIXME
+        appendRenderedScreenFor screen
+        switchToScreen screen
+
+    addScreen: ->
+        beginUndoTransaction "creation of a new screen"
+        addScreenWithoutTransaction()
+        endUndoTransaction()
+
+    deleteScreen: (screen) ->
+        pos: application.screens.indexOf(screen)
+        return if pos < 0
+
+        beginUndoTransaction "deletion of a screen"
+        application.screens.splice(pos, 1)
+        $(screen.node).fadeOut(250)
+        if application.screens.length is 0
+            addScreenWithoutTransaction()
+        else
+            switchToScreen(application.screens[pos] || application.screens[pos-1])
+        endUndoTransaction()
             
     appendRenderedScreenFor: (screen) ->
         sn: screen.node: renderScreen screen
@@ -1415,15 +1447,7 @@ jQuery ($) ->
         componentsChanged()
         
     $('#add-screen-button').click ->
-        beginUndoTransaction "creation of a new screen"
-        application.screens.push screen: internalizeScreen {
-            rootComponent: DEFAULT_ROOT_COMPONENT
-        }
-        screen.userIndex: application.screens.length
-        screen.sid: screen.userIndex # TEMP FIXME
-        appendRenderedScreenFor screen
-        switchToScreen screen
-        endUndoTransaction()
+        addScreen()
         false
         
     
@@ -1760,10 +1784,31 @@ jQuery ($) ->
         loadApplication internalizeApplication(MakeApp.appTemplates.basic), null
         switchToDesign()
         
-    bindApplication: (app, appId, an) ->
+    bindApplication: (app, an) ->
+        app.node: an
+        $(an).bindContextMenu '#application-context-menu', app
         $(an).click ->
-            loadApplication app, appId
+            loadApplication app.content, app.id
             switchToDesign()
+
+    deleteApplication: (app) ->
+        $.ajax {
+            type: 'DELETE'
+            url: "/apps/${encodeURIComponent app.id}/"
+            dataType: 'json'
+            success: (r) ->
+                if r.error
+                    switch r.error
+                        when 'signed-out'
+                            alert "Cannot save your changes because you were logged out. Please sign in again."
+                        else
+                            alert "Other error: ${r.error}"
+                else
+                    $(app.node).fadeOut(250)
+            error: (xhr, status, e) ->
+                alert "Failed to delete an application: ${status} - ${e}"
+                # TODO ERROR HANDLING!
+        }
         
     refreshApplicationList: ->
         serverMode.loadApplications (apps) ->
@@ -1777,7 +1822,7 @@ jQuery ($) ->
                 $('.caption', $(an)).html(app.name)
                 renderScreenComponents(app.screens[0], $('.content .rendered', an))
                 $(an).appendTo('#apps-list')
-                bindApplication app, appId, an
+                bindApplication { id: appId, content: app }, an
     
     switchToDesign: ->
         $(".screen").hide()

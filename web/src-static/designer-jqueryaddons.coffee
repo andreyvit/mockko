@@ -66,6 +66,14 @@ $.fn.showAsContextMenuAt: (pt, context) ->
     document.addEventListener 'keydown', dismissOnEvent, true
     document.addEventListener 'mousedown', dismissOnMouse, true
 
+$.fn.bindContextMenu: (menu, context) ->
+    this.bind {
+        contextmenu: -> false
+        mouseup: (e) ->
+            if e.which is 3
+                $(menu).showAsContextMenuAt e, context
+                false
+    }
 
 window.stringSetWith: (list) ->
     set: {}

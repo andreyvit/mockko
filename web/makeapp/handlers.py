@@ -80,6 +80,27 @@ class SaveAppHandler(RequestHandler):
             app.put()
             return render_json_response({ 'id': app.key().id()    })
 
+class DeleteAppHandler(RequestHandler):
+    
+    def delete(self, **kwargs):
+        app_id = kwargs['app_id']
+        
+        user = users.get_current_user()
+        if user is None:
+            return render_json_response({ 'error': 'signed-out' })
+        else:
+            account = Account.all().filter('user', user).get()
+            if account is None:
+                account = Account(user=user)
+                account.put()
+            app = App.get_by_id(int(app_id))
+            if app is None:
+                return render_json_response({ 'error': 'app-not-found' })
+            if account.key() not in app.editors:
+                return render_json_response({ 'error': 'access-denied' })
+            app.delete()
+            return render_json_response({ 'status': 'ok' })
+
 class GetImageListHandler(RequestHandler):
 
     def get(self, **kwargs):

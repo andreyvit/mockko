@@ -8,6 +8,7 @@ def get_rules():
         Rule('/apps/', endpoint='api/get-app-list', methods=['GET'], handler='makeapp.handlers:GetAppListHandler'),
         Rule('/apps/', endpoint='api/save-new-app', methods=['POST'], handler='makeapp.handlers:SaveAppHandler'),
         Rule('/apps/<int:app_id>/', endpoint='api/save-app', methods=['POST'], handler='makeapp.handlers:SaveAppHandler'),
+        Rule('/apps/<int:app_id>/', endpoint='api/delete-app', methods=['DELETE'], handler='makeapp.handlers:DeleteAppHandler'),
         Rule('/images/', endpoint='api/get-image-list', methods=['GET'], handler='makeapp.handlers:GetImageListHandler'),
         Rule('/images/', endpoint='api/save-image', methods=['POST'], handler='makeapp.handlers:SaveImageHandler'),
         Rule('/images/<image_name>', endpoint='api/serve-image', methods=['GET'], handler='makeapp.handlers:ServeImageHandler'),
