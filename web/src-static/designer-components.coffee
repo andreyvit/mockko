@@ -50,6 +50,11 @@
         supportsImage: yes
         supportsImageReplacement: yes
         state: off
+        dynamicStyle: (comp) ->
+            {
+                imageEffect: if comp.state then 'iphone-tabbar-active' else 'iphone-tabbar-inactive'
+                textColor: if comp.state then '#fff' else '#eee'
+            }
     }
     'navBar': {
         label: 'Navigation Bar'
@@ -277,6 +282,7 @@ window.MakeApp.paletteDefinition: [
                     {
                         type: 'tab-bar-item'
                         text: "Tab 1"
+                        image: "static/stock/glyphish/icons/53-house.png"
                         location: { x: 100, y: 3 }
                         size: { width: null, height: null }
                         state: on
@@ -284,6 +290,7 @@ window.MakeApp.paletteDefinition: [
                     {
                         type: 'tab-bar-item'
                         text: "Tab 2"
+                        image: "static/stock/glyphish/icons/83-calendar.png"
                         location: { x: 162, y: 3 }
                         size: { width: null, height: null }
                         state: off
@@ -292,6 +299,7 @@ window.MakeApp.paletteDefinition: [
             }
             {
                 type: 'tab-bar-item'
+                image: "static/stock/glyphish/icons/28-star.png"
                 state: off
             }
         ]
@@ -736,11 +744,13 @@ MakeApp.stockImageGroups: [
         label: "Glyphish Nav Bar Icons"
         size: '30x30'
         path: 'glyphish/icons'
+        imageEffect: 'iphone-tabbar-active'
     }
     {
         name: "glyphish-mini-icons"
         label: "Glyphish Toolbar Icons"
         size: '20x20'
         path: 'glyphish/mini-icons'
+        imageEffect: 'iphone-tabbar-inactive'
     }
 ]

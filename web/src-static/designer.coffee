@@ -491,7 +491,11 @@ jQuery ($) ->
         if c.type.imageSelector then $(c.type.imageSelector, cn)[0] else cn
 
     renderComponentStyle: (c, cn) ->
-        style: c.stylePreview || c.style || {}
+        cn ||= c.node
+
+        dynamicStyle: if c.type.dynamicStyle then c.type.dynamicStyle(c) else {}
+        style: $.extend({}, dynamicStyle, c.stylePreview || c.style)
+        console.log(style)
         css: {}
         css.fontSize: style.fontSize if style.fontSize?
         css.color: style.textColor if style.textColor?
@@ -513,18 +517,21 @@ jQuery ($) ->
             bgn.className: _((bgn.className || '').trim().split(/\s+/)).reject((n) -> n.match(/^bg-/)).
                 concat(["bg-${style.background}"]).join(" ")
 
-    renderComponentState: (c, cn) ->
-        cn ||= c.node
         if c.state?
             $(cn).removeClass('state-on state-off').addClass("state-${c.state && 'on' || 'off'}")
         if c.text?
             $(textNodeOfComponent c, cn).html(c.text)
         if c.image?
-            $(imageNodeOfComponent c, cn).css { backgroundImage: "url(${c.image})"}
-    
+            imageUrl: c.image
+            if style.imageEffect
+                if imageUrl.substr(0, STOCK_DIR.length) == STOCK_DIR
+                    imageUrl = "images/stock--" + imageUrl.substr(STOCK_DIR.length).replace(/\//g, '--') + "/${style.imageEffect}"
+                else
+                    imageUrl = "${imageUrl}/${style.imageEffect}"
+            $(imageNodeOfComponent c, cn).css { backgroundImage: "url(${imageUrl})"}
+
     renderComponentVisualProperties: (c, cn) ->
         renderComponentStyle c, cn
-        renderComponentState c, cn
         if cn?
             renderComponentSize c, cn
         else
@@ -807,14 +814,14 @@ jQuery ($) ->
                     newState: if c is child then on else off
                     if child.state isnt newState
                         child.state: newState
-                        renderComponentState child
+                        renderComponentStyle child
                 componentsChanged()
             when 'switch'
                 c.state: c.type.state unless c.state?
                 newStateDesc: if c.state then 'off' else 'on'
                 beginUndoTransaction "undo turning ${friendlyComponentName c} ${newStateDesc}"
                 c.state: !c.state
-                renderComponentState c
+                renderComponentStyle c
                 componentsChanged()
         startDoubleClickEditing c
 
@@ -1319,7 +1326,7 @@ jQuery ($) ->
         for compTemplate in ctg.items
             c: cloneTemplateComponent compTemplate
             n: renderStaticComponentHierarchy c
-            $(n).attr('title', c.label || c.type.label)
+            $(n).attr('title', compTemplate.label || c.type.label)
             $(n).addClass('item').appendTo(items)
             bindPaletteItem n, compTemplate
             func compTemplate, n
@@ -1338,6 +1345,9 @@ jQuery ($) ->
                     label: fileData.f.replace(/\.png$/, '')
                     image: path
                     size: { width: 30, height: 30 }
+                    style: {
+                        imageEffect: grp.imageEffect
+                    }
                 }
             MakeApp.paletteDefinition.push { name: grp.label, items: items }
         
