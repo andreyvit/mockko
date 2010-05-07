@@ -1531,7 +1531,7 @@ jQuery ($) ->
         app.name = createNewApplicationName() unless app.name
         application = app
         applicationId = appId
-        $('#app-name').html(app.name)
+        $('#app-name-content').html(app.name)
         updateScreenList()
         switchToScreen application.screens[0]
         

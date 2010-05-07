@@ -1,6 +1,7 @@
 !!! 5
 %html
   %head
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     %link(rel="stylesheet" href="./static/lib/animations.css" type="text/css" media="screen" title="no title" charset="utf-8")
     %link(rel="stylesheet" href="./static/theme/theme-common.css" type="text/css" media="screen" title="no title" charset="utf-8")
     %link(rel="stylesheet" href="./static/theme/theme-designer.css" type="text/css" media="screen" title="no title" charset="utf-8")
@@ -23,7 +24,10 @@
           %a#new-app-button(href="#") New Application
         .right
           %a#logout-button.logout-button(href="#") Sign Out
-        %h1 My Applications
+        %h1
+          My Applications
+          —
+          %span.mockko-logo-titlebar Mockko
         
       #apps-list
         #app-template.app.template
@@ -58,6 +62,9 @@
           %a#share-button(href="#") Share
           %a#run-button(href="#") Run
         %h1#app-name
+          %span#app-name-content My Great App
+          —
+          %span.mockko-logo-titlebar Mockko
         
       #screens-pane.left-pane
         #screens-list
