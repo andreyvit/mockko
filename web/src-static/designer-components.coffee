@@ -282,7 +282,7 @@ window.MakeApp.paletteDefinition: [
                     {
                         type: 'tab-bar-item'
                         text: "Tab 1"
-                        image: "static/stock/glyphish/icons/53-house.png"
+                        image: { kind: 'stock', group: 'glyphish/icons', name: '53-house.png' }
                         location: { x: 100, y: 3 }
                         size: { width: null, height: null }
                         state: on
@@ -290,7 +290,7 @@ window.MakeApp.paletteDefinition: [
                     {
                         type: 'tab-bar-item'
                         text: "Tab 2"
-                        image: "static/stock/glyphish/icons/83-calendar.png"
+                        image: { kind: 'stock', group: 'glyphish/icons', name: '83-calendar.png' }
                         location: { x: 162, y: 3 }
                         size: { width: null, height: null }
                         state: off
@@ -299,7 +299,7 @@ window.MakeApp.paletteDefinition: [
             }
             {
                 type: 'tab-bar-item'
-                image: "static/stock/glyphish/icons/28-star.png"
+                image: { kind: 'stock', group: 'glyphish/icons', name: '28-star.png' }
                 state: off
             }
         ]

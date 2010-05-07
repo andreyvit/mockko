@@ -189,6 +189,18 @@ jQuery ($) ->
             throw "Missing type: ${c.type}"
         rc.state: c.state if c.state?
         rc.image: c.image if c.image?
+        if rc.image?.constructor is String
+            if rc.image.substr(0, STOCK_DIR.length) == STOCK_DIR
+                path: rc.image.substr(STOCK_DIR.length)
+                pos: path.lastIndexOf('/')
+                name: path.substr(pos + 1)
+                group: path.substr(0, pos)
+                rc.image: { kind: 'stock', group: group, name: name }
+            else if rc.image.substr(0, 'images/'.length) == 'images/'
+                encodedId: rc.image.substr('images/'.length)
+                rc.image: { kind: 'custom', id: decodeURIComponent encodedId }
+            else
+                throw "Invalid image reference: ${rc.image}"
         rc.style: $.extend({}, (if rc.type.textStyleEditable then DEFAULT_TEXT_STYLES else {}), rc.type.style || {}, c.style || {})
         rc.text: c.text || rc.type.defaultText if rc.type.supportsText
         rc
@@ -495,6 +507,19 @@ jQuery ($) ->
         return null unless c.type.supportsImage
         if c.type.imageSelector then $(c.type.imageSelector, cn)[0] else cn
 
+    imageUrlForImage: (image, effect) ->
+        switch image.kind
+            when 'custom'
+                if effect
+                    "images/${encodeURIComponent image.id}/${effect}"
+                else
+                    "images/${encodeURIComponent image.id}"
+            when 'stock'
+                if effect
+                    "images/stock--" + image.group.replace(/\//g, '--') + "--${image.name}/${effect}"
+                else
+                    "${STOCK_DIR}${image.group}/${image.name}"
+
     renderComponentStyle: (c, cn) ->
         cn ||= c.node
 
@@ -527,12 +552,7 @@ jQuery ($) ->
         if c.text?
             $(textNodeOfComponent c, cn).html(c.text)
         if c.image?
-            imageUrl: c.image
-            if style.imageEffect
-                if imageUrl.substr(0, STOCK_DIR.length) == STOCK_DIR
-                    imageUrl = "images/stock--" + imageUrl.substr(STOCK_DIR.length).replace(/\//g, '--') + "/${style.imageEffect}"
-                else
-                    imageUrl = "${imageUrl}/${style.imageEffect}"
+            imageUrl: imageUrlForImage(c.image, style.imageEffect || null)
             $(imageNodeOfComponent c, cn).css { backgroundImage: "url(${imageUrl})"}
 
     renderComponentVisualProperties: (c, cn) ->
@@ -1344,11 +1364,10 @@ jQuery ($) ->
     fillPalette: ->
         for grp in MakeApp.stockImageGroups
             items: for fileData in MakeApp.imageDirectories[grp.path]
-                path: "${STOCK_DIR}${grp.path}/${encodeURIComponent fileData.f}"
                 {
                     type: 'image'
                     label: fileData.f.replace(/\.png$/, '')
-                    image: path
+                    image: { kind: 'stock', group: grp.path, name: fileData.f }
                     size: { width: 30, height: 30 }
                     style: {
                         imageEffect: grp.imageEffect
@@ -1367,7 +1386,7 @@ jQuery ($) ->
             {
                 type: 'image'
                 label: "${image.fileName} ${image.width}x${image.height}"
-                image: "images/${encodeURIComponent image.id}"
+                image: { kind: 'custom', id: image.id }
                 size: { width: image.width, height: image.height }
                 imageEl: image
             }
