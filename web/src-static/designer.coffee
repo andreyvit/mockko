@@ -266,7 +266,9 @@ jQuery ($) ->
     
     revertToMemento: (memento) -> loadApplication JSON.parse(memento), applicationId
     
-    $('#undo-button').click -> undoLastChange(); false
+    $('#undo-button').click (e) ->
+        e.preventDefault(); e.stopPropagation()
+        undoLastChange()
     
     undoStackChanged()
     
@@ -1523,7 +1525,8 @@ jQuery ($) ->
         s: JSON.stringify(externalizeApplication(application))
         $('#share-popover textarea').val(s)
         
-    $('#share-button').click ->
+    $('#share-button').click (e) ->
+        e.preventDefault(); e.stopPropagation()
         if paletteWanted
             paletteWanted = no
             updatePaletteVisibility 'wanted'
@@ -1819,7 +1822,8 @@ jQuery ($) ->
             throw "This hack only works for the current screen"
         screen.html: screen.rootComponent.node.outerHTML
 
-    $('#run-button').click ->
+    $('#run-button').click (e) ->
+        e.preventDefault(); e.stopPropagation()
         $('#run-screen').show()
         url: window.location.href.replace(/\/dev.*$/, '/').replace(/#.*$/, '') + "R" + applicationId
         console.log url
@@ -1907,9 +1911,12 @@ jQuery ($) ->
         $('#dashboard-screen').show()
         refreshApplicationList()
     
-    $('#new-app-button').click -> createNewApplication()
+    $('#new-app-button').click (e) ->
+        e.preventDefault(); e.stopPropagation()
+        createNewApplication()
         
-    $('#dashboard-button').click ->
+    $('#dashboard-button').click (e) ->
+        e.preventDefault(); e.stopPropagation()
         switchToDashboard()
     
     loadDesigner: (userData) ->
