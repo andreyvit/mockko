@@ -283,7 +283,7 @@ jQuery ($) ->
         
     createApplicationMemento: -> JSON.stringify(externalizeApplication(application))
     
-    revertToMemento: (memento) -> loadApplication JSON.parse(memento), applicationId
+    revertToMemento: (memento) -> loadApplication internalizeApplication(JSON.parse(memento)), applicationId
     
     $('#undo-button').click (e) ->
         e.preventDefault(); e.stopPropagation()
