@@ -208,6 +208,7 @@ jQuery ($) ->
     externalizeScreen: (screen) ->
         {
             rootComponent: externalizeComponent(screen.rootComponent)
+            name: screen.name || null
             html: screen.html || ''
         }
         
@@ -216,6 +217,7 @@ jQuery ($) ->
         screen: {
             rootComponent: rootComponent
             html: screen.html || ''
+            name: screen.name || null
             nextId: 1
         }
         traverse rootComponent, (c) -> assignNameIfStillUnnamed c, screen
@@ -1375,22 +1377,26 @@ jQuery ($) ->
         $(node).append(cn)
     
     renderScreen: (screen) ->
-        sn: domTemplate 'app-screen-template'
+        sn: screen.node: domTemplate 'app-screen-template'
         $(sn).setdata('makeapp.screen', screen).attr('id', "app-screen-${screen.sid}")
-        rerenderScreenContent screen, sn
-        return sn
-    
-    rerenderScreenContent: (screen, sn) ->
-        $(screen).find('.component').remove()
-        $('.caption', sn).html "Screen ${screen.userIndex}"
-        renderScreenComponents screen, $('.content .rendered', sn)
+        rerenderScreenContent screen
+        sn
+
+    renderScreenName: (screen) ->
+        $('.caption', screen.node).html screen.name || "Screen ${screen.userIndex}"
+
+    rerenderScreenContent: (screen) ->
+        $(screen.node).find('.component').remove()
+        renderScreenName screen
+        renderScreenComponents screen, $('.content .rendered', screen.node)
         
-    bindScreen: (screen, sn) ->
-        $(sn).bindContextMenu '#screen-context-menu', screen
-        $(sn).click (e) ->
+    bindScreen: (screen) ->
+        $(screen.node).bindContextMenu '#screen-context-menu', screen
+        $('.content', screen.node).click (e) ->
             if e.which is 1
                 switchToScreen screen
                 false
+        $('.caption', screen.node).dblclick -> startRenamingScreen screen; false
         
     updateScreenList: ->
         $('#screens-list > .app-screen').remove()
@@ -1412,6 +1418,14 @@ jQuery ($) ->
         beginUndoTransaction "creation of a new screen"
         addScreenWithoutTransaction()
         endUndoTransaction()
+
+    startRenamingScreen: (screen) ->
+        $('.caption', screen.node).startInPlaceEditing {
+            accept: (newText) ->
+                runTransaction "screen rename", ->
+                    screen.name: newText
+                    renderScreenName screen
+        }
 
     deleteScreen: (screen) ->
         pos: application.screens.indexOf(screen)
@@ -1439,15 +1453,15 @@ jQuery ($) ->
         endUndoTransaction()
             
     appendRenderedScreenFor: (screen, after) ->
-        sn: screen.node: renderScreen screen
+        renderScreen screen
         if after
-            $(after).after(sn)
+            $(after).after(screen.node)
         else
-            $('#screens-list').append(sn)
-        bindScreen screen, sn
+            $('#screens-list').append(screen.node)
+        bindScreen screen
         
     updateScreenPreview: (screen) ->
-        rerenderScreenContent screen, screen.node
+        rerenderScreenContent screen
             
     setActiveScreen: (screen) ->
         $('#screens-list > .app-screen').removeClass('active')
@@ -1455,11 +1469,14 @@ jQuery ($) ->
 
     $('#add-screen-button').click -> addScreen(); false
 
-    $('#delete-screen-menu-item').bind {
-        selected: (e, screen) -> deleteScreen screen
+    $('#rename-screen-menu-item').bind {
+        selected: (e, screen) -> startRenamingScreen screen
     }
     $('#duplicate-screen-menu-item').bind {
         selected: (e, screen) -> duplicateScreen screen
+    }
+    $('#delete-screen-menu-item').bind {
+        selected: (e, screen) -> deleteScreen screen
     }
 
 
