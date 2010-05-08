@@ -177,6 +177,7 @@ jQuery.fn.startInPlaceEditing: (->
         savedHTML: $el.html()
 
         startEditing: ->
+            $el.css '-webkit-user-select', 'auto'
             $el[0].contentEditable: yes
             setTimeout((-> $el.focus()), 1)
             document.addEventListener 'keydown', handleKeyDown, true
@@ -185,6 +186,7 @@ jQuery.fn.startInPlaceEditing: (->
                 acceptActiveEditor(); true
 
         stopEditing: ->
+            $el.css '-webkit-user-select', ''
             $el[0].contentEditable: no
             $el[0].blur()
             document.removeEventListener 'keydown', handleKeyDown, true

@@ -1496,12 +1496,22 @@ jQuery ($) ->
         app.name = createNewApplicationName() unless app.name
         application = app
         applicationId = appId
-        $('#app-name-content').html(app.name)
+        renderApplicationName()
         updateScreenList()
         switchToScreen application.screens[0]
         
     saveApplicationChanges: ->
         serverMode.saveApplicationChanges()
+
+    renderApplicationName: ->
+        $('#app-name-content').html(application.name)
+
+    $('#app-name-content').dblclick ->
+        $('#app-name-content').startInPlaceEditing {
+            accept: (newText) ->
+                runTransaction "application rename", ->
+                    application.name: newText
+        }
         
     ##########################################################################################################
 
