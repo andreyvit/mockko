@@ -892,12 +892,6 @@ jQuery ($) ->
     $('#duplicate-screen-menu-item').bind {
         selected: (e, screen) -> duplicateScreen screen
     }
-
-    $('#delete-application-menu-item').bind {
-        selected: (e, applicationId) ->
-            return unless confirm("Are you sure you want to delete this application?")
-            deleteApplication applicationId
-    }
     
     
     ##########################################################################################################
@@ -1839,6 +1833,15 @@ jQuery ($) ->
                     refreshApplicationList()
         }
 
+    $('#rename-application-menu-item').bind {
+        selected: (e, app) -> startDashboardApplicationNameEditing app
+    }
+    $('#delete-application-menu-item').bind {
+        selected: (e, app) ->
+            return unless confirm("Are you sure you want to delete this application?")
+            deleteApplication app
+    }
+
     ##########################################################################################################
     
     initComponentTypes: ->
@@ -1868,7 +1871,7 @@ jQuery ($) ->
         
     bindApplication: (app, an) ->
         app.node: an
-        $('.content', an).bindContextMenu '#application-context-menu', app
+        $(an).bindContextMenu '#application-context-menu', app
         $('.content', an).click ->
             loadApplication app.content, app.id
             switchToDesign()
