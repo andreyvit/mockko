@@ -48,7 +48,7 @@ jQuery ($) ->
                 createNewApplication()
                 $('#welcome-screen').show()
                 
-            saveApplicationChanges: ->
+            saveApplicationChanges: (app, appId, callback) ->
                 #
         }
         
@@ -59,11 +59,11 @@ jQuery ($) ->
             startDesigner: (userData) ->
                 switchToDashboard()
                 
-            saveApplicationChanges: ->
+            saveApplicationChanges: (app, appId, callback) ->
                 $.ajax {
-                    url: '/apps/' + (if applicationId then "${applicationId}/" else "")
+                    url: '/apps/' + (if appId then "${appId}/" else "")
                     type: 'POST'
-                    data: JSON.stringify(externalizeApplication(application))
+                    data: JSON.stringify(externalizeApplication(app))
                     contentType: 'application/json'
                     dataType: 'json'
                     success: (r) ->
@@ -74,7 +74,7 @@ jQuery ($) ->
                                 else
                                     alert "Other error: ${r.error}"
                         else
-                            applicationId = r.id
+                            callback(r.id)
                     error: (xhr, status, e) ->
                         alert "Failed to save the application: ${status} - ${e}"
                         # TODO ERROR HANDLING!
@@ -106,7 +106,7 @@ jQuery ($) ->
             startDesigner: (userData) ->
                 createNewApplication()
                 
-            saveApplicationChanges: ->
+            saveApplicationChanges: (app, appId, callback) ->
                 #
 
             loadApplications: (callback) ->
@@ -1501,7 +1501,8 @@ jQuery ($) ->
         switchToScreen application.screens[0]
         
     saveApplicationChanges: ->
-        serverMode.saveApplicationChanges()
+        serverMode.saveApplicationChanges application, applicationId, (newId) ->
+            applicationId: newId
 
     renderApplicationName: ->
         $('#app-name-content').html(application.name)
@@ -1828,6 +1829,17 @@ jQuery ($) ->
         $('#run-screen').hide()
 
     ##########################################################################################################
+    ##  Dashboard: Application List
+
+    startDashboardApplicationNameEditing: (app) ->
+        $('.caption', app.node).startInPlaceEditing {
+            accept: (newText) ->
+                app.content.name: newText
+                serverMode.saveApplicationChanges app.content, app.id, (newId) ->
+                    refreshApplicationList()
+        }
+
+    ##########################################################################################################
     
     initComponentTypes: ->
         for typeName, ct of Types
@@ -1856,10 +1868,13 @@ jQuery ($) ->
         
     bindApplication: (app, an) ->
         app.node: an
-        $(an).bindContextMenu '#application-context-menu', app
-        $(an).click ->
+        $('.content', an).bindContextMenu '#application-context-menu', app
+        $('.content', an).click ->
             loadApplication app.content, app.id
             switchToDesign()
+        $('.caption', an).dblclick ->
+            startDashboardApplicationNameEditing app
+            false
 
     deleteApplication: (app) ->
         $.ajax {
