@@ -1906,8 +1906,13 @@ jQuery ($) ->
     createNewApplicationName: ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
             'Amazing', 'Awesome', 'Fantastic', 'Beautiful', 'Unbelievable', 'Remarkable']
-        i = Math.floor(Math.random() * adjs.length)
-        return "My ${adjs[i]} App"
+        names: ("${adj} App" for adj in adjs)
+        usedNames: setOf(app.content.name for app in (applicationList || []))
+        names: _(names).reject (n) -> n in usedNames
+        if names.length == 0
+            "Yet Another App"
+        else
+            names[Math.floor(Math.random() * names.length)]
         
     createNewApplication: ->
         loadApplication internalizeApplication(MakeApp.appTemplates.basic), null
@@ -1949,9 +1954,8 @@ jQuery ($) ->
 
     refreshApplicationList: (callback) ->
         serverMode.loadApplications (apps) ->
-            applicationList = apps
             $('#apps-list .app').remove()
-            apps: for appData in apps
+            applicationList: for appData in apps
                 appId: appData.id
                 app: JSON.parse(appData.body)
                 app: internalizeApplication(app)
@@ -1963,7 +1967,7 @@ jQuery ($) ->
                 bindApplication app, an
                 app
             updateApplicationListWidth()
-            callback(apps) if callback
+            callback(applicationList) if callback
     
     switchToDesign: ->
         $(".screen").hide()
