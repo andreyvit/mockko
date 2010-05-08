@@ -26,6 +26,16 @@
         widthPolicy: { autoSize: 'browser' }
         heightPolicy: { fixedSize: 20 }
     }
+    'rect': {
+        label: 'Rectangle'
+        widthPolicy:  { userSize: true, fixedSize: 150 }
+        heightPolicy: { userSize: true, fixedSize: 44 }
+        container: yes
+        supportsBackground: yes
+        style: {
+            background: 'transparent'
+        }
+    }
     'statusBar': {
         label: 'Status Bar'
         widthPolicy: { autoSize: 'fill' }
@@ -249,6 +259,14 @@ window.MakeApp.paletteDefinition: [
                     fontSize: 17
                     textColor: '#000'
                 }
+            }
+        ]
+    }
+    {
+        name: "Shapes"
+        items: [
+            {
+                type: 'rect'
             }
         ]
     }
@@ -712,6 +730,10 @@ MakeApp.textShadowStyles: {
 }
 
 MakeApp.backgroundStyles: [
+    {
+        name: 'transparent'
+        label: 'Transparent'
+    }
     {
         name: "striped"
         label: "Striped"
