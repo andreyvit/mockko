@@ -6,7 +6,7 @@ jQuery ($) ->
     STACKED_COMP_TRANSITION_DURATION = 200
 
     ##########################################################################################################
-    #  constants
+    ## constants
     
     applicationList: null
     serverMode: null
@@ -122,7 +122,7 @@ jQuery ($) ->
 
 
     ##########################################################################################################
-    #  DOM templates
+    ##  DOM templates
     
     domTemplates = {}
     $('.template').each ->
@@ -132,13 +132,13 @@ jQuery ($) ->
         domTemplates[id].cloneNode(true)
 
     ##########################################################################################################
-    #  utilities
+    ##  utilities
     
     aOrAn: (s) ->
         if s[0] in {a: yes, e: yes, i: yes, o: yes, u: yes} then "an ${s}" else "a ${s}"
 
     ##########################################################################################################
-    #  external representation
+    ##  external representation
 
     internalizeLocation: (location, parent) ->
         {
@@ -235,7 +235,7 @@ jQuery ($) ->
     
 
     ##########################################################################################################
-    #  undo
+    ##  undo
     
     undoStack: []
     lastChange: null
@@ -290,7 +290,7 @@ jQuery ($) ->
     undoStackChanged()
     
     ##########################################################################################################
-    #  global events
+    ##  global events
     
     componentsChanged: ->
         endUndoTransaction()
@@ -306,7 +306,7 @@ jQuery ($) ->
         updateScreenPreview(activeScreen)
     
     ##########################################################################################################
-    #  geometry
+    ##  geometry
 
     isRectInsideRect: (i, o) -> i.x >= o.x and i.x+i.w <= o.x+o.w and i.y >= o.y and i.y+i.h <= o.y+o.h
     
@@ -345,7 +345,7 @@ jQuery ($) ->
     ptMul:  (p, r) -> { x: p.x * r,   y: p.y * r   }
     
     ##########################################################################################################
-    #  component management
+    ##  component management
     
     assignNameIfStillUnnamed: (c, screen) -> c.id ||= "c${screen.nextId++}"
     
@@ -458,7 +458,7 @@ jQuery ($) ->
         trav(activeScreen.rootComponent)?.comp || activeScreen.rootComponent
 
     ##########################################################################################################
-    #  DOM rendering
+    ##  DOM rendering
     
     createNodeForComponent: (c) ->
         ct: c.type
@@ -586,7 +586,7 @@ jQuery ($) ->
 
 
     ##########################################################################################################
-    #  sizing
+    ##  sizing
     
     recomputeEffectiveSizeInDimension: (userSize, policy, fullSize) ->
         userSize || policy.fixedSize?.portrait || policy.fixedSize || switch policy.autoSize
@@ -613,7 +613,7 @@ jQuery ($) ->
 
 
     ##########################################################################################################
-    #  stacking
+    ##  stacking
     
     TABLE_TYPES = setOf ['plain-row', 'plain-header', 'roundrect-row', 'roundrect-header']
     
@@ -766,7 +766,7 @@ jQuery ($) ->
             return res
 
     ##########################################################################################################
-    #  hover panel
+    ##  hover panel
     
     hoveredComponent: null
     
@@ -813,7 +813,7 @@ jQuery ($) ->
         
 
     ##########################################################################################################
-    #  selection
+    ##  selection
     
     selectedComponent: null
     
@@ -834,7 +834,7 @@ jQuery ($) ->
         
 
     ##########################################################################################################
-    #  double-click editing
+    ##  double-click editing
     
     handleComponentDoubleClick: (c) ->
         switch c.type.name
@@ -870,7 +870,7 @@ jQuery ($) ->
 
 
     ##########################################################################################################
-    #  context menu
+    ##  context menu
 
     $('#delete-component-menu-item').bind {
         update:   (e, comp) -> e.enabled: !comp.type.unmovable
@@ -901,7 +901,7 @@ jQuery ($) ->
     
     
     ##########################################################################################################
-    #  dragging
+    ##  dragging
     
     sizeOf: (c) -> { w: c.effsize.w, h: c.effsize.h }
     rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
@@ -1294,7 +1294,7 @@ jQuery ($) ->
     }
 
     ##########################################################################################################
-    #  palette
+    ##  palette
     
     paletteWanted: on
     customImagesPaletteCategory: { name: 'Custom Images (drop your image files here)', items: [] }
@@ -1380,7 +1380,7 @@ jQuery ($) ->
         
     
     ##########################################################################################################
-    #  screens/applications
+    ##  screens/applications
     
     renderScreenComponents: (screen, node) ->
         cn: renderStaticComponentHierarchy screen.rootComponent
@@ -1538,7 +1538,7 @@ jQuery ($) ->
         $('#share-popover textarea').bind event, checkApplicationLoading
 
     ##########################################################################################################
-    # inspector
+    ## inspector
     
     $('.tab').click ->
         $('.tab').removeClass 'active'
@@ -1676,7 +1676,7 @@ jQuery ($) ->
 
 
     ##########################################################################################################
-    #  Image Upload
+    ##  Image Upload
     
     uploadImageFile: (file) ->
         console.log "Uploading ${file.fileName} of size ${file.fileSize}"
@@ -1760,7 +1760,7 @@ jQuery ($) ->
         
 
     ##########################################################################################################
-    #  keyboard shortcuts
+    ##  keyboard shortcuts
 
     KB_MOVE_DIRS: {
         up: {
@@ -1799,7 +1799,7 @@ jQuery ($) ->
                 when 'D'.charCodeAt(0) then duplicateComponent(act) if act and (e.ctrlKey or e.metaKey)
 
     ##########################################################################################################
-    #  Simulation (Run)
+    ##  Simulation (Run)
     
     snapshotForSimulation: (screen) ->
         if not screen.rootComponent.node?
