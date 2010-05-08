@@ -244,7 +244,7 @@ window.MakeApp.paletteDefinition: [
         items: [
             {
                 type: 'text'
-                text: 'Standard Text'
+                text: 'Single-Line Text'
                 style: {
                     fontSize: 17
                     textColor: '#000'
