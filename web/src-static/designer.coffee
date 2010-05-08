@@ -1882,7 +1882,7 @@ jQuery ($) ->
     }
     $('#delete-application-menu-item').bind {
         selected: (e, app) ->
-            return unless confirm("Are you sure you want to delete this application?")
+            return unless confirm("Are you sure you want to delete ${app.content.name}?")
             deleteApplication app
     }
 
