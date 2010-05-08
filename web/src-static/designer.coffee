@@ -1433,7 +1433,8 @@ jQuery ($) ->
 
         beginUndoTransaction "deletion of a screen"
         application.screens.splice(pos, 1)
-        $(screen.node).fadeOut(250)
+        $(screen.node).fadeOut 250, ->
+            $(screen.node).remove()
         if application.screens.length is 0
             addScreenWithoutTransaction()
         else
@@ -1477,6 +1478,18 @@ jQuery ($) ->
     }
     $('#delete-screen-menu-item').bind {
         selected: (e, screen) -> deleteScreen screen
+    }
+
+    $('#screens-list').sortable {
+        items: '.app-screen'
+        axis: 'y'
+        distance: 5
+        opacity: 0.8
+        update: (e, ui) ->
+            screens: _($("#screens-list .app-screen")).map (sn) -> $(sn).getdata('makeapp.screen')
+            runTransaction "reordering screens", ->
+                application.screens: screens
+                updateScreenList()
     }
 
 
@@ -1776,7 +1789,8 @@ jQuery ($) ->
                         else
                             alert "Other error: ${r.error}"
                 else
-                    $(image.node).fadeOut(250)
+                    $(image.node).fadeOut 250, ->
+                        $(image.node).remove()
             error: (xhr, status, e) ->
                 alert "Failed to delete an image: ${status} - ${e}"
                 # TODO ERROR HANDLING!
@@ -1922,7 +1936,8 @@ jQuery ($) ->
                         else
                             alert "Other error: ${r.error}"
                 else
-                    $(app.node).fadeOut(250)
+                    $(app.node).fadeOut 250, ->
+                        $(app.node).remove()
             error: (xhr, status, e) ->
                 alert "Failed to delete an application: ${status} - ${e}"
                 # TODO ERROR HANDLING!
