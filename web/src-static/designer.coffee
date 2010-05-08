@@ -885,13 +885,6 @@ jQuery ($) ->
     $('#delete-custom-image-menu-item').bind {
         selected: (e, image) -> deleteCustomImage image
     }
-
-    $('#delete-screen-menu-item').bind {
-        selected: (e, screen) -> deleteScreen screen
-    }
-    $('#duplicate-screen-menu-item').bind {
-        selected: (e, screen) -> duplicateScreen screen
-    }
     
     
     ##########################################################################################################
@@ -1374,7 +1367,7 @@ jQuery ($) ->
         
     
     ##########################################################################################################
-    ##  screens/applications
+    ##  Screen List
     
     renderScreenComponents: (screen, node) ->
         cn: renderStaticComponentHierarchy screen.rootComponent
@@ -1459,6 +1452,19 @@ jQuery ($) ->
     setActiveScreen: (screen) ->
         $('#screens-list > .app-screen').removeClass('active')
         $("#app-screen-${screen.sid}}").addClass('active')
+
+    $('#add-screen-button').click -> addScreen(); false
+
+    $('#delete-screen-menu-item').bind {
+        selected: (e, screen) -> deleteScreen screen
+    }
+    $('#duplicate-screen-menu-item').bind {
+        selected: (e, screen) -> duplicateScreen screen
+    }
+
+
+    ##########################################################################################################
+    ##  Active Screen / Application
         
     switchToScreen: (screen) ->
         setActiveScreen screen
@@ -1480,10 +1486,6 @@ jQuery ($) ->
         }
         
         componentsChanged()
-        
-    $('#add-screen-button').click ->
-        addScreen()
-        false
         
     
     loadApplication: (app, appId) ->
