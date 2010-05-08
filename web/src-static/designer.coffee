@@ -1938,11 +1938,15 @@ jQuery ($) ->
                 else
                     $(app.node).fadeOut 250, ->
                         $(app.node).remove()
+                        updateApplicationListWidth()
             error: (xhr, status, e) ->
                 alert "Failed to delete an application: ${status} - ${e}"
                 # TODO ERROR HANDLING!
         }
-        
+
+    updateApplicationListWidth: ->
+        $('#apps-list-container').css 'width', (160+60) * $('#apps-list-container .app').length
+
     refreshApplicationList: (callback) ->
         serverMode.loadApplications (apps) ->
             applicationList = apps
@@ -1954,10 +1958,11 @@ jQuery ($) ->
                 an: domTemplate('app-template')
                 $('.caption', $(an)).html(app.name)
                 renderScreenComponents(app.screens[0], $('.content .rendered', an))
-                $(an).appendTo('#apps-list')
+                $(an).appendTo('#apps-list #apps-list-container')
                 app: { id: appId, content: app }
                 bindApplication app, an
                 app
+            updateApplicationListWidth()
             callback(apps) if callback
     
     switchToDesign: ->
