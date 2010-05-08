@@ -163,3 +163,61 @@ $.extend $, {
     KEY_DELETE:      46
     KEY_F1:          112
 }
+
+jQuery.fn.startInPlaceEditing: (->
+    nop: ->
+    cancelActiveEditor: nop
+    acceptActiveEditor: nop
+    DEFAULT_OPTIONS: { before: nop, accept: nop, cancel: nop, after: nop }
+
+    startInPlaceEditing: (options) ->
+        cancelActiveEditor()
+        options: jQuery.extend({}, DEFAULT_OPTIONS, options)
+        $el: this
+        savedHTML: $el.html()
+
+        startEditing: ->
+            $el[0].contentEditable: yes
+            setTimeout((-> $el.focus()), 1)
+            document.addEventListener 'keydown', handleKeyDown, true
+            document.addEventListener 'mousedown', handleMouseDown, true
+            $el.bind 'blur.in-place-editor', ->
+                acceptActiveEditor(); true
+
+        stopEditing: ->
+            $el[0].contentEditable: no
+            $el[0].blur()
+            document.removeEventListener 'keydown', handleKeyDown, true
+            document.removeEventListener 'mousedown', handleMouseDown, true
+            $el.unbind '.in-place-editor'
+
+        cancelActiveEditor: ->
+            [cancelActiveEditor, acceptActiveEditor]: [nop, nop]
+            stopEditing()
+            $el.html(savedHTML)
+            options.cancel()
+            options.after($el[0])
+
+        acceptActiveEditor: ->
+            [cancelActiveEditor, acceptActiveEditor]: [nop, nop]
+            stopEditing()
+            options.accept($el.html())
+            options.after($el[0])
+
+        handleKeyDown: (e) ->
+            switch e.which
+                when 13 then acceptActiveEditor(); false
+                when 27 then cancelActiveEditor(); false
+                else    e.stopPropagation(); true
+
+        handleMouseDown: (e) ->
+            if e.target is $el[0]
+                e.stopPropagation(); true
+            else
+                acceptActiveEditor(); true
+
+        startEditing()
+        options.before($el[0])
+        undefined
+)()
+

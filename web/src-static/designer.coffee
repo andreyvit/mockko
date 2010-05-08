@@ -249,6 +249,11 @@ jQuery ($) ->
         if lastChange isnt null
             console.log "Make-App Internal Warning: implicitly closing an unclosed undo change: ${lastChange.name}"
         lastChange: { memento: createApplicationMemento(), name: changeName }
+
+    runTransaction: (changeName, change) ->
+        beginUndoTransaction changeName
+        change()
+        componentsChanged()
         
     setCurrentChangeName: (changeName) -> lastChange.name: changeName
         
@@ -848,60 +853,20 @@ jQuery ($) ->
                 c.state: !c.state
                 renderComponentStyle c
                 componentsChanged()
-        startDoubleClickEditing c
+        startComponentTextInPlaceEditing c
 
-    startDoubleClickEditing: (c) ->
+    startComponentTextInPlaceEditing: (c) ->
         activatePointingMode()
-        
-        ct: c.type
-        return unless ct.supportsText
-        
-        componentBeingDoubleClickEdited = c
-        $(c.node).addClass 'editing'
-        
-        $editable: $(textNodeOfComponent c)
-        
-        $editable[0].contentEditable = true
-        $editable[0].focus()
-        
-        originalText: c.text
-        
-        $editable.blur -> finishDoubleClickEditing() if c is componentBeingDoubleClickEdited
-        $editable.keydown (e) ->
-            switch e.keyCode
-                when 13 then finishDoubleClickEditing(); false
-                when 27 then finishDoubleClickEditing(originalText); false
-        
-        baseMode = mode
-        mode: $.extend({}, baseMode, {
-            mousedown: (e, c) ->
-                return false if c is componentBeingDoubleClickEdited
-                finishDoubleClickEditing()
-                baseMode.mousedown e, c
-        })
-        
-    finishDoubleClickEditing: (overrideText) ->
-        return if componentBeingDoubleClickEdited is null
-        
-        c:  componentBeingDoubleClickEdited
+        return unless c.type.supportsText
 
-        $editable: $(textNodeOfComponent c)
-
-        beginUndoTransaction "text change in ${friendlyComponentName c}"
-        
-        $(c.node).removeClass 'editing'
-        $editable[0].contentEditable = false
-        
-        $editable.unbind 'blur'
-        $editable.unbind 'keydown'
-        
-        c.text = overrideText || $($editable).text()
-        renderComponentVisualProperties c
-        componentsChanged()
-        
-        $editable.blur()
-        componentBeingDoubleClickEdited = null
-        activatePointingMode()
+        $(textNodeOfComponent c).startInPlaceEditing {
+            before: -> $(c.node).addClass 'editing'
+            after:  -> $(c.node).removeClass 'editing'
+            accept: (newText) ->
+                runTransaction "text change in ${friendlyComponentName c}", ->
+                    c.text: newText
+                    renderComponentVisualProperties c
+        }
 
 
     ##########################################################################################################
