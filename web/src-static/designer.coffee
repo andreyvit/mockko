@@ -243,9 +243,11 @@ jQuery ($) ->
     lastChange: null
     
     friendlyComponentName: (c) ->
-        ct: c.type
-        label: (ct.genericLabel || ct.label).toLowerCase()
-        if c.text then "the “${c.text}” ${label}" else aOrAn label
+        if c.type is Types.text
+            "“${c.text}”"
+        else
+            label: (c.type.genericLabel || c.type.label).toLowerCase()
+            if c.text then "the “${c.text}” ${label}" else aOrAn label
     
     beginUndoTransaction: (changeName) ->
         if lastChange isnt null
