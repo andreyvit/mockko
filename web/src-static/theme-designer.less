@@ -308,12 +308,14 @@
 
 #screens-list {
     position: absolute;
-    width: 100px;
+    width: 105px;
     top: 44px;
     bottom: 50px;
 	color: #656C73;
     padding-top: 5px;
 	text-shadow: rgba(255, 255, 255, 0.746094) 0px 1px 0px;
+	overflow-x: hidden;
+	overflow-y: auto;
 }
 
 .app-screen {
@@ -321,7 +323,10 @@
     padding: 5px 0px 0px 0px;
     cursor: pointer;
     width: 80px + 10px + 10px - 3px;
+    margin-left: auto;
+    margin-right: auto;
     height: 120px + 10px + 16px + 5px;
+    -webkit-box-sizing: content-box;
 
     .content {
         opacity: 0.9;
