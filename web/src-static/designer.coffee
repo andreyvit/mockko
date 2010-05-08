@@ -63,7 +63,7 @@ jQuery ($) ->
                 $.ajax {
                     url: '/apps/' + (if appId then "${appId}/" else "")
                     type: 'POST'
-                    data: JSON.stringify(externalizeApplication(app))
+                    data: JSON.stringify(app)
                     contentType: 'application/json'
                     dataType: 'json'
                     success: (r) ->
@@ -1495,7 +1495,7 @@ jQuery ($) ->
         switchToScreen application.screens[0]
         
     saveApplicationChanges: ->
-        serverMode.saveApplicationChanges application, applicationId, (newId) ->
+        serverMode.saveApplicationChanges externalizeApplication(application), applicationId, (newId) ->
             applicationId: newId
 
     renderApplicationName: ->
@@ -1829,12 +1829,23 @@ jQuery ($) ->
         $('.caption', app.node).startInPlaceEditing {
             accept: (newText) ->
                 app.content.name: newText
-                serverMode.saveApplicationChanges app.content, app.id, (newId) ->
+                serverMode.saveApplicationChanges externalizeApplication(app.content), app.id, (newId) ->
                     refreshApplicationList()
         }
 
+    duplicateApplication: (app) ->
+        content: externalizeApplication(app.content)
+        content.name: "${content.name} Copy"
+        serverMode.saveApplicationChanges content, null, (newId) ->
+            refreshApplicationList (newApps) ->
+                freshApp: _(newApps).detect (a) -> a.id is newId
+                startDashboardApplicationNameEditing freshApp
+
     $('#rename-application-menu-item').bind {
         selected: (e, app) -> startDashboardApplicationNameEditing app
+    }
+    $('#duplicate-application-menu-item').bind {
+        selected: (e, app) -> duplicateApplication app
     }
     $('#delete-application-menu-item').bind {
         selected: (e, app) ->
@@ -1898,11 +1909,11 @@ jQuery ($) ->
                 # TODO ERROR HANDLING!
         }
         
-    refreshApplicationList: ->
+    refreshApplicationList: (callback) ->
         serverMode.loadApplications (apps) ->
             applicationList = apps
             $('#apps-list .app').remove()
-            for appData in apps
+            apps: for appData in apps
                 appId: appData.id
                 app: JSON.parse(appData.body)
                 app: internalizeApplication(app)
@@ -1910,7 +1921,10 @@ jQuery ($) ->
                 $('.caption', $(an)).html(app.name)
                 renderScreenComponents(app.screens[0], $('.content .rendered', an))
                 $(an).appendTo('#apps-list')
-                bindApplication { id: appId, content: app }, an
+                app: { id: appId, content: app }
+                bindApplication app, an
+                app
+            callback(apps) if callback
     
     switchToDesign: ->
         $(".screen").hide()
