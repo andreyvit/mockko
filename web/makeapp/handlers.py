@@ -49,7 +49,7 @@ class GetAppListHandler(RequestHandler):
             if account is None:
                 apps = []
             else:
-                apps = App.all().filter('editors', account.key())
+                apps = App.all().filter('editors', account.key()).order('-updated_at').fetch(100)
 
             apps_json = [ { 'id': app.key().id(), 'body': app.body } for app in apps]
             return render_json_response({ 'apps': apps_json })

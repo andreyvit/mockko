@@ -20,6 +20,9 @@ class App(db.Model):
     created_by = db.ReferenceProperty(Account)
     editors    = db.ListProperty(db.Key)
 
+    created_at = db.DateTimeProperty(auto_now_add=True)
+    updated_at = db.DateTimeProperty(auto_now=True)
+
 class Image(db.Model):
     account   = db.ReferenceProperty(Account)
     file_name = db.StringProperty()

@@ -10,6 +10,12 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: App
+  properties:
+  - name: editors
+  - name: updated_at
+    direction: desc
+
 - kind: Image
   properties:
   - name: account
