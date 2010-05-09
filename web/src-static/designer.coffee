@@ -34,7 +34,7 @@ jQuery ($) ->
     
     DEFAULT_ROOT_COMPONENT: {
         type: "background"
-        size: { width: 320, height: 480 }
+        size: { w: 320, h: 480 }
         abspos: { x: 0, y: 0 }
         id: "root"
     }
@@ -154,8 +154,8 @@ jQuery ($) ->
     
     internalizeSize: (size) ->
         {
-            width: size?.width || null
-            height: size?.height || null
+            w: size?.w || size?.width || null
+            h: size?.h || size?.height || null
         }
     
     externalizeComponent: (c) ->
@@ -603,8 +603,8 @@ jQuery ($) ->
     renderComponentSize: (c, cn) ->
         ct: c.type
         effsize: {
-            w: recomputeEffectiveSizeInDimension c.size.width, ct.widthPolicy, 320
-            h: recomputeEffectiveSizeInDimension c.size.height, ct.heightPolicy, 460
+            w: recomputeEffectiveSizeInDimension c.size.w, ct.widthPolicy, 320
+            h: recomputeEffectiveSizeInDimension c.size.h, ct.heightPolicy, 460
         }
         $(cn || c.node).css({ width: sizeToPx(effsize.w), height: sizeToPx(effsize.h) })
         return effsize
@@ -774,12 +774,33 @@ jQuery ($) ->
     
     hoveredComponent: null
     
+    RESIZING_HANDLES = ['tl', 'tc', 'tr', 'cl', 'cr', 'bl', 'bc', 'br']
+
+    adjustHorizontalSizingMode: (comp, hmode) ->
+        if comp.type.widthPolicy.userSize then hmode else 'c'
+    adjustVerticalSizingMode: (comp, vmode) ->
+        if comp.type.heightPolicy.userSize then vmode else 'c'
+
     updateHoverPanelPosition: ->
         return if hoveredComponent is null
         refOffset: $('#design-area').offset()
         compOffset: $(hoveredComponent.node).offset()
-        offset: { left: compOffset.left - refOffset.left, top: compOffset.top - refOffset.top }
-        $('#hover-panel').css({ left: offset.left, top: offset.top })
+        r: {
+            x: compOffset.left - refOffset.left
+            y: compOffset.top - refOffset.top
+            w: $(hoveredComponent.node).outerWidth()
+            h: $(hoveredComponent.node).outerHeight()
+        }
+        $('#hover-panel').css({ left: r.x, top: r.y })
+        [r.x, r.y]: [-3, -3]
+        xpos: { 'l': r.x, 'c': r.x + r.w/2, 'r': r.x + r.w }
+        ypos: { 't': r.y, 'c': r.y + r.h/2, 'b': r.y + r.h }
+        _($('#hover-panel .resizing-handle')).each (handle, index) ->
+            [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]] 
+            pos: { x: xpos[hmode], y: ypos[vmode] }
+            [vmode, hmode]: [adjustVerticalSizingMode(hoveredComponent, vmode), adjustHorizontalSizingMode(hoveredComponent, hmode)]
+            disabled: (vmode is 'c' and hmode is 'c')
+            $(handle).css({ left: pos.x, top: pos.y }).alterClass('disabled', disabled)
     
     componentHovered: (c) ->
         return unless c.node?  # the component is being deleted right now
@@ -814,7 +835,15 @@ jQuery ($) ->
     $('#hover-panel .duplicate-handle').click ->
         if hoveredComponent isnt null
             duplicateComponent hoveredComponent 
-        
+
+    _($('.hover-panel .resizing-handle')).each (handle, index) ->
+        $(handle).mousedown (e) ->
+            return if hoveredComponent is null
+            [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]] 
+            [vmode, hmode]: [adjustVerticalSizingMode(hoveredComponent, vmode), adjustHorizontalSizingMode(hoveredComponent, hmode)]
+            disabled: (vmode is 'c' and hmode is 'c')
+            return if disabled
+            activateResizingMode hoveredComponent, { x: e.pageX, y: e.pageY }, { vmode: vmode, hmode: hmode }
 
     ##########################################################################################################
     ##  selection
@@ -977,6 +1006,7 @@ jQuery ($) ->
         true
     
     activateMode: (m) ->
+        m.mousedown ||= (e) -> activatePointingMode(); mode.mousedown(e)
         mode: m
         # updatePaletteVisibility('mode')
     
@@ -1263,6 +1293,55 @@ jQuery ($) ->
             
             hidesPalette: yes
         }
+
+    startResizing: (comp, startPt, options) ->
+        originalSize: comp.size
+        baseSize: comp.effsize
+        originalPos: comp.abspos
+        {
+            moveTo: (pt) ->
+                delta: ptDiff(pt, startPt)
+                newPos: {}
+                newSize: {}
+                console.log options
+                [newSize.w, newPos.x]: switch true
+                    when (delta.w is 0 or options.hmode is 'c') then [originalSize.w, originalPos.x]
+                    when (options.hmode is 'r') then [baseSize.w + delta.x, originalPos.x]
+                    when (options.hmode is 'l') then [baseSize.w - delta.x, originalPos.x + delta.x]
+                    else throw "Internal Error: unknown resize hmode ${options.hmode}"
+                [newSize.h, newPos.y]: switch true
+                    when (delta.h is 0 or options.vmode is 'c') then [originalSize.h, originalPos.y]
+                    when (options.vmode is 'b') then [baseSize.h + delta.y, originalPos.y]
+                    when (options.vmode is 't') then [baseSize.h - delta.y, originalPos.y + delta.y]
+                    else throw "Internal Error: unknown resize vmode ${options.vmode}"
+                comp.size: newSize
+                comp.dragpos: newPos
+                comp.dragParent: comp.parent
+                console.log "resizing to ${comp.size.w} x ${comp.size.h}"
+                updateEffectiveSize comp
+                renderComponentPosition comp
+                updateHoverPanelPosition()
+
+            dropAt: (pt) ->
+                @moveTo pt
+                runTransaction "resizing of ${friendlyComponentName comp}", ->
+                    comp.abspos: comp.dragpos
+        }
+
+    activateResizingMode: (comp, startPt, options) ->
+        console.log "activating resizing mode for ${friendlyComponentName comp}"
+        resizer: startResizing comp, startPt, options
+        activateMode {
+            mousemove: (e) ->
+                resizer.moveTo { x:e.pageX, y:e.pageY }
+                true
+            mouseup: (e) ->
+                resizer.dropAt { x:e.pageX, y:e.pageY }
+                activatePointingMode()
+                true
+            mousedown: (e) ->
+                console.log "mouse down in resizing mode!!!"
+        }
     
     $('#design-pane').bind {
         mousedown: (e) ->
@@ -1324,7 +1403,7 @@ jQuery ($) ->
                     type: 'image'
                     label: fileData.f.replace(/\.png$/, '')
                     image: { kind: 'stock', group: grp.path, name: fileData.f }
-                    size: { width: 30, height: 30 }
+                    size: { w: 30, h: 30 }
                     style: {
                         imageEffect: grp.imageEffect
                     }
@@ -1343,7 +1422,7 @@ jQuery ($) ->
                 type: 'image'
                 label: "${image.fileName} ${image.width}x${image.height}"
                 image: { kind: 'custom', id: image.id }
-                size: { width: image.width, height: image.height }
+                size: { w: image.width, h: image.height }
                 imageEl: image
             }
         renderPaletteGroupContent customImagesPaletteCategory, customImagesPaletteGroup, (item, node) ->

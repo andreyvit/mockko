@@ -75,7 +75,7 @@
 
 .hover-panel {
     position: absolute;
-    z-index: 100;
+    z-index: 9999;
     
     .handle {
         position: absolute;
@@ -154,6 +154,22 @@
     .move-handle:before {
         content: "M";
     }
+
+    .resizing-handle {
+        position: absolute;
+        width: 7px;
+        height: 7px;
+        background: rgba(160, 160, 160, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.8);
+        cursor: move;
+    }
+    .resizing-handle.disabled {
+        border: 1px dotted rgba(0, 0, 0, 0.5);
+    }
+    .resizing-ne { cursor: nwse-resize; }
+    .resizing-nw { curosr: nesw-resize; }
+    .resizing-e  { cursor: ew-resize; }
+    .resizing-n  { cursor: ns-resize; }
     
 }
 .hover-panel.leaf .move-handle {
