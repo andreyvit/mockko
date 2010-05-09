@@ -245,6 +245,35 @@
             }
         }
     }
+    'map': {
+        label: 'Map'
+        widthPolicy:  { userSize: true, fixedSize: 320 }
+        heightPolicy: { userSize: true, fixedSize: 320 }
+    }
+    'map-marker': {
+        label: 'Map Marker'
+        widthPolicy:  { fixedSize: 20 }
+        heightPolicy: { fixedSize: 34 }
+    }
+    'map-gps-location': {
+        label: 'Current GPS Location'
+        widthPolicy:  { fixedSize: 65 }
+        heightPolicy: { fixedSize: 65 }
+    }
+    'map-pin': {
+        label: 'iPhone-Style Pin'
+        widthPolicy:  { fixedSize: 50 }
+        heightPolicy: { fixedSize: 66 }
+    }
+    'map-callout': {
+        label: 'Callout'
+        defaultText: '123 Ave.'
+        widthPolicy:  { userSize: yes; fixedSize: 116 }
+        heightPolicy: { fixedSize: 35 }
+        style: {
+            fontSize: 15
+        }
+    }
 }
 
 window.MakeApp: {} unless window.MakeApp?
@@ -691,6 +720,33 @@ window.MakeApp.paletteDefinition: [
             {
                 type: 'switch'
                 state: on
+            }
+        ]
+    }
+    {
+        name: 'Maps'
+        items: [
+            {
+                type: 'map'
+            }
+            {
+                type: 'map-marker'
+                styleName: 'red'
+            }
+            {
+                type: 'map-marker'
+                styleName: 'blue'
+            }
+            {
+                type: 'map-pin'
+                styleName: 'red'
+            }
+            {
+                type: 'map-gps-location'
+            }
+            {
+                type: 'map-callout'
+                text: '123 Avenue'
             }
         ]
     }
