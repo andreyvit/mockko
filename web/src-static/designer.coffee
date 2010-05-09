@@ -50,6 +50,10 @@ jQuery ($) ->
                 
             saveApplicationChanges: (app, appId, callback) ->
                 #
+
+            uploadImageFile: (fileName, file, callback) ->
+            loadCustomImages: (callback) ->
+            deleteCustomImage: (imageId, callback) ->
         }
         
         authenticated: {
@@ -97,6 +101,86 @@ jQuery ($) ->
                         alert "Failed to save the application: ${status} - ${e}"
                         # TODO ERROR HANDLING!
                 }
+
+            uploadImageFile: (fileName, file, callback) ->
+                $.ajax {
+                    type: 'POST'
+                    url: '/images/'
+                    data: file
+                    processData: no
+                    beforeSend: (xhr) -> xhr.setRequestHeader("X-File-Name", fileName)
+                    contentType: 'application/octet-stream'
+                    dataType: 'json'
+                    success: (r) ->
+                        if r.error
+                            switch r.error
+                                when 'signed-out'
+                                    alert "Cannot upload the image because you were logged out. Please sign in again."
+                                else
+                                    alert "Other error: ${r.error}"
+                        else
+                            callback()
+                    error: (xhr, status, e) ->
+                        alert "Failed to save the image: ${status} - ${e}"
+                        # TODO ERROR HANDLING!
+                }
+
+            loadCustomImages: (callback) ->
+                $.ajax {
+                    type: 'GET'
+                    url: '/images/'
+                    dataType: 'json'
+                    success: (r) ->
+                        if r.error
+                            switch r.error
+                                when 'signed-out'
+                                    alert "Cannot save your changes because you were logged out. Please sign in again."
+                                else
+                                    alert "Other error: ${r.error}"
+                        else
+                            callback(r.images)
+                    error: (xhr, status, e) ->
+                        alert "Failed to retrieve a list of images: ${status} - ${e}"
+                        # TODO ERROR HANDLING!
+                }
+
+            deleteCustomImage: (imageId, callback) ->
+                $.ajax {
+                    type: 'DELETE'
+                    url: "/images/${encodeURIComponent imageId}"
+                    dataType: 'json'
+                    success: (r) ->
+                        if r.error
+                            switch r.error
+                                when 'signed-out'
+                                    alert "Cannot save your changes because you were logged out. Please sign in again."
+                                else
+                                    alert "Other error: ${r.error}"
+                        else
+                            callback()
+                    error: (xhr, status, e) ->
+                        alert "Failed to delete an image: ${status} - ${e}"
+                        # TODO ERROR HANDLING!
+                }
+
+            deleteApplication: (appId, callback) ->
+                $.ajax {
+                    type: 'DELETE'
+                    url: "/apps/${encodeURIComponent appId}/"
+                    dataType: 'json'
+                    success: (r) ->
+                        if r.error
+                            switch r.error
+                                when 'signed-out'
+                                    alert "Cannot save your changes because you were logged out. Please sign in again."
+                                else
+                                    alert "Other error: ${r.error}"
+                        else
+                            callback()
+                    error: (xhr, status, e) ->
+                        alert "Failed to delete an application: ${status} - ${e}"
+                        # TODO ERROR HANDLING!
+                }
         }
         
         local: {
@@ -111,6 +195,10 @@ jQuery ($) ->
 
             loadApplications: (callback) ->
                 callback { apps: [ { id: 42, body: MakeApp.appTemplates.basic } ] }
+
+            uploadImageFile: (fileName, file, callback) ->
+            loadCustomImages: (callback) ->
+            deleteCustomImage: (imageId, callback) ->
         }
     }
     
@@ -1798,47 +1886,13 @@ jQuery ($) ->
     
     uploadImageFile: (file) ->
         console.log "Uploading ${file.fileName} of size ${file.fileSize}"
-        $.ajax {
-            type: 'POST'
-            url: '/images/'
-            data: file
-            processData: no
-            beforeSend: (xhr) -> xhr.setRequestHeader("X-File-Name", file.fileName)
-            contentType: 'application/octet-stream'
-            dataType: 'json'
-            success: (r) ->
-                if r.error
-                    switch r.error
-                        when 'signed-out'
-                            alert "Cannot save your changes because you were logged out. Please sign in again."
-                        else
-                            alert "Other error: ${r.error}"
-                else
-                    updateCustomImages()
-            error: (xhr, status, e) ->
-                alert "Failed to save the image: ${status} - ${e}"
-                # TODO ERROR HANDLING!
-        }
+        serverMode.uploadImageFile file.fileName, file, ->
+            updateCustomImages()
     
     updateCustomImages: ->
-        $.ajax {
-            type: 'GET'
-            url: '/images/'
-            dataType: 'json'
-            success: (r) ->
-                if r.error
-                    switch r.error
-                        when 'signed-out'
-                            alert "Cannot save your changes because you were logged out. Please sign in again."
-                        else
-                            alert "Other error: ${r.error}"
-                else
-                    customImages: r.images
-                    updateCustomImagesPalette()
-            error: (xhr, status, e) ->
-                alert "Failed to retrieve a list of images: ${status} - ${e}"
-                # TODO ERROR HANDLING!
-        }
+        serverMode.loadCustomImages (images) ->
+            customImages: images
+            updateCustomImagesPalette()
     
     $('body').each ->
         this.ondragenter: (e) ->
@@ -1858,25 +1912,10 @@ jQuery ($) ->
                 uploadImageFile file
 
     deleteCustomImage: (image) ->
-        $.ajax {
-            type: 'DELETE'
-            url: "/images/${encodeURIComponent image.id}"
-            dataType: 'json'
-            success: (r) ->
-                if r.error
-                    switch r.error
-                        when 'signed-out'
-                            alert "Cannot save your changes because you were logged out. Please sign in again."
-                        else
-                            alert "Other error: ${r.error}"
-                else
-                    $(image.node).fadeOut 250, ->
-                        $(image.node).remove()
-            error: (xhr, status, e) ->
-                alert "Failed to delete an image: ${status} - ${e}"
-                # TODO ERROR HANDLING!
-        }
-        
+        serverMode.deleteCustomImage image.id, ->
+            $(image.node).fadeOut 250, ->
+                $(image.node).remove()
+
 
     ##########################################################################################################
     ##  keyboard shortcuts
@@ -1981,7 +2020,6 @@ jQuery ($) ->
 
     initComponentTypes()
     initPalette()
-    updateCustomImages()
     hookKeyboardShortcuts()
     
     createNewApplicationName: ->
@@ -2010,25 +2048,10 @@ jQuery ($) ->
             false
 
     deleteApplication: (app) ->
-        $.ajax {
-            type: 'DELETE'
-            url: "/apps/${encodeURIComponent app.id}/"
-            dataType: 'json'
-            success: (r) ->
-                if r.error
-                    switch r.error
-                        when 'signed-out'
-                            alert "Cannot save your changes because you were logged out. Please sign in again."
-                        else
-                            alert "Other error: ${r.error}"
-                else
-                    $(app.node).fadeOut 250, ->
-                        $(app.node).remove()
-                        updateApplicationListWidth()
-            error: (xhr, status, e) ->
-                alert "Failed to delete an application: ${status} - ${e}"
-                # TODO ERROR HANDLING!
-        }
+        serverMode.deleteApplication app.id, ->
+            $(app.node).fadeOut 250, ->
+                $(app.node).remove()
+                updateApplicationListWidth()
 
     updateApplicationListWidth: ->
         $('#apps-list-container').css 'width', (160+60) * $('#apps-list-container .app').length
@@ -2055,6 +2078,7 @@ jQuery ($) ->
         $('#design-screen').show()
         activatePointingMode()
         adjustDeviceImagePosition()
+        updateCustomImages()
 
     switchToDashboard: ->
         $(".screen").hide()
