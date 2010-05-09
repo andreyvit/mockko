@@ -466,19 +466,25 @@ jQuery ($) ->
         c: internalizeComponent compTemplate, null
         traverse c, (comp) -> comp.inDocument: no
         return c
-    
-    deleteComponent: (rootc) ->
+
+    deleteComponentWithoutTransaction: (rootc, animated) ->
         return if rootc.type.unmovable
-        beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
 
         stacking: handleStacking rootc, null, allStacks
         
         liveMover: newLiveMover [rootc]
         liveMover.moveComponents stacking.moves
-        liveMover.commit(STACKED_COMP_TRANSITION_DURATION)
+        liveMover.commit(animated && STACKED_COMP_TRANSITION_DURATION)
 
         _(rootc.parent.children).removeValue rootc
-        $(rootc.node).hide 'drop', { direction: 'down' }, 'normal', -> $(rootc.node).remove()
+        if animated
+            $(rootc.node).hide 'drop', { direction: 'down' }, 'normal', -> $(rootc.node).remove()
+        else
+            $(rootc.node).remove()
+
+    deleteComponent: (rootc) ->
+        beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
+        deleteComponentWithoutTransaction rootc, true
         componentsChanged()
 
     moveComponent: (comp, offset) ->
@@ -2006,6 +2012,52 @@ jQuery ($) ->
             deleteApplication app
     }
 
+
+    ##########################################################################################################
+    ##  Copy/Paste
+
+    pasteJSON: (json) ->
+        targetCont: activeScreen.rootComponent
+        data: JSON.parse(json)
+        if data.type then data: [data]
+        newComps: (internalizeComponent(c, targetCont) for c in data)
+        newComps: _((if c.type is Types.background then c.children else c) for c in newComps).flatten()
+        pasteComponents targetCont, newComps
+
+    pasteComponents: (targetCont, newComps) ->
+        return if newComps.length is 0
+        for newComp in newComps
+            traverse newComp, (child) -> child.id: null  # make sure all ids are reassigned
+        friendlyName: if newComps.length > 1 then "${newComps.length} objects" else friendlyComponentName(newComps[0])
+        runTransaction "pasting ${friendlyName}", ->
+            for newComp in newComps
+                while true
+                    found: no
+                    traverse activeScreen.rootComponent, (c) -> found: c if c.abspos.x == newComp.abspos.x && c.abspos.y == newComp.abspos.y
+                    found: null if found is activeScreen.rootComponent  # handle (0,0) case
+                    break unless found
+                    traverse newComp, (c) -> c.abspos.y += found.effsize.h
+
+                newComp.parent: targetCont
+                targetCont.children.push newComp
+                $(targetCont.node).append renderInteractiveComponentHeirarchy newComp
+                traverse newComp, (child) -> updateEffectiveSize child
+                traverse newComp, (child) -> assignNameIfStillUnnamed child, activeScreen
+
+    cutComponents: (comps) ->
+        comps: _((if c.type is Types.background then c.children else c) for c in comps).flatten()
+        friendlyName: if comps.length > 1 then "${comps.length} objects" else friendlyComponentName(comps[0])
+        runTransaction "cutting of ${friendlyName}", ->
+            for comp in comps
+                deleteComponentWithoutTransaction comp, false
+
+    $(document).copiableAsText {
+        gettext: -> JSON.stringify(externalizeComponent(comp)) if comp: componentToActUpon()
+        aftercut: -> cutComponents [comp] if comp: componentToActUpon()
+        paste: (text) -> pasteJSON text
+    }
+
+
     ##########################################################################################################
     
     initComponentTypes: ->
@@ -2139,5 +2191,4 @@ jQuery ($) ->
         }
 
     # Make-App Dump
-    window.mad: ->
-        console.log(activeScreen)
+    window.mad: -> activeScreen

@@ -223,3 +223,28 @@ jQuery.fn.startInPlaceEditing: (->
         undefined
 )()
 
+(($) ->
+    hiddenCopyTextArea: null
+    $ -> hiddenCopyTextArea: $("<textarea />", { css: { 'display': 'none', 'z-index': 9999, position: 'absolute', 'left': 0, 'top': 0, 'width': 0, 'height': 0 }}).appendTo($("body"))
+    hideTextArea: -> hiddenCopyTextArea.hide()
+
+    $.fn.copiableAsText: (options) ->
+        options: { gettext: options } if options.constructor is Function
+
+        this.each ->
+            this.onbeforecopy: this.onbeforecut: (e) ->
+                data: options.gettext(this)
+                hiddenCopyTextArea.val(data || '').show().focus()
+                hiddenCopyTextArea[0].select()
+                console.log "Preparing to copy text: ${data}"
+            this.oncopy: (e) ->
+                setTimeout hideTextArea, 10
+            this.oncut: (e) ->
+                setTimeout hideTextArea, 10
+                options.aftercut() if options.aftercut
+            if options.paste
+                this.onpaste: (e) ->
+                    e.preventDefault()
+                    if data: e.clipboardData.getData("text/plain")
+                        options.paste(data)
+)(jQuery)
