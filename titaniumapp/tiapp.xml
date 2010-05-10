@@ -12,8 +12,8 @@
   <window>
     <id>initial</id>
     <title>Mockko</title>
-    <url>http://localhost:7000/dev</url>
-    <width>800</width>
+    <url>http://www.mockko.com/</url>
+    <width>1200</width>
     <max-width>3000</max-width>
     <min-width>800</min-width>
     <height>700</height>
