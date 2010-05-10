@@ -248,3 +248,5 @@ jQuery.fn.startInPlaceEditing: (->
                     if data: e.clipboardData.getData("text/plain")
                         options.paste(data)
 )(jQuery)
+
+String.prototype.trim: -> this.replace(/^\s+/, '').replace(/\s+$/, '')
