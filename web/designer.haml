@@ -108,6 +108,7 @@
           #insp-backgrounds-tab.tab Backgrounds
           #insp-text-tab.tab Text
           #insp-position-tab.tab Position
+          #insp-action-tab.tab Action
         #insp-backgrounds-pane.pane
           %ul#backgrounds-palette
             %li#background-swatch-template.template
@@ -135,6 +136,12 @@
             %li#insp-size-li
               Size:
               %span#insp-size 150x30
+        #insp-action-pane.pane
+          %ul#action-group
+            .descr When this object is tapped:
+            %li#no-action-button Do Nothing
+            %li#set-action-button Switch To Screen
+            #chosen-action-label (no action set)
 
     #welcome-screen.screen
       #welcome-popup

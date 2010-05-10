@@ -693,6 +693,54 @@
     
 }
 
+#insp-action-pane {
+    ul {
+        display: block;
+        position: absolute;
+        bottom: 10px;
+        width: auto;
+    }
+
+    li, .descr, #chosen-action-label {
+        display: block;
+        float: left;
+    	line-height: 30px;
+    	height: 30px;
+    	font-size: 12px;
+    }
+    li {
+    	width: auto;
+    	text-align: center;
+    	font-weight: bold;
+    	margin-right: 3px;
+    	cursor: pointer;
+
+    	.silver-bar-button;
+
+    	padding-left: 7px;
+    	padding-right: 7px;
+    	margin-left: 10px;
+    }
+    li.disabled {
+        opacity: 0.9;
+        color: #ccc;
+        cursor: default;
+    }
+    li.active {
+        color: gold;
+    }
+    .descr {
+    	margin-right: 10px;
+    }
+
+    ul#action-group {
+        left: 20px;
+    }
+    #chosen-action-label {
+        margin-left: 5px;
+    }
+}
+
 .context-menu {
 	position: absolute;
 	z-index: 99999;

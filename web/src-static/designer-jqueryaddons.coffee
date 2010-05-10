@@ -250,3 +250,27 @@ jQuery.fn.startInPlaceEditing: (->
 )(jQuery)
 
 String.prototype.trim: -> this.replace(/^\s+/, '').replace(/\s+$/, '')
+
+window.newModeEngine: (options) ->
+    nop: ->
+    activeMode: null
+    options: $.extend({ modeDidChange: nop }, options)
+
+    activateMode: (mode) -> (activeMode?.cancel || nop)(); oldMode: activeMode; activeMode: mode; (oldMode?.deactivated || nop)(); (activeMode?.activated || nop)(); options.modeDidChange(activeMode)
+    deactivateMode:      -> oldMode: activeMode; activeMode: null; (oldMode?.deactivated || nop)(); options.modeDidChange(activeMode)
+    cancelMode:          -> (activeMode?.cancel || nop)(); deactivateMode()
+    getActiveMode:       -> activeMode
+
+    # dispatchToMode(((a) -> a.methodname), arg1, arg2)
+    dispatchToMode: (method, args...) ->
+        method || throw "null method passed to dispatchToMode"
+        if not activeMode
+            false
+        else if func: method(activeMode)
+            func.apply(activeMode, args)
+        else
+            console.log "cancelling mode b/c of ${method}"
+            cancelMode()
+            false
+
+    [activateMode, deactivateMode, cancelMode, dispatchToMode, getActiveMode]

@@ -208,6 +208,19 @@ jQuery ($) ->
             BACKGROUND_STYLES[bg.name]: bg
     )()
 
+    ACTIONS: {
+        switchScreen: {
+            extname: 'switch-screen'
+            describe: (act) ->
+                "${act.screenName}"
+            create: (screen) ->
+                {
+                    action: this
+                    screenName: screen.name
+                }
+        }
+    }
+
 
     ##########################################################################################################
     ##  DOM templates
@@ -227,6 +240,26 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  external representation
+
+    externalizeAction: (action) ->
+        return null unless action?
+        switch action.action
+            when ACTIONS.switchScreen
+                {
+                    'action': ACTIONS.switchScreen.extname
+                    'screenName': action.screenName
+                }
+            else throw "unknown action: ${action.action}"
+
+    internalizeAction: (action) ->
+        return null unless action?
+        switch action['action']
+            when ACTIONS.switchScreen.extname
+                {
+                    action: ACTIONS.switchScreen
+                    screenName: action['screenName']
+                }
+            else throw "error loading app: invalid action ${action['action']}"
 
     internalizeLocation: (location, parent) ->
         {
@@ -255,6 +288,7 @@ jQuery ($) ->
             styleName: c.styleName
             style: cloneObj c.style
             text: c.text
+            'action': externalizeAction c.action
             children: (externalizeComponent(child) for child in c.children || [])
         }
         rc.state: c.state if c.state?
@@ -267,6 +301,7 @@ jQuery ($) ->
             abspos: internalizeLocation c.location, parent
             size: internalizeSize c.size
             styleName: c.styleName
+            action: internalizeAction c['action']
             inDocument: yes
             parent: parent
         }
@@ -296,7 +331,7 @@ jQuery ($) ->
     externalizeScreen: (screen) ->
         {
             rootComponent: externalizeComponent(screen.rootComponent)
-            name: screen.name || null
+            name: screen.name
             html: screen.html || ''
         }
         
@@ -318,9 +353,12 @@ jQuery ($) ->
         }
         
     internalizeApplication: (app) ->
+        screens: (internalizeScreen(s) for s in app.screens)
+        _(screens).each (screen, index) ->
+            screen.name ||= "Screen ${index+1}"
         {
             name: app.name
-            screens: (internalizeScreen(s) for s in app.screens)
+            screens: screens
         }
     
 
@@ -938,6 +976,7 @@ jQuery ($) ->
             disabled: (vmode is 'c' and hmode is 'c')
             return if disabled
             activateResizingMode hoveredComponent, { x: e.pageX, y: e.pageY }, { vmode: vmode, hmode: hmode }
+            false
 
     ##########################################################################################################
     ##  selection
@@ -983,12 +1022,11 @@ jQuery ($) ->
         startComponentTextInPlaceEditing c
 
     startComponentTextInPlaceEditing: (c) ->
-        activatePointingMode()
         return unless c.type.supportsText
 
         $(textNodeOfComponent c).startInPlaceEditing {
-            before: -> $(c.node).addClass 'editing'
-            after:  -> $(c.node).removeClass 'editing'
+            before: -> $(c.node).addClass 'editing';    activateMode { debugname: "In-Place Text Edit" }
+            after:  -> $(c.node).removeClass 'editing'; deactivateMode()
             accept: (newText) ->
                 runTransaction "text change in ${friendlyComponentName c}", ->
                     c.text: newText
@@ -1012,8 +1050,27 @@ jQuery ($) ->
     $('#delete-custom-image-menu-item').bind {
         selected: (e, image) -> deleteCustomImage image
     }
-    
-    
+
+
+    ##########################################################################################################
+    ##  Mode Engine
+
+    [activateMode, deactivateMode, cancelMode, dispatchToMode, activeMode]: newModeEngine {
+        modeDidChange: (mode) ->
+            if mode
+                console.log "Mode: ${mode?.debugname}"
+            else
+                console.log "Mode: None"
+    }
+    ModeMethods: {
+        mouseup:      (m) -> m.mouseup
+        contextmenu:  (m) -> m.contextmenu
+        mousedown:    (m) -> m.mousedown
+        mousemove:    (m) -> m.mousemove
+        screenclick:  (m) -> m.screenclick
+        escdown:      (m) -> m.escdown
+    }
+
     ##########################################################################################################
     ##  dragging
     
@@ -1098,40 +1155,7 @@ jQuery ($) ->
             when 'ycenter' then r.y = a.coord - r.h/2
             else return false
         true
-    
-    activateMode: (m) ->
-        m.mousedown ||= (e) -> activatePointingMode(); mode.mousedown(e)
-        mode: m
-        # updatePaletteVisibility('mode')
-    
-    activatePointingMode: ->
-        window.status = "Hover a component for options. Click to edit. Drag to move."
-        activateMode {
-            mousedown: (e, c) ->
-                if c
-                    selectComponent c
-                    if not c.type.unmovable
-                        activateExistingComponentDragging c, { x: e.pageX, y: e.pageY }
-                else
-                    deselectComponent()
-                true
 
-            mousemove: (e, c) ->
-                if c
-                    componentHovered c
-                else if $(e.target).closest('.hover-panel').length
-                    #
-                else
-                    componentUnhovered()
-                    
-            mouseup: (e, c) ->
-                if e.button == 2
-                    if c
-                        showComponentContextMenu c, { x: e.pageX, y: e.pageY }
-            
-            hidesPalette: no
-        }
-        
     newLiveMover: (excluded) ->
         excludedSet: setOf excluded
         traverse activeScreen.rootComponent, (c) ->
@@ -1331,7 +1355,7 @@ jQuery ($) ->
         if c.node.parentNode
             c.node.parentNode.removeChild(c.node)
         activeScreen.rootComponent.node.appendChild(c.node)
-        updateEffectiveSize c  # we might have just added a new component
+        traverse c, (child) -> updateEffectiveSize child  # we might have just added a new component
         
         moveTo(options.startPt)
             
@@ -1343,6 +1367,7 @@ jQuery ($) ->
         window.status = "Dragging a component."
         
         activateMode {
+            debugname: "Existing Component Dragging"
             mousemove: (e) ->
                 pt: { x: e.pageX, y: e.pageY }
                 if dragger is null
@@ -1350,17 +1375,16 @@ jQuery ($) ->
                     beginUndoTransaction "movement of ${friendlyComponentName c}"
                     dragger: startDragging c, { startPt: startPt }
                 dragger.moveTo pt
+                true
                 
             mouseup: (e) ->
                 if dragger isnt null
                     if dragger.dropAt { x: e.pageX, y: e.pageY }
                         componentsChanged()
-                        activatePointingMode()
                     else
                         deleteComponent c
-                activatePointingMode()
-                
-            hidesPalette: yes
+                deactivateMode()
+                true
         }
         
     activateNewComponentDragging: (startPt, c) ->
@@ -1372,25 +1396,27 @@ jQuery ($) ->
         window.status = "Dragging a new component."
         
         activateMode {
+            debugname: "New Component Dragging"
             mousemove: (e) ->
                 dragger.moveTo { x: e.pageX, y: e.pageY }
+                true
                 
             mouseup: (e) ->
                 ok: dragger.dropAt { x: e.pageX, y: e.pageY }
                 if ok
                     componentsChanged()
-                    activatePointingMode()
                 else
                     $(c.node).fadeOut 250, ->
                         $(c.node).remove()
-                    activatePointingMode()
-            
-            hidesPalette: yes
+                deactivateMode()
+                true
         }
 
     startResizing: (comp, startPt, options) ->
         originalSize: comp.size
         baseSize: comp.effsize
+        console.log "base size:"
+        console.log baseSize
         originalPos: comp.abspos
         {
             moveTo: (pt) ->
@@ -1426,35 +1452,66 @@ jQuery ($) ->
         console.log "activating resizing mode for ${friendlyComponentName comp}"
         resizer: startResizing comp, startPt, options
         activateMode {
+            debugname: "Resizing"
             mousemove: (e) ->
                 resizer.moveTo { x:e.pageX, y:e.pageY }
                 true
             mouseup: (e) ->
                 resizer.dropAt { x:e.pageX, y:e.pageY }
-                activatePointingMode()
+                deactivateMode()
                 true
-            mousedown: (e) ->
-                console.log "mouse down in resizing mode!!!"
         }
-    
+
+
+    ##########################################################################################################
+    ##  Mouse Event Handling
+
+    defaultMouseDown: (e, comp) ->
+        if comp
+            selectComponent comp
+            if not comp.type.unmovable
+                activateExistingComponentDragging comp, { x: e.pageX, y: e.pageY }
+        else
+            deselectComponent()
+        true
+
+    defaultMouseMove: (e, comp) ->
+        if comp
+            componentHovered comp
+        else if $(e.target).closest('.hover-panel').length
+            #
+        else
+            componentUnhovered()
+        true
+
+    defaultContextMenu: (e, comp) ->
+        if comp then showComponentContextMenu comp, { x: e.pageX, y: e.pageY }; true
+        else         false
+
+    defaultMouseUp: (e, comp) -> false
+
     $('#design-pane').bind {
         mousedown: (e) ->
-            return if e.button != 0
-            if mode.mousedown e, findComponentOfNode(e.target)
-                e.preventDefault()
+            if e.button is 0
+                comp: findComponentOfNode(e.target)
+                e.preventDefault(); e.stopPropagation()
+                dispatchToMode(ModeMethods.mousedown, e, comp) || defaultMouseDown(e, comp)
+            undefined
 
         mousemove: (e) ->
-            if mode.mousemove e, findComponentOfNode(e.target)
-                e.preventDefault()
-            
-            # if !isDragging && component && isMouseDown && (Math.abs(pt.x - dragOrigin.x) > 2 || Math.abs(pt.y - dragOrigin.y) > 2)
-            #     isDragging: true
-            #     draggedComponent: component
-            #     $draggedComponentNode: $target
-                
+            comp: findComponentOfNode(e.target)
+            e.preventDefault(); e.stopPropagation()
+            dispatchToMode(ModeMethods.mousemove, e, comp) || defaultMouseMove(e, comp)
+            undefined
+
         mouseup: (e) ->
-            if mode.mouseup e, findComponentOfNode(e.target)
-                e.preventDefault()
+            comp: findComponentOfNode(e.target)
+            if e.button == 2
+                handled: dispatchToMode(ModeMethods.contextmenu, e, comp) || defaultContextMenu(e, comp)
+            else
+                handled: dispatchToMode(ModeMethods.mouseup, e, comp) || defaultMouseUp(e, comp)
+            e.preventDefault() if handled
+            undefined
     }
 
     ##########################################################################################################
@@ -1553,12 +1610,12 @@ jQuery ($) ->
     
     renderScreen: (screen) ->
         sn: screen.node: domTemplate 'app-screen-template'
-        $(sn).setdata('makeapp.screen', screen).attr('id', "app-screen-${screen.sid}")
+        $(sn).setdata('makeapp.screen', screen)
         rerenderScreenContent screen
         sn
 
     renderScreenName: (screen) ->
-        $('.caption', screen.node).html screen.name || "Screen ${screen.userIndex}"
+        $('.caption', screen.node).html screen.name
 
     rerenderScreenContent: (screen) ->
         $(screen.node).find('.component').remove()
@@ -1569,23 +1626,41 @@ jQuery ($) ->
         $(screen.node).bindContextMenu '#screen-context-menu', screen
         $('.content', screen.node).click (e) ->
             if e.which is 1
-                switchToScreen screen
+                if not dispatchToMode ModeMethods.screenclick, screen
+                    switchToScreen screen
                 false
         $('.caption', screen.node).dblclick -> startRenamingScreen screen; false
         
     updateScreenList: ->
         $('#screens-list > .app-screen').remove()
         _(application.screens).each (screen, index) ->
-            screen.userIndex: index + 1
-            screen.sid: screen.userIndex # TEMP FIXME
             appendRenderedScreenFor screen
 
+    updateActionsDueToScreenRenames: (renames) ->
+        for screen in application.screens
+            traverse screen.rootComponent, (comp) ->
+                if comp.action && comp.action.action is ACTIONS.switchScreen
+                        if newName: renames[comp.action.screenName]
+                            comp.action.screenName: newName
+
+    keepingScreenNamesNormalized: (func) ->
+        _(application.screens).each (screen, index) -> screen.originalName: screen.name; screen.nameIsBasedOnIndex: (screen.name is "Screen ${index+1}")
+        func()
+        renames: {}  # important to execute all renames at once to handle numbered screens ("Screen 1") being swapped
+        _(application.screens).each (screen, index) ->
+            screen.name: "Screen ${index+1}" if screen.nameIsBasedOnIndex or not screen.name?
+            if screen.name isnt screen.originalName
+                renames[screen.originalName]: screen.name
+            delete screen.nameIsBasedOnIndex if screen.nameIsBasedOnIndex?
+            delete screen.originalName if screen.originalName?
+        updateActionsDueToScreenRenames renames
+
     addScreenWithoutTransaction: ->
-        application.screens.push screen: internalizeScreen {
+        screen: internalizeScreen {
             rootComponent: DEFAULT_ROOT_COMPONENT
         }
-        screen.userIndex: application.screens.length
-        screen.sid: screen.userIndex # TEMP FIXME
+        keepingScreenNamesNormalized ->
+            application.screens.push screen
         appendRenderedScreenFor screen
         switchToScreen screen
 
@@ -1598,7 +1673,11 @@ jQuery ($) ->
         $('.caption', screen.node).startInPlaceEditing {
             accept: (newText) ->
                 runTransaction "screen rename", ->
+                    oldText: screen.name
                     screen.name: newText
+                    renames: {}
+                    renames[oldText]: newText
+                    updateActionsDueToScreenRenames renames
                     renderScreenName screen
         }
 
@@ -1607,7 +1686,8 @@ jQuery ($) ->
         return if pos < 0
 
         beginUndoTransaction "deletion of a screen"
-        application.screens.splice(pos, 1)
+        keepingScreenNamesNormalized ->
+            application.screens.splice(pos, 1)
         $(screen.node).fadeOut 250, ->
             $(screen.node).remove()
         if application.screens.length is 0
@@ -1621,9 +1701,8 @@ jQuery ($) ->
         return if pos < 0
 
         beginUndoTransaction "duplication of a screen"
-        application.screens.splice pos+1, 0, screen: internalizeScreen externalizeScreen oldScreen
-        screen.userIndex: application.screens.length
-        screen.sid: screen.userIndex # TEMP FIXME
+        keepingScreenNamesNormalized ->
+            application.screens.splice pos+1, 0, screen: internalizeScreen externalizeScreen oldScreen
         appendRenderedScreenFor screen, oldScreen.node
         switchToScreen screen
         endUndoTransaction()
@@ -1641,7 +1720,7 @@ jQuery ($) ->
             
     setActiveScreen: (screen) ->
         $('#screens-list > .app-screen').removeClass('active')
-        $("#app-screen-${screen.sid}}").addClass('active')
+        $(screen.node).addClass('active')
 
     $('#add-screen-button').click -> addScreen(); false
 
@@ -1661,9 +1740,10 @@ jQuery ($) ->
         distance: 5
         opacity: 0.8
         update: (e, ui) ->
-            screens: _($("#screens-list .app-screen")).map (sn) -> $(sn).getdata('makeapp.screen')
             runTransaction "reordering screens", ->
-                application.screens: screens
+                keepingScreenNamesNormalized ->
+                    screens: _($("#screens-list .app-screen")).map (sn) -> $(sn).getdata('makeapp.screen')
+                    application.screens: screens
                 updateScreenList()
     }
 
@@ -1680,7 +1760,10 @@ jQuery ($) ->
         activeScreen.nextId ||= 1
         
         $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
-        traverse activeScreen.rootComponent, (c) -> updateEffectiveSize c
+        updateSizes: ->
+            traverse activeScreen.rootComponent, (c) -> updateEffectiveSize c
+        setTimeout updateSizes, 10
+        
         
         devicePanel: $('#device-panel')[0]
         allowedArea: {
@@ -1767,6 +1850,7 @@ jQuery ($) ->
         updateBackgroundsInspector()
         updatePositionInspector()
         updateTextInspector()
+        updateActionInspector()
 
     bindBackground: (swatch, bg) ->
         bindStyleChangeButton swatch, (c, style) ->
@@ -1819,7 +1903,58 @@ jQuery ($) ->
         $('#insp-text-pane li')[if textStyleEditable then 'removeClass' else 'addClass']('disabled')
         $('#text-bold')[if bold then 'addClass' else 'removeClass']('active')
         $('#text-italic')[if italic then 'addClass' else 'removeClass']('active')
-        
+
+    updateActionInspector: ->
+        enabled: no
+        current: ""
+        actionSet: no
+        actionCleared: no
+        if activeMode()?.isActionPickingMode
+            enabled: yes
+            current: "&larr; click on a screen in the left pane (ESC to cancel)"
+            actionSet: yes
+        else if c: componentToActUpon()
+            if enabled: not c.type.forbidsAction
+                if act: c.action
+                    current: act.action.describe(act, application)
+                    actionSet: yes
+                else
+                    current: ""
+                    actionCleared: yes
+        $('#chosen-action-label').html(current)
+        $('#set-action-button, #no-action-button')[if enabled then 'removeClass' else 'addClass']('disabled')
+        $('#set-action-button')[if actionSet then 'addClass' else 'removeClass']('active')
+        $('#no-action-button')[if actionCleared then 'addClass' else 'removeClass']('active')
+
+    activateActionPickingMode: (c) ->
+        activateMode {
+            screenclick: (screen) ->
+                runTransaction "action change", ->
+                    c.action: ACTIONS.switchScreen.create(screen)
+                    deactivateMode()
+                    updateActionInspector()
+            activated:   -> updateActionInspector()
+            deactivated: -> updateActionInspector()
+            escdown:     -> deactivateMode(); true
+            mousemove:   -> true
+            isActionPickingMode: yes
+        }
+
+    $('#no-action-button').click (e) ->
+        cancelMode()
+        if c: componentToActUpon()
+            if enabled: not c.type.forbidsAction
+                runTransaction "clearing action of ${friendlyComponentName c}", ->
+                    c.action: null
+                    updateActionInspector()
+
+    $('#set-action-button').click (e) ->
+        if activeMode()?.isActionPickingMode
+            deactivateMode()
+        else if c: componentToActUpon()
+            if enabled: not c.type.forbidsAction
+                activateActionPickingMode c
+
     bindStyleChangeButton: (button, func) ->
         savedComponent: null
         cancelStyle: ->
@@ -1954,7 +2089,7 @@ jQuery ($) ->
             return if componentBeingDoubleClickEdited isnt null
             act: componentToActUpon()
             switch e.which
-                when $.KEY_ESC then deselectComponent(); false
+                when $.KEY_ESC then dispatchToMode(ModeMethods.escdown, e) || deselectComponent(); false
                 when $.KEY_DELETE then deleteComponent(act) if act
                 when $.KEY_ARROWUP    then moveComponentByKeyboard act, e, KB_MOVE_DIRS.up    if act
                 when $.KEY_ARROWDOWN  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.down  if act
@@ -2128,7 +2263,7 @@ jQuery ($) ->
     switchToDesign: ->
         $(".screen").hide()
         $('#design-screen').show()
-        activatePointingMode()
+        deactivateMode()  # if any
         adjustDeviceImagePosition()
         updateCustomImages()
 
