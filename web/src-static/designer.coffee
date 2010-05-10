@@ -1975,7 +1975,7 @@ jQuery ($) ->
         $('#run-screen').show()
         url: window.location.href.replace(/\/dev.*$/, '/').replace(/#.*$/, '') + "R" + applicationId
         console.log url
-        $('#run-address-label span').html(url)
+        $('#run-address-label a').attr('href', url).html(url)
         $('#run-iframe').attr 'src', url
 
     $('#run-stop-button').click ->

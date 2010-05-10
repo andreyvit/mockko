@@ -289,6 +289,9 @@ class RunAppHandler(RequestHandler):
         <!DOCTYPE html>
         <html>
           <head>
+            <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+            <meta name="apple-mobile-web-app-capable" content="yes" />
+            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
             <link charset='utf-8' href='/static/iphone/iphone.css' media='screen' rel='stylesheet' title='no title' type='text/css' />
             <script charset='utf-8' src='/static/lib/jquery-1.4.2.js' type='text/javascript'></script>
             <title>

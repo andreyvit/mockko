@@ -40,7 +40,7 @@ handlers:
 - url: /static/iphone/iphone.css
   static_files: static/iphone/iphone.css
   upload: static/iphone/iphone.css
-  login: admin
+  # login: admin
   
 - url: /dev
   static_files: designer.html
@@ -71,7 +71,7 @@ handlers:
 
 - url: /static/iphone/images
   static_dir: static/iphone/images
-  login: admin
+  # login: admin
 
 - url: /static/theme/images
   static_dir: static/theme/images
