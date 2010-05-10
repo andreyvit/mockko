@@ -666,7 +666,6 @@ jQuery ($) ->
 
         dynamicStyle: if c.type.dynamicStyle then c.type.dynamicStyle(c) else {}
         style: $.extend({}, dynamicStyle, c.stylePreview || c.style)
-        console.log(style)
         css: {}
         css.fontSize: style.fontSize if style.fontSize?
         css.color: style.textColor if style.textColor?
