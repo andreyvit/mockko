@@ -2095,6 +2095,7 @@ jQuery ($) ->
                 when $.KEY_ARROWLEFT  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.left  if act
                 when $.KEY_ARROWRIGHT then moveComponentByKeyboard act, e, KB_MOVE_DIRS.right if act
                 when 'D'.charCodeAt(0) then duplicateComponent(act) if act and (e.ctrlKey or e.metaKey)
+                when 'Z'.charCodeAt(0) then undoLastChange() if (e.ctrlKey or e.metaKey)
 
     ##########################################################################################################
     ##  Simulation (Run)
