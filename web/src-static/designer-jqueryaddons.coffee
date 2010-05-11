@@ -263,7 +263,7 @@ window.newModeEngine: (options) ->
 
     # dispatchToMode(((a) -> a.methodname), arg1, arg2)
     dispatchToMode: (method, args...) ->
-        method || throw "null method passed to dispatchToMode"
+        throw "null method passed to dispatchToMode" unless method
         if not activeMode
             false
         else if func: method(activeMode)

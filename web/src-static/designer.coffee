@@ -859,25 +859,25 @@ jQuery ($) ->
         return { moves: [] } unless sourceStack? or targetStack?
         
         if sourceStack == targetStack
-            target: _(targetStack.items).min (c) -> proximityOfRectToRect rectOf(c), rect
-            if target is comp
-                return { targetRect: rectOf(comp), moves: [] }
-            else if rect.y > comp.abspos.y
-                # moving down
-                {
-                    targetRect: rectWith target.abspos, comp.effsize
-                    moves: [
-                        { comps: stackSlice(comp, no, target, yes), offset: { x: 0, y: -comp.effsize.h } }
-                    ]
-                } 
-            else
-                # moving up
-                {
-                    targetRect: rectWith target.abspos, comp.effsize
-                    moves: [
-                        { comps: stackSlice(target, yes, comp, no), offset: { x: 0, y: comp.effsize.h } }
-                    ]
-                } 
+          target: _(targetStack.items).min (c) -> proximityOfRectToRect rectOf(c), rect
+          if target is comp
+            return { targetRect: rectOf(comp), moves: [] }
+          else if rect.y > comp.abspos.y
+            # moving down
+            return {
+              targetRect: rectWith target.abspos, comp.effsize
+              moves: [
+                { comps: stackSlice(comp, no, target, yes), offset: { x: 0, y: -comp.effsize.h } }
+              ]
+            } 
+          else
+            # moving up
+            return {
+                targetRect: rectWith target.abspos, comp.effsize
+                moves: [
+                    { comps: stackSlice(target, yes, comp, no), offset: { x: 0, y: comp.effsize.h } }
+                ]
+            } 
         else
             res: { moves: [] }
             if targetStack?
@@ -1423,15 +1423,15 @@ jQuery ($) ->
                 newPos: {}
                 newSize: {}
                 console.log options
-                [newSize.w, newPos.x]: switch true
-                    when (delta.w is 0 or options.hmode is 'c') then [originalSize.w, originalPos.x]
-                    when (options.hmode is 'r') then [baseSize.w + delta.x, originalPos.x]
-                    when (options.hmode is 'l') then [baseSize.w - delta.x, originalPos.x + delta.x]
+                [newSize.w, newPos.x]: switch
+                    when delta.w is 0 or options.hmode is 'c' then [originalSize.w, originalPos.x]
+                    when options.hmode is 'r' then [baseSize.w + delta.x, originalPos.x]
+                    when options.hmode is 'l' then [baseSize.w - delta.x, originalPos.x + delta.x]
                     else throw "Internal Error: unknown resize hmode ${options.hmode}"
-                [newSize.h, newPos.y]: switch true
-                    when (delta.h is 0 or options.vmode is 'c') then [originalSize.h, originalPos.y]
-                    when (options.vmode is 'b') then [baseSize.h + delta.y, originalPos.y]
-                    when (options.vmode is 't') then [baseSize.h - delta.y, originalPos.y + delta.y]
+                [newSize.h, newPos.y]: switch
+                    when delta.h is 0 or options.vmode is 'c' then [originalSize.h, originalPos.y]
+                    when options.vmode is 'b' then [baseSize.h + delta.y, originalPos.y]
+                    when options.vmode is 't' then [baseSize.h - delta.y, originalPos.y + delta.y]
                     else throw "Internal Error: unknown resize vmode ${options.vmode}"
                 comp.size: newSize
                 comp.dragpos: newPos
