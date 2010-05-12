@@ -28,6 +28,7 @@
         defaultText: "Some text"
         widthPolicy: { autoSize: 'browser' }
         heightPolicy: { fixedSize: 20 }
+        wantsSmartAlignment: yes
     }
     'rect': {
         label: 'Rectangle'

@@ -476,6 +476,11 @@ jQuery ($) ->
     ptDiff: (a, b) -> { x: a.x - b.x, y: a.y - b.y }
     ptSum:  (a, b) -> { x: a.x + b.x, y: a.y + b.y }
     ptMul:  (p, r) -> { x: p.x * r,   y: p.y * r   }
+    distancePtToPtMod: (a, b) -> Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))
+    distancePtToPtSqr: (a, b) -> Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y))
+
+    centerOfRect: (r) -> { x: r.x + r.w / 2, y: r.y + r.h / 2 }
+    centerOfSize: (s) -> { x: s.w / 2, y: s.h / 2 }
     
     ##########################################################################################################
     ##  component management
@@ -730,6 +735,96 @@ jQuery ($) ->
 
 
     ##########################################################################################################
+    ##  Alignment Detection
+
+    ALIGNMENT_DETECTION_CENTER_FUZZINESS_PX: 2
+    ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX: 10
+    ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX: 10
+    Alignments: {
+        left: {
+            bestDefiniteGuess: -> this
+            cssValue: 'left'
+            adjustedPosition: (originalRect, newSize) -> null
+        }
+        center: {
+            bestDefiniteGuess: -> this
+            cssValue: 'center'
+            adjustedPosition: (originalRect, newSize) ->
+                c: centerOfRect originalRect
+                { x: c.x - newSize.w/2, y: originalRect.y }
+        }
+        right: {
+            bestDefiniteGuess: -> this
+            cssValue: 'right'
+            adjustedPosition: (originalRect, newSize) ->
+                { x: originalRect.x+originalRect.w - newSize.w, y: originalRect.y }
+        }
+        tight: {
+            bestDefiniteGuess: -> Alignments.left
+        }
+        unknown: {
+            bestDefiniteGuess: -> Alignments.left
+        }
+    }
+    (->
+        for name, al of Alignments
+            al.name: name
+    )()
+    Edges: {
+        top: {
+            siblingRect: (r, distance) -> { x: r.x, w: r.w, h: distance, y: r.y - distance }
+        }
+        bottom: {
+            siblingRect: (r, distance) -> { x: r.x, w: r.w, h: distance, y: r.y + r.h }
+        }
+        left: {
+            siblingRect: (r, distance) -> { y: r.y, h: r.h, w: distance, x: r.x - distance }
+        }
+        right: {
+            siblingRect: (r, distance) -> { y: r.y, h: r.h, w: distance, x: r.x + r.w }
+        }
+    }
+
+    findComponentByRect: (r, exclusionSet) ->
+        match: null
+        traverse activeScreen.rootComponent, (comp) ->
+            unless inSet comp, exclusionSet
+                if doesRectIntersectRect r, rectOf comp
+                    match: r  # don't return yet to find the innermost match
+        match
+
+    compWithChildrenAndParents: (comp) ->
+        items: []
+        traverse comp, (child) -> items.push child
+        while comp: comp.parent
+            items.push comp
+        items
+
+    possibleAlignmentOf: (comp) ->
+        return Alignments.unknown unless comp.parent
+
+        pr: rectOf comp.parent
+        cr: rectOf comp
+
+        nonSiblings: setOf compWithChildrenAndParents comp
+        findConstrainingSibling: (edge) -> findComponentByRect(edge.siblingRect(cr, ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX), nonSiblings)
+
+        leftSibling:  findConstrainingSibling Edges.left
+        rightSibling: findConstrainingSibling Edges.right
+        return Alignments.tight if leftSibling and rightSibling
+        return Alignments.right if rightSibling
+        return Alignments.left  if leftSibling
+
+        if Math.abs(centerOfRect(pr).x - centerOfRect(cr).x) <= ALIGNMENT_DETECTION_CENTER_FUZZINESS_PX
+            return Alignments.center
+
+        return Alignments.left  if pr.x <= cr.x <= pr.x + ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX
+        return Alignments.right if pr.x+pr.w - ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX <= cr.x+cr.w <= pr.x+pr.w
+
+        return Alignments.unknown
+
+
+    ##########################################################################################################
     ##  sizing
     
     recomputeEffectiveSizeInDimension: (userSize, policy, fullSize) ->
@@ -914,7 +1009,8 @@ jQuery ($) ->
     
     hoveredComponent: null
     
-    RESIZING_HANDLES = ['tl', 'tc', 'tr', 'cl', 'cr', 'bl', 'bc', 'br']
+    # RESIZING_HANDLES = ['tl', 'tc', 'tr', 'cl', 'cr', 'bl', 'bc', 'br']
+    RESIZING_HANDLES = ['tc', 'tr', 'cl', 'cr', 'bl', 'bc', 'br']
 
     adjustHorizontalSizingMode: (comp, hmode) ->
         if comp.type.widthPolicy.userSize then hmode else 'c'
@@ -1032,6 +1128,10 @@ jQuery ($) ->
     startComponentTextInPlaceEditing: (c) ->
         return unless c.type.supportsText
 
+        if c.type.wantsSmartAlignment
+            alignment: possibleAlignmentOf(c).bestDefiniteGuess()
+            originalRect: rectOf c
+
         $(textNodeOfComponent c).startInPlaceEditing {
             before: -> $(c.node).addClass 'editing';    activateMode { debugname: "In-Place Text Edit" }
             after:  -> $(c.node).removeClass 'editing'; deactivateMode()
@@ -1039,6 +1139,13 @@ jQuery ($) ->
                 runTransaction "text change in ${friendlyComponentName c}", ->
                     c.text: newText
                     renderComponentVisualProperties c
+            changed: ->
+                if c.type.wantsSmartAlignment
+                    updateEffectiveSize c
+                    if newPos: alignment.adjustedPosition(originalRect, c.effsize)
+                        c.abspos: newPos
+                        renderComponentPosition c
+                        updateHoverPanelPosition()
         }
 
 
@@ -1578,7 +1685,7 @@ jQuery ($) ->
                         imageEffect: grp.imageEffect
                     }
                 }
-            # MakeApp.paletteDefinition.push { name: grp.label, items: items }
+            MakeApp.paletteDefinition.push { name: grp.label, items: items }
         
         for ctg in MakeApp.paletteDefinition
             renderPaletteGroup ctg

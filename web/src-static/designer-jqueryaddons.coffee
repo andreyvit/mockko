@@ -164,17 +164,19 @@ $.extend $, {
     KEY_F1:          112
 }
 
+# TODO: fire change events when doing cut/copy/paste, etc
 jQuery.fn.startInPlaceEditing: (->
     nop: ->
     cancelActiveEditor: nop
     acceptActiveEditor: nop
-    DEFAULT_OPTIONS: { before: nop, accept: nop, cancel: nop, after: nop }
+    DEFAULT_OPTIONS: { before: nop, accept: nop, cancel: nop, after: nop, changed: nop }
 
     startInPlaceEditing: (options) ->
         cancelActiveEditor()
         options: jQuery.extend({}, DEFAULT_OPTIONS, options)
         $el: this
         savedHTML: $el.html()
+        previouslySeenHTML: savedHTML
 
         startEditing: ->
             $el.css '-webkit-user-select', 'auto'
@@ -184,6 +186,7 @@ jQuery.fn.startInPlaceEditing: (->
             document.addEventListener 'mousedown', handleMouseDown, true
             $el.bind 'blur.in-place-editor', ->
                 acceptActiveEditor(); true
+            $el.bind 'change.in-place-editor', -> alert 'change!'
 
         stopEditing: ->
             $el.css '-webkit-user-select', ''
@@ -203,16 +206,25 @@ jQuery.fn.startInPlaceEditing: (->
         acceptActiveEditor: ->
             [cancelActiveEditor, acceptActiveEditor]: [nop, nop]
             stopEditing()
+            checkChange()
             options.accept($el.html())
             options.after($el[0])
 
+        checkChange: ->
+            currentHTML: $el.html()
+            if currentHTML isnt previouslySeenHTML
+                previouslySeenHTML: currentHTML
+                options.changed(currentHTML)
+
         handleKeyDown: (e) ->
+            setTimeout checkChange, 1
             switch e.which
                 when 13 then acceptActiveEditor(); false
                 when 27 then cancelActiveEditor(); false
                 else    e.stopPropagation(); true
 
         handleMouseDown: (e) ->
+            setTimeout checkChange, 1
             if e.target is $el[0]
                 e.stopPropagation(); true
             else
