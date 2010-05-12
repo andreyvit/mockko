@@ -738,8 +738,8 @@ jQuery ($) ->
     ##  Alignment Detection
 
     ALIGNMENT_DETECTION_CENTER_FUZZINESS_PX: 2
-    ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX: 10
-    ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX: 10
+    ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX: 17
+    ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX: 12
     Alignments: {
         left: {
             bestDefiniteGuess: -> this
@@ -806,6 +806,9 @@ jQuery ($) ->
         pr: rectOf comp.parent
         cr: rectOf comp
 
+        return Alignments.left  if pr.x <= cr.x <= pr.x + ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX
+        return Alignments.right if pr.x+pr.w - ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX <= cr.x+cr.w <= pr.x+pr.w
+
         nonSiblings: setOf compWithChildrenAndParents comp
         findConstrainingSibling: (edge) -> findComponentByRect(edge.siblingRect(cr, ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX), nonSiblings)
 
@@ -817,9 +820,6 @@ jQuery ($) ->
 
         if Math.abs(centerOfRect(pr).x - centerOfRect(cr).x) <= ALIGNMENT_DETECTION_CENTER_FUZZINESS_PX
             return Alignments.center
-
-        return Alignments.left  if pr.x <= cr.x <= pr.x + ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX
-        return Alignments.right if pr.x+pr.w - ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX <= cr.x+cr.w <= pr.x+pr.w
 
         return Alignments.unknown
 

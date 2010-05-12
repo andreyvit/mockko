@@ -88,6 +88,7 @@
         	fontSize: 12
         	fontBold: yes
         }
+        wantsSmartAlignment: yes
     }
     'barButton': {
         label: 'Bar Button'
@@ -101,6 +102,7 @@
         	fontSize: 12
         	fontBold: yes
         }
+        wantsSmartAlignment: yes
     }
     'toolbar': {
         label: 'Toolbar'
