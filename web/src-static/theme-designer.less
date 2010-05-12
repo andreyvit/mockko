@@ -80,19 +80,11 @@
     .handle {
         position: absolute;
         color: white;
-        width: 16px;
-        height: 16px;
-        line-height: 16px;
-        font-size: 12px;
-        text-align: center;
+        width: 18px;
+        height: 18px;
         cursor: pointer;
-        background: rgba(0, 0, 0, 0.5);
-        -webkit-border-radius: 8px;
         
         :hover {
-            background: yellow;
-            color: red;
-            
             .tip {
                 visibility: visible;
             }
@@ -103,42 +95,51 @@
             visibility: hidden;
             display: block;
             font-size: 12px;
-            font-weight: bold;
             height: 16px;
             width: auto;
             line-height: 16px;
             -webkit-border-radius: 6px;
             background: rgba(0, 0, 0, 0.66);
             padding: 0px 6px;
-            
-            color: red;
         }
     }
     
     .delete-handle {
         left: -8px;
         top: -8px;
-        
+
+        background: url(images/button-delete-normal.png);
+        :hover {
+            background: url(images/button-delete-over.png);
+        }
+        :active {
+            background: url(images/button-delete-down.png);
+        }
+
         .tip {
             top: -18px;
             left: -17px;
+            color: red;
         }
-    }
-    .delete-handle:before {
-        content: "X";
     }
     
     .duplicate-handle {
         left: 8px;
         top: -8px;
-        
+
+        background: url(images/button-dup-normal.png);
+        :hover {
+            background: url(images/button-dup-over.png);
+        }
+        :active {
+            background: url(images/button-dup-down.png);
+        }
+
         .tip {
             top: -18px;
             left: -25px;
+            color: #6cc341;
         }
-    }
-    .duplicate-handle:before {
-        content: "D";
     }
     
     .move-handle {
@@ -159,12 +160,11 @@
         position: absolute;
         width: 7px;
         height: 7px;
-        background: rgba(160, 160, 160, 0.8);
-        border: 1px solid rgba(0, 0, 0, 0.8);
+        background: url(images/resizing-handle.png) no-repeat 0px 0px;
         cursor: move;
     }
     .resizing-handle.disabled {
-        border: 1px dotted rgba(0, 0, 0, 0.5);
+        background: url(images/resizing-handle-disabled.png) no-repeat 0px 0px;
     }
     .resizing-ne { cursor: nwse-resize; }
     .resizing-nw { curosr: nesw-resize; }
