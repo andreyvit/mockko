@@ -44,6 +44,8 @@ jQuery ($) ->
     
     SERVER_MODES = {
         anonymous: {
+            supportsImageEffects: yes
+
             adjustUI: (userData) ->
                 $('.login-button').attr 'href', userData.login_url
                 
@@ -60,6 +62,8 @@ jQuery ($) ->
         }
         
         authenticated: {
+            supportsImageEffects: yes
+
             adjustUI: (userData) ->
                 $('.logout-button').attr 'href', userData.logout_url
                 
@@ -187,6 +191,8 @@ jQuery ($) ->
         }
         
         local: {
+            supportsImageEffects: no
+
             adjustUI: (userData) ->
                 #
                 
@@ -662,12 +668,12 @@ jQuery ($) ->
     imageUrlForImage: (image, effect) ->
         switch image.kind
             when 'custom'
-                if effect
+                if effect and serverMode.supportsImageEffects
                     "images/${encodeURIComponent image.id}/${effect}"
                 else
                     "images/${encodeURIComponent image.id}"
             when 'stock'
-                if effect
+                if effect and serverMode.supportsImageEffects
                     "images/stock--" + image.group.replace(/\//g, '--') + "--${image.name}/${effect}"
                 else
                     "${STOCK_DIR}${image.group}/${image.name}"
@@ -1676,11 +1682,12 @@ jQuery ($) ->
     fillPalette: ->
         for grp in MakeApp.stockImageGroups
             items: for fileData in MakeApp.imageDirectories[grp.path]
+                [w, h]: _(grp.size.split("x")).map (s) -> parseInt(s)
                 {
                     type: 'image'
                     label: fileData.f.replace(/\.png$/, '')
                     image: { kind: 'stock', group: grp.path, name: fileData.f }
-                    size: { w: 30, h: 30 }
+                    size: { w: w, h: h }
                     style: {
                         imageEffect: grp.imageEffect
                     }
@@ -2364,10 +2371,6 @@ jQuery ($) ->
             if not ct.textStyleEditable?
                 ct.textStyleEditable: ct.defaultText?
             ct.supportsText: ct.defaultText?
-
-    initComponentTypes()
-    initPalette()
-    hookKeyboardShortcuts()
     
     createNewApplicationName: ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
@@ -2473,6 +2476,15 @@ jQuery ($) ->
         # resizePalette()
         adjustDeviceImagePosition()
     
+    if window.location.href.match /^file:/
+        serverMode: SERVER_MODES.local
+    else
+        serverMode: SERVER_MODES.anonymous
+
+    initComponentTypes()
+    initPalette()
+    hookKeyboardShortcuts()
+
     if window.location.href.match /^file:/
         loadDesigner { status: 'local' }
     else
