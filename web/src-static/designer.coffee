@@ -5,6 +5,9 @@ jQuery ($) ->
     CONF_DESIGNAREA_PUSHBACK_DISTANCE = 100
     STACKED_COMP_TRANSITION_DURATION = 200
 
+    MAX_IMAGE_UPLOAD_SIZE: 1024*1024
+    MAX_IMAGE_UPLOAD_SIZE_DESCR: '1 Mb'
+
     ##########################################################################################################
     ## constants
     
@@ -2063,8 +2066,20 @@ jQuery ($) ->
         this.ondrop: (e) ->
             console.log "drop"
             e.preventDefault()
+            errors: []
             for file in e.dataTransfer.files
-                uploadImageFile file
+                if not file.fileName.match(/\.jpg$|\.png$|\.gif$/)
+                    ext: file.fileName.match(/\.[^.\/\\]+$/)[1]
+                    errors.push { fileName: file.fileName, reason: "${ext || 'this'} format is not supported"}
+                else if file.fileSize > MAX_IMAGE_UPLOAD_SIZE
+                    errors.push { fileName: file.fileName, reason: "file too big, maximum size is ${MAX_IMAGE_UPLOAD_SIZE_DESCR}"}
+                else
+                    uploadImageFile file
+            if errors.length > 0
+                message: switch errors.length
+                    when 1 then "Cannot upload ${errors[0].fileName}: ${errors[0].reason}."
+                    else "Cannot upload the following files:\n" + ("\t* ${e.fileName} (${e.reason})\n" for e in errors)
+                alert message
 
     deleteCustomImage: (image) ->
         serverMode.deleteCustomImage image.id, ->
