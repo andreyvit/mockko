@@ -599,7 +599,8 @@ jQuery ($) ->
     createNodeForComponent: (c) ->
         ct: c.type
         movability: if ct.unmovable then "unmovable" else "movable"
-        $(ct.html || "<div />").addClass("component c-${c.type.name} c-${c.type.name}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c).addClass(movability)[0]
+        tagName: c.type.tagName || "div"
+        $(ct.html || "<${tagName} />").addClass("component c-${c.type.name} c-${c.type.name}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c).addClass(movability)[0]
         
     _renderComponentHierarchy: (c, storeFunc) ->
         n: storeFunc c, createNodeForComponent(c)
@@ -661,6 +662,9 @@ jQuery ($) ->
                 else
                     "${STOCK_DIR}${image.group}/${image.name}"
 
+    renderImageDefault: (comp, node, imageUrl) ->
+        $(imageNodeOfComponent comp, node).css { backgroundImage: "url(${imageUrl})"}
+
     renderComponentStyle: (c, cn) ->
         cn ||= c.node
 
@@ -693,7 +697,7 @@ jQuery ($) ->
             $(textNodeOfComponent c, cn).html(c.text)
         if c.image?
             imageUrl: imageUrlForImage(c.image, style.imageEffect || null)
-            $(imageNodeOfComponent c, cn).css { backgroundImage: "url(${imageUrl})"}
+            (c.type.renderImage || renderImageDefault)(c, cn, imageUrl)
 
     renderComponentVisualProperties: (c, cn) ->
         renderComponentStyle c, cn
@@ -1506,6 +1510,7 @@ jQuery ($) ->
         mouseup: (e) ->
             comp: findComponentOfNode(e.target)
             if e.button == 2
+                return if e.shiftKey
                 handled: dispatchToMode(ModeMethods.contextmenu, e, comp) || defaultContextMenu(e, comp)
             else
                 handled: dispatchToMode(ModeMethods.mouseup, e, comp) || defaultMouseUp(e, comp)
@@ -1558,13 +1563,23 @@ jQuery ($) ->
                         imageEffect: grp.imageEffect
                     }
                 }
-            MakeApp.paletteDefinition.push { name: grp.label, items: items }
+            # MakeApp.paletteDefinition.push { name: grp.label, items: items }
         
         for ctg in MakeApp.paletteDefinition
             renderPaletteGroup ctg
             
         customImagesPaletteGroup: renderPaletteGroup customImagesPaletteCategory
-        
+
+    constrainImageSize: (imageSize, maxSize) ->
+      if imageSize.w <= maxSize.w and imageSize.h <= maxSize.h
+        imageSize
+      else
+        ratio: { x: maxSize.w / imageSize.w ; y: maxSize.h / imageSize.h }  # need to scale up this number of times
+        if ratio.x > ratio.y
+          { h: maxSize.h; w: imageSize.w * ratio.y }
+        else
+          { w: maxSize.w; h: imageSize.h * ratio.x }
+
     updateCustomImagesPalette: ->
         $(customImagesPaletteGroup).find("*").remove()
         customImagesPaletteCategory.items: for image in customImages
@@ -1572,7 +1587,7 @@ jQuery ($) ->
                 type: 'image'
                 label: "${image.fileName} ${image.width}x${image.height}"
                 image: { kind: 'custom', id: image.id }
-                size: { w: image.width, h: image.height }
+                size: constrainImageSize { w: image.width, h: image.height }, { w: 320, h: 480 }  # TODO landscape
                 imageEl: image
             }
         renderPaletteGroupContent customImagesPaletteCategory, customImagesPaletteGroup, (item, node) ->

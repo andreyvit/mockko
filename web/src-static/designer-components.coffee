@@ -19,6 +19,9 @@
         heightPolicy: { fixedSize: 30 }
         supportsImage: yes
         supportsImageReplacement: no
+        tagName: 'img'
+        renderImage: (comp, node, imageUrl) ->
+          node.src: imageUrl
     }
     'text': {
         label: 'Text'
