@@ -837,4 +837,11 @@ MakeApp.stockImageGroups: [
         path: 'glyphish/mini-icons'
         imageEffect: 'iphone-tabbar-inactive'
     }
+    {
+        name: "iphone-accessories"
+        label: "iPhone Accessory Icons"
+        size: '25x26'
+        path: 'iphone-accessories'
+        imageEffect: null
+    }
 ]
