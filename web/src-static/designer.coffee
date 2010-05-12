@@ -1432,7 +1432,7 @@ jQuery ($) ->
                 console.log options
                 minimumSize: comp.type.minimumSize || { w: 4, h: 4 }
 
-                maxSizeDecrease: { x: baseSize.w - minimumSize.w; y: baseSize.h - minimumSize.h }
+                maxSizeDecrease: { x: baseSize.w - minimumSize.w; y : baseSize.h - minimumSize.h }
                 switch options.hmode
                     when 'l' then delta.x: Math.min delta.x,  maxSizeDecrease.x
                     else          delta.x: Math.max delta.x, -maxSizeDecrease.x
