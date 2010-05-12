@@ -1430,6 +1430,16 @@ jQuery ($) ->
                 newPos: {}
                 newSize: {}
                 console.log options
+                minimumSize: comp.type.minimumSize || { w: 4, h: 4 }
+
+                maxSizeDecrease: { x: baseSize.w - minimumSize.w; y: baseSize.h - minimumSize.h }
+                switch options.hmode
+                    when 'l' then delta.x: Math.min delta.x,  maxSizeDecrease.x
+                    else          delta.x: Math.max delta.x, -maxSizeDecrease.x
+                switch options.vmode
+                    when 't' then delta.y: Math.min delta.y,  maxSizeDecrease.y
+                    else          delta.y: Math.max delta.y, -maxSizeDecrease.y
+
                 [newSize.w, newPos.x]: switch
                     when delta.w is 0 or options.hmode is 'c' then [originalSize.w, originalPos.x]
                     when options.hmode is 'r' then [baseSize.w + delta.x, originalPos.x]
