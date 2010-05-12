@@ -2249,7 +2249,7 @@ jQuery ($) ->
             act: componentToActUpon()
             switch e.which
                 when $.KEY_ESC then dispatchToMode(ModeMethods.escdown, e) || deselectComponent(); false
-                when $.KEY_DELETE then deleteComponent(act) if act
+                when $.KEY_DELETE, $.KEY_BACKSPACE then deleteComponent(act) if act
                 when $.KEY_ARROWUP    then moveComponentByKeyboard act, e, KB_MOVE_DIRS.up    if act
                 when $.KEY_ARROWDOWN  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.down  if act
                 when $.KEY_ARROWLEFT  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.left  if act
