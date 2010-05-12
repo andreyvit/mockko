@@ -545,25 +545,27 @@ jQuery ($) ->
         newComp: internalizeComponent(externalizeComponent(comp), comp.parent)
         traverse newComp, (c) -> c.id: null  # make sure all ids are reassigned
         
-        
+        oldPos: newComp.abspos
         if stacking.targetRect
             # part of stack, so add directly below
             liveMover: newLiveMover [comp]
             liveMover.moveComponents stacking.moves
             liveMover.commit(STACKED_COMP_TRANSITION_DURATION)
             
-            newComp.abspos: { x: stacking.targetRect.x, y: stacking.targetRect.y }
+            newPos: { x: stacking.targetRect.x, y: stacking.targetRect.y }
         else
             if comp.abspos.x + 2*comp.effsize.w + 5 + 5 <= 320
-                newComp.abspos: {
+                newPos: {
                     x: comp.abspos.x + comp.effsize.w + 5
                     y: comp.abspos.y
                 }
             else
-                newComp.abspos: {
+                newPos: {
                     x: comp.abspos.x
                     y: comp.abspos.y + comp.effsize.h + 5
                 }
+        posDelta: ptDiff newPos, oldPos
+        traverse newComp, (child) -> child.abspos: ptSum child.abspos, posDelta
 
         comp.parent.children.push newComp
         $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
