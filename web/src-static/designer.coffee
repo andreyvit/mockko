@@ -1551,7 +1551,7 @@ jQuery ($) ->
             
     renderPaletteGroupContent: (ctg, group, func) ->
         $('<div />').addClass('header').html(ctg.name).appendTo(group)
-        items: $('<div />').addClass('items').appendTo(group)
+        ctg.itemsNode: items: $('<div />').addClass('items').appendTo(group)
         func ||= ((ct, n) ->)
         for compTemplate in ctg.items
             c: cloneTemplateComponent compTemplate
@@ -1608,6 +1608,10 @@ jQuery ($) ->
         renderPaletteGroupContent customImagesPaletteCategory, customImagesPaletteGroup, (item, node) ->
             item.imageEl.node: node
             $(node).bindContextMenu '#custom-image-context-menu', item.imageEl
+
+    addCustomImagePlaceholder: ->
+        $(customImagesPaletteCategory.itemsNode).append $("<div />", { className: 'customImagePlaceholder' })
+        $('#palette').scrollToBottom()
                     
     # updatePaletteVisibility: (reason) ->
     #     showing: $('.palette').is(':visible')
@@ -2079,6 +2083,7 @@ jQuery ($) ->
             console.log "drop"
             e.preventDefault()
             errors: []
+            filesToUpload: []
             for file in e.dataTransfer.files
                 if not file.fileName.match(/\.jpg$|\.png$|\.gif$/)
                     ext: file.fileName.match(/\.[^.\/\\]+$/)[1]
@@ -2086,12 +2091,18 @@ jQuery ($) ->
                 else if file.fileSize > MAX_IMAGE_UPLOAD_SIZE
                     errors.push { fileName: file.fileName, reason: "file too big, maximum size is ${MAX_IMAGE_UPLOAD_SIZE_DESCR}"}
                 else
-                    uploadImageFile file
+                    filesToUpload.push file
             if errors.length > 0
                 message: switch errors.length
-                    when 1 then "Cannot upload ${errors[0].fileName}: ${errors[0].reason}."
+                    when 1 then "Cannot upload ${errors[0].fileName}: ${errors[0].reason}.\n"
                     else "Cannot upload the following files:\n" + ("\t* ${e.fileName} (${e.reason})\n" for e in errors)
+                if filesToUpload.length > 0
+                    message += "\nThe following files WILL be uploaded: " + _(filesToUpload).map((f) -> f.fileName).join(", ")
                 alert message
+            for file in filesToUpload
+                addCustomImagePlaceholder()
+                uploadImageFile file
+            $('#palette').scrollToBottom()
 
     deleteCustomImage: (image) ->
         serverMode.deleteCustomImage image.id, ->
