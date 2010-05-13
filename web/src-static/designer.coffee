@@ -412,11 +412,14 @@ jQuery ($) ->
         
     undoLastChange: ->
         return if undoStack.length == 0
+        screenIndex: _(application.screens).indexOf activeScreen
         change: undoStack.pop()
         console.log "Undoing: ${change.name}"
         revertToMemento change.memento
         undoStackChanged()
         saveApplicationChanges()
+        if screenIndex >= 0 && screenIndex < application.screens.length
+            switchToScreen application.screens[screenIndex]
         
     createApplicationMemento: -> JSON.stringify(externalizeApplication(application))
     
