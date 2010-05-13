@@ -178,6 +178,7 @@
     'roundrect-row': {
         group: 'roundrect-rows'
         label: 'Rounded Rect Row'
+        container: yes
         widthPolicy: { autoSize: 'fill' }
         heightPolicy: { userSize: true, fixedSize: 44 }
         html: '<div><div class="inner"></div></div>'
@@ -253,6 +254,7 @@
     }
     'map': {
         label: 'Map'
+        container: yes
         widthPolicy:  { userSize: true, fixedSize: 320 }
         heightPolicy: { userSize: true, fixedSize: 320 }
     }
@@ -273,6 +275,7 @@
     }
     'map-callout': {
         label: 'Callout'
+        container: yes
         defaultText: '123 Ave.'
         widthPolicy:  { userSize: yes; fixedSize: 116 }
         heightPolicy: { fixedSize: 35 }

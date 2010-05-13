@@ -8,6 +8,11 @@ jQuery ($) ->
     MAX_IMAGE_UPLOAD_SIZE: 1024*1024
     MAX_IMAGE_UPLOAD_SIZE_DESCR: '1 Mb'
 
+    DUPLICATE_COMPONENT_OFFSET_X: 5
+    DUPLICATE_COMPONENT_OFFSET_Y: 5
+    DUPLICATE_COMPONENT_MIN_EDGE_INSET_X: 5
+    DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y: 5
+
     ##########################################################################################################
     ## constants
     
@@ -552,34 +557,10 @@ jQuery ($) ->
         return if comp.type.unmovable
         beginUndoTransaction "duplicate ${friendlyComponentName comp}"
 
-        rect: rectOf comp
-        rect.y += rect.h
-        stacking: handleStacking comp, rect, allStacks, 'duplicate'
-        
         newComp: internalizeComponent(externalizeComponent(comp), comp.parent)
         traverse newComp, (c) -> c.id: null  # make sure all ids are reassigned
-        
-        oldPos: newComp.abspos
-        if stacking.targetRect
-            # part of stack, so add directly below
-            liveMover: newLiveMover [comp]
-            liveMover.moveComponents stacking.moves
-            liveMover.commit(STACKED_COMP_TRANSITION_DURATION)
-            
-            newPos: { x: stacking.targetRect.x, y: stacking.targetRect.y }
-        else
-            if comp.abspos.x + 2*comp.effsize.w + 5 + 5 <= 320
-                newPos: {
-                    x: comp.abspos.x + comp.effsize.w + 5
-                    y: comp.abspos.y
-                }
-            else
-                newPos: {
-                    x: comp.abspos.x
-                    y: comp.abspos.y + comp.effsize.h + 5
-                }
-        posDelta: ptDiff newPos, oldPos
-        traverse newComp, (child) -> child.abspos: ptSum child.abspos, posDelta
+        newPos: pickPositionForDuplicateComponent newComp, comp
+        moveComponent newComp, newPos
 
         comp.parent.children.push newComp
         $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
@@ -831,6 +812,65 @@ jQuery ($) ->
             return Alignments.center
 
         return Alignments.unknown
+
+
+    ##########################################################################################################
+    ##  Component Positioning
+
+    moveComponent: (comp, newPos) ->
+        delta: ptDiff(newPos, comp.abspos)
+        traverse comp, (child) -> child.abspos: ptSum(child.abspos, delta)
+
+    pickPositionForDuplicateComponent: (newComp, oldComp) ->
+        oldComp ||= newComp
+        rect: rectOf(oldComp)
+        rect.y += rect.h
+        stacking: handleStacking oldComp, rect, allStacks, 'duplicate'
+
+        if stacking.targetRect
+            # part of stack, so add directly below
+            liveMover: newLiveMover [newComp]
+            liveMover.moveComponents stacking.moves
+            liveMover.commit(STACKED_COMP_TRANSITION_DURATION)
+            
+            return { x: stacking.targetRect.x, y: stacking.targetRect.y }
+        else
+            usableBounds: rectOf activeScreen.rootComponent
+
+            rect: rectOf(oldComp)
+            while rect.x+rect.w <= usableBounds.x+usableBounds.w - DUPLICATE_COMPONENT_MIN_EDGE_INSET_X
+                found: findComponentOccupyingRect rect
+                return rect unless found
+                rect.x += found.effsize.w + DUPLICATE_COMPONENT_OFFSET_X
+
+            rect: rectOf(oldComp)
+            while rect.y+rect.h <= usableBounds.y+usableBounds.h - DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y
+                found: findComponentOccupyingRect rect
+                return rect unless found
+                rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
+
+            # when everything else fails, just pick a position not occupied by exact duplicate
+            rect: rectOf(oldComp)
+            while true
+                found: no
+                traverse activeScreen.rootComponent, (c) -> found: c if c.abspos.x == rect.x && c.abspos.y == rect.y
+                found: null if found is activeScreen.rootComponent  # handle (0,0) case
+                return rect unless found
+                rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
+
+    findComponentOccupyingRect: (r, exclusionSet) ->
+        match: null
+        traverse activeScreen.rootComponent, (comp) ->
+            if not exclusionSet? or not inSet comp, exclusionSet
+                candidate: not isContainer
+                if !candidate and (comp isnt activeScreen.rootComponent)
+                    rect: rectOf comp
+                    if rect.x == r.x && rect.y == r.y && rect.w == r.w && rect.h == r.h
+                        candidate: yes
+                if candidate
+                    if doesRectIntersectRect r, rectOf comp
+                        match: comp  # don't return yet to find the innermost match
+        match
 
 
     ##########################################################################################################
@@ -2342,17 +2382,13 @@ jQuery ($) ->
         friendlyName: if newComps.length > 1 then "${newComps.length} objects" else friendlyComponentName(newComps[0])
         runTransaction "pasting ${friendlyName}", ->
             for newComp in newComps
-                while true
-                    found: no
-                    traverse activeScreen.rootComponent, (c) -> found: c if c.abspos.x == newComp.abspos.x && c.abspos.y == newComp.abspos.y
-                    found: null if found is activeScreen.rootComponent  # handle (0,0) case
-                    break unless found
-                    traverse newComp, (c) -> c.abspos.y += found.effsize.h
-
                 newComp.parent: targetCont
                 targetCont.children.push newComp
                 $(targetCont.node).append renderInteractiveComponentHeirarchy newComp
-                traverse newComp, (child) -> updateEffectiveSize child
+                
+                newPos: pickPositionForDuplicateComponent newComp
+                moveComponent newComp, newPos
+                traverse newComp, (child) -> renderComponentPosition child; updateEffectiveSize child
                 traverse newComp, (child) -> assignNameIfStillUnnamed child, activeScreen
 
     cutComponents: (comps) ->
