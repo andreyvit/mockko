@@ -268,8 +268,8 @@
     }
     'map-pin': {
         label: 'iPhone-Style Pin'
-        widthPolicy:  { fixedSize: 50 }
-        heightPolicy: { fixedSize: 66 }
+        widthPolicy:  { fixedSize: 32 }
+        heightPolicy: { fixedSize: 37 }
     }
     'map-callout': {
         label: 'Callout'
