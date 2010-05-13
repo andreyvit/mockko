@@ -709,7 +709,7 @@ jQuery ($) ->
 
         if c.state?
             $(cn).removeClass('state-on state-off').addClass("state-${c.state && 'on' || 'off'}")
-        if c.text?
+        if c.text? and not c.dirtyText
             $(textNodeOfComponent c, cn).html(c.text)
         if c.image?
             imageUrl: imageUrlForImage(c.image, style.imageEffect || null)
@@ -1139,8 +1139,8 @@ jQuery ($) ->
             originalRect: rectOf c
 
         $(textNodeOfComponent c).startInPlaceEditing {
-            before: -> $(c.node).addClass 'editing';    activateMode { debugname: "In-Place Text Edit" }
-            after:  -> $(c.node).removeClass 'editing'; deactivateMode()
+            before: -> c.dirtyText: yes; $(c.node).addClass 'editing';    activateMode { debugname: "In-Place Text Edit" }
+            after:  -> c.dirtyText: no;  $(c.node).removeClass 'editing'; deactivateMode()
             accept: (newText) ->
                 runTransaction "text change in ${friendlyComponentName c}", ->
                     c.text: newText
