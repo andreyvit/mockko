@@ -1852,12 +1852,16 @@ jQuery ($) ->
         pos: application.screens.indexOf(oldScreen)
         return if pos < 0
 
+        screen: internalizeScreen externalizeScreen oldScreen
+        screen.name: null
+
         beginUndoTransaction "duplication of a screen"
         keepingScreenNamesNormalized ->
-            application.screens.splice pos+1, 0, screen: internalizeScreen externalizeScreen oldScreen
+            application.screens.splice pos+1, 0, screen
         appendRenderedScreenFor screen, oldScreen.node
-        switchToScreen screen
         endUndoTransaction()
+        updateScreenList()
+        switchToScreen screen
             
     appendRenderedScreenFor: (screen, after) ->
         renderScreen screen
