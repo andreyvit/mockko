@@ -1577,6 +1577,8 @@ jQuery ($) ->
                 @moveTo pt
                 runTransaction "resizing of ${friendlyComponentName comp}", ->
                     comp.abspos: comp.dragpos
+                    comp.dragpos: null
+                    comp.dragParent: null
         }
 
     activateResizingMode: (comp, startPt, options) ->
