@@ -541,6 +541,8 @@ jQuery ($) ->
             $(rootc.node).hide 'drop', { direction: 'down' }, 'normal', -> $(rootc.node).remove()
         else
             $(rootc.node).remove()
+        deselectComponent() if isComponentOrDescendant selectedComponent, rootc
+        componentUnhovered() if isComponentOrDescendant hoveredComponent, rootc
 
     deleteComponent: (rootc) ->
         beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
@@ -870,6 +872,12 @@ jQuery ($) ->
                 if candidate
                     if doesRectIntersectRect r, rectOf comp
                         match: comp  # don't return yet to find the innermost match
+        match
+
+    isComponentOrDescendant: (candidate, possibleAncestor) ->
+        match: no
+        traverse possibleAncestor, (child) ->
+            match: yes if child is candidate
         match
 
 
@@ -1970,7 +1978,9 @@ jQuery ($) ->
         }
         
         componentsChanged()
-        
+        deselectComponent()
+        componentUnhovered()
+
     
     loadApplication: (app, appId) ->
         app.name = createNewApplicationName() unless app.name
