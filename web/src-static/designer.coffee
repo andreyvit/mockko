@@ -1389,27 +1389,27 @@ jQuery ($) ->
                 if delay? then setTimeout(cleanup, delay) else cleanup()
         }
 
-    startDragging: (c, options) ->
+    startDragging: (comp, options) ->
         origin: $('#design-area').offset()
 
-        if c.inDocument
-            originalR: rectOf c
+        if comp.inDocument
+            originalR: rectOf comp
 
         computeHotSpot: (pt) ->
-            r: rectOf c
+            r: rectOf comp
             {
                 x: if r.w then ((pt.x - origin.left) - r.x) / r.w else 0.5
                 y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
             }
         hotspot: options.hotspot || computeHotSpot(options.startPt)
-        liveMover: newLiveMover [c]
+        liveMover: newLiveMover [comp]
         wasAnchored: no
         anchoredTransitionChangeTimeout: new Timeout STACKED_COMP_TRANSITION_DURATION
 
-        $(c.node).addClass 'dragging'
+        $(comp.node).addClass 'dragging'
 
         updateRectangleAndClipToArea: (pt) ->
-            r: sizeOf c
+            r: sizeOf comp
             r.x: pt.x - origin.left - r.w * hotspot.x
             r.y: pt.y - origin.top  - r.h * hotspot.y
 
@@ -1434,14 +1434,14 @@ jQuery ($) ->
 
         moveTo: (pt) ->
             [r, ok] = updateRectangleAndClipToArea(pt)
-            $(c.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
+            $(comp.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
-                stacking: handleStacking c, r, allStacks
+                stacking: handleStacking comp, r, allStacks
                 liveMover.moveComponents stacking.moves
 
-                target: findBestTargetContainerForRect(r, [c])
-                target = activeScreen.rootComponent if c.type.name in TABLE_TYPES
+                target: findBestTargetContainerForRect(r, [comp])
+                target = activeScreen.rootComponent if comp.type.name in TABLE_TYPES
 
                 isAnchored: no
                 if stacking.targetRect?
@@ -1449,7 +1449,7 @@ jQuery ($) ->
                     r = stacking.targetRect
                     isAnchored: yes
                 else
-                    aps: _(computeAllSnappingPositions(target)).reject (a) -> c == a.c
+                    aps: _(computeAllSnappingPositions(target)).reject (a) -> comp == a.comp
                     aa: _.flatten(computeSnappings(ap, r) for ap in aps)
 
                     best: {
@@ -1466,29 +1466,29 @@ jQuery ($) ->
                     ya: applySnapping best.horz, r if best.horz
                     # isAnchored: xa or ya
 
-            c.dragpos = { x: r.x, y: r.y }
-            c.dragParent: null
+            comp.dragpos = { x: r.x, y: r.y }
+            comp.dragParent: null
 
             if wasAnchored and not isAnchored
-                anchoredTransitionChangeTimeout.set -> $(c.node).removeClass 'anchored'
+                anchoredTransitionChangeTimeout.set -> $(comp.node).removeClass 'anchored'
             else if isAnchored and not wasAnchored
                 anchoredTransitionChangeTimeout.clear()
-                $(c.node).addClass 'anchored'
+                $(comp.node).addClass 'anchored'
             wasAnchored = isAnchored
 
-            componentPositionChangedWhileDragging c
+            componentPositionChangedWhileDragging comp
 
             if ok then { target: target } else null
 
         dropAt: (pt) ->
-            $(c.node).removeClass 'dragging'
+            $(comp.node).removeClass 'dragging'
 
             if res: moveTo pt
                 effects: []
-                if c.type is Types.image and res.target.type.supportsImageReplacement
-                    effects.push newSetImageEffect(res.target, c)
+                if comp.type is Types.image and res.target.type.supportsImageReplacement
+                    effects.push newSetImageEffect(res.target, comp)
                 else
-                    effects.push newDropOnTargetEffect(c, res.target)
+                    effects.push newDropOnTargetEffect(comp, res.target)
                 for e in effects
                     e.apply()
                 liveMover.commit()
@@ -1497,10 +1497,10 @@ jQuery ($) ->
                 liveMover.rollback()
                 false
 
-        if c.node.parentNode
-            c.node.parentNode.removeChild(c.node)
-        activeScreen.rootComponent.node.appendChild(c.node)
-        traverse c, (child) -> updateEffectiveSize child  # we might have just added a new component
+        if comp.node.parentNode
+            comp.node.parentNode.removeChild(comp.node)
+        activeScreen.rootComponent.node.appendChild(comp.node)
+        traverse comp, (child) -> updateEffectiveSize child  # we might have just added a new component
 
         moveTo(options.startPt)
 
