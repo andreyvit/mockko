@@ -1243,12 +1243,10 @@ jQuery ($) ->
         escdown:      (m) -> m.escdown
     }
 
+
     ##########################################################################################################
-    ##  dragging
-    
-    sizeOf: (c) -> { w: c.effsize.w, h: c.effsize.h }
-    rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
-    
+    ##  Snapping
+
     computeSnappingPositionsOfComponent: (c) ->
         r: rectOf c
         _.compact [
@@ -1259,14 +1257,14 @@ jQuery ($) ->
             { orient: 'horz', type: 'edge', c: c, coord: r.y + r.h } if r.y+r.h < allowedArea.y+allowedArea.h
             { orient: 'horz', type: 'center', c: c, coord: r.y + r.h / 2 }
         ]
-        
+
     computeChildrenSnappingPositionsOfContainer: (c) -> computeSnappingPositionsOfComponent c
-        
+
     computeAllSnappingPositions: (pc) ->
         comps: pc.children
         r: _.flatten(computeSnappingPositionsOfComponent c for c in comps)
         if pc is null then r else r.concat computeChildrenSnappingPositionsOfContainer pc
-        
+
     computeSnappings: (ap, r) ->
         switch ap.type
             when 'edge'
@@ -1316,7 +1314,7 @@ jQuery ($) ->
                         coord: ap.coord
                         orient: ap.orient
                     }]
-                
+
     applySnapping: (a, r) ->
         switch a.atype
             when 'left'   then r.x = a.coord
@@ -1327,6 +1325,13 @@ jQuery ($) ->
             when 'ycenter' then r.y = a.coord - r.h/2
             else return false
         true
+
+
+    ##########################################################################################################
+    ##  General Dragging
+
+    sizeOf: (c) -> { w: c.effsize.w, h: c.effsize.h }
+    rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
 
     newLiveMover: (excluded) ->
         excludedSet: setOf excluded
@@ -1350,14 +1355,14 @@ jQuery ($) ->
                         c.dragParent: null
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedWhileDragging c
-                
+
                 for m in moves
                     for c in m.comps
                         $(c.node).addClass 'stacked'
                         c.dragpos: { x: c.abspos.x + m.offset.x; y: c.abspos.y + m.offset.y }
                         c.dragParent: c.parent
                         componentPositionChangedWhileDragging c
-                    
+
             rollback: ->
                 traverse activeScreen.rootComponent, (c) ->
                     if inSet c, excludedSet
@@ -1371,7 +1376,7 @@ jQuery ($) ->
                         c.dragParent: null
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedWhileDragging c
-                    
+
             commit: (delay) ->
                 traverse activeScreen.rootComponent, (c) ->
                     if c.dragpos
@@ -1383,6 +1388,128 @@ jQuery ($) ->
                 cleanup: -> $('.component').removeClass 'stackable'
                 if delay? then setTimeout(cleanup, delay) else cleanup()
         }
+
+    startDragging: (c, options) ->
+        origin: $('#design-area').offset()
+
+        if c.inDocument
+            originalR: rectOf c
+
+        computeHotSpot: (pt) ->
+            r: rectOf c
+            {
+                x: if r.w then ((pt.x - origin.left) - r.x) / r.w else 0.5
+                y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
+            }
+        hotspot: options.hotspot || computeHotSpot(options.startPt)
+        liveMover: newLiveMover [c]
+        wasAnchored: no
+        anchoredTransitionChangeTimeout: new Timeout STACKED_COMP_TRANSITION_DURATION
+
+        $(c.node).addClass 'dragging'
+
+        updateRectangleAndClipToArea: (pt) ->
+            r: sizeOf c
+            r.x: pt.x - origin.left - r.w * hotspot.x
+            r.y: pt.y - origin.top  - r.h * hotspot.y
+
+            insideArea: {
+                x: (allowedArea.x <= r.x <= allowedArea.x+allowedArea.w-r.w)
+                y: allowedArea.y <= r.y <= allowedArea.y+allowedArea.h-r.h
+            }
+            snapToArea: {
+                left:   (allowedArea.x - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.x < allowedArea.x)
+                top:    (allowedArea.y - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.y < allowedArea.y)
+                right:  (allowedArea.x+allowedArea.w-r.w < r.x <= allowedArea.x+allowedArea.w-r.w + CONF_DESIGNAREA_PUSHBACK_DISTANCE)
+                bottom: (allowedArea.y+allowedArea.h-r.h < r.y <= allowedArea.y+allowedArea.h-r.h + CONF_DESIGNAREA_PUSHBACK_DISTANCE)
+            }
+            if (insideArea.x or snapToArea.left or snapToArea.right) and (insideArea.y or snapToArea.top or snapToArea.bottom)
+                if snapToArea.left then r.x = allowedArea.x
+                if snapToArea.top  then r.y = allowedArea.y
+                if snapToArea.right then r.x = allowedArea.x+allowedArea.w - r.w
+                if snapToArea.bottom then r.y = allowedArea.y+allowedArea.h - r.h
+                insideArea.x = insideArea.y = yes
+
+            [r, insideArea.x && insideArea.y]
+
+        moveTo: (pt) ->
+            [r, ok] = updateRectangleAndClipToArea(pt)
+            $(c.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
+
+            if ok
+                stacking: handleStacking c, r, allStacks
+                liveMover.moveComponents stacking.moves
+
+                target: findBestTargetContainerForRect(r, [c])
+                target = activeScreen.rootComponent if c.type.name in TABLE_TYPES
+
+                isAnchored: no
+                if stacking.targetRect?
+                    aps: []
+                    r = stacking.targetRect
+                    isAnchored: yes
+                else
+                    aps: _(computeAllSnappingPositions(target)).reject (a) -> c == a.c
+                    aa: _.flatten(computeSnappings(ap, r) for ap in aps)
+
+                    best: {
+                        horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
+                        vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
+                    }
+
+                    console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+
+                    if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
+                    if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
+
+                    xa: applySnapping best.vert, r if best.vert
+                    ya: applySnapping best.horz, r if best.horz
+                    # isAnchored: xa or ya
+
+            c.dragpos = { x: r.x, y: r.y }
+            c.dragParent: null
+
+            if wasAnchored and not isAnchored
+                anchoredTransitionChangeTimeout.set -> $(c.node).removeClass 'anchored'
+            else if isAnchored and not wasAnchored
+                anchoredTransitionChangeTimeout.clear()
+                $(c.node).addClass 'anchored'
+            wasAnchored = isAnchored
+
+            componentPositionChangedWhileDragging c
+
+            if ok then { target: target } else null
+
+        dropAt: (pt) ->
+            $(c.node).removeClass 'dragging'
+
+            if res: moveTo pt
+                effects: []
+                if c.type is Types.image and res.target.type.supportsImageReplacement
+                    effects.push newSetImageEffect(res.target, c)
+                else
+                    effects.push newDropOnTargetEffect(c, res.target)
+                for e in effects
+                    e.apply()
+                liveMover.commit()
+                true
+            else
+                liveMover.rollback()
+                false
+
+        if c.node.parentNode
+            c.node.parentNode.removeChild(c.node)
+        activeScreen.rootComponent.node.appendChild(c.node)
+        traverse c, (child) -> updateEffectiveSize child  # we might have just added a new component
+
+        moveTo(options.startPt)
+
+        { moveTo: moveTo, dropAt: dropAt }
+
+
+    ##########################################################################################################
+    ##  Dragging Specifics
+
 
     newDropOnTargetEffect: (c, target) ->
         {
@@ -1415,124 +1542,7 @@ jQuery ($) ->
                 renderComponentVisualProperties target
                 componentsChanged()
         }
-    
-    startDragging: (c, options) ->
-        origin: $('#design-area').offset()
-        
-        if c.inDocument
-            originalR: rectOf c
-        
-        computeHotSpot: (pt) ->
-            r: rectOf c
-            {
-                x: if r.w then ((pt.x - origin.left) - r.x) / r.w else 0.5
-                y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
-            }
-        hotspot: options.hotspot || computeHotSpot(options.startPt)
-        liveMover: newLiveMover [c]
-        wasAnchored: no
-        anchoredTransitionChangeTimeout: new Timeout STACKED_COMP_TRANSITION_DURATION
-        
-        $(c.node).addClass 'dragging'
-        
-        updateRectangleAndClipToArea: (pt) ->
-            r: sizeOf c
-            r.x: pt.x - origin.left - r.w * hotspot.x
-            r.y: pt.y - origin.top  - r.h * hotspot.y
 
-            insideArea: {
-                x: (allowedArea.x <= r.x <= allowedArea.x+allowedArea.w-r.w)
-                y: allowedArea.y <= r.y <= allowedArea.y+allowedArea.h-r.h
-            }
-            snapToArea: {
-                left:   (allowedArea.x - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.x < allowedArea.x)
-                top:    (allowedArea.y - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.y < allowedArea.y)
-                right:  (allowedArea.x+allowedArea.w-r.w < r.x <= allowedArea.x+allowedArea.w-r.w + CONF_DESIGNAREA_PUSHBACK_DISTANCE)
-                bottom: (allowedArea.y+allowedArea.h-r.h < r.y <= allowedArea.y+allowedArea.h-r.h + CONF_DESIGNAREA_PUSHBACK_DISTANCE)
-            }
-            if (insideArea.x or snapToArea.left or snapToArea.right) and (insideArea.y or snapToArea.top or snapToArea.bottom)
-                if snapToArea.left then r.x = allowedArea.x
-                if snapToArea.top  then r.y = allowedArea.y
-                if snapToArea.right then r.x = allowedArea.x+allowedArea.w - r.w
-                if snapToArea.bottom then r.y = allowedArea.y+allowedArea.h - r.h
-                insideArea.x = insideArea.y = yes
-            
-            [r, insideArea.x && insideArea.y]
-        
-        moveTo: (pt) ->
-            [r, ok] = updateRectangleAndClipToArea(pt)
-            $(c.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
-
-            if ok
-                stacking: handleStacking c, r, allStacks
-                liveMover.moveComponents stacking.moves
-                    
-                target: findBestTargetContainerForRect(r, [c])
-                target = activeScreen.rootComponent if c.type.name in TABLE_TYPES
-                
-                isAnchored: no
-                if stacking.targetRect?
-                    aps: []
-                    r = stacking.targetRect
-                    isAnchored: yes
-                else
-                    aps: _(computeAllSnappingPositions(target)).reject (a) -> c == a.c
-                    aa: _.flatten(computeSnappings(ap, r) for ap in aps)
-
-                    best: {
-                        horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
-                        vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
-                    }
-                
-                    console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
-
-                    if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
-                    if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
-
-                    xa: applySnapping best.vert, r if best.vert
-                    ya: applySnapping best.horz, r if best.horz
-                    # isAnchored: xa or ya
-            
-            c.dragpos = { x: r.x, y: r.y }
-            c.dragParent: null
-            
-            if wasAnchored and not isAnchored
-                anchoredTransitionChangeTimeout.set -> $(c.node).removeClass 'anchored'
-            else if isAnchored and not wasAnchored
-                anchoredTransitionChangeTimeout.clear()
-                $(c.node).addClass 'anchored'
-            wasAnchored = isAnchored
-            
-            componentPositionChangedWhileDragging c
-            
-            if ok then { target: target } else null
-            
-        dropAt: (pt) ->
-            $(c.node).removeClass 'dragging'
-            
-            if res: moveTo pt
-                effects: []
-                if c.type is Types.image and res.target.type.supportsImageReplacement
-                    effects.push newSetImageEffect(res.target, c)
-                else
-                    effects.push newDropOnTargetEffect(c, res.target)
-                for e in effects
-                    e.apply()
-                liveMover.commit()
-                true
-            else
-                liveMover.rollback()
-                false
-            
-        if c.node.parentNode
-            c.node.parentNode.removeChild(c.node)
-        activeScreen.rootComponent.node.appendChild(c.node)
-        traverse c, (child) -> updateEffectiveSize child  # we might have just added a new component
-        
-        moveTo(options.startPt)
-            
-        { moveTo: moveTo, dropAt: dropAt }
-        
     activateExistingComponentDragging: (c, startPt) ->
         dragger: null
         
