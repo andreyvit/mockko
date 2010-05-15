@@ -19,9 +19,16 @@ IPHONE_IMAGES_SHA="$( (for i in web/static/iphone/images/**/*.png; do cat $i; do
 THEME_IMAGES_SHA="$( (for i in web/static/theme/images/**/*.{png,jpg,gif}; do cat $i; done) | openssl sha1)"
 STOCK_IMAGES_SHA="$( (for i in web/static/stock/**/*.png; do cat $i; done) | openssl sha1)"
 
+cat web/static/lib/jquery.cookie.js web/static/designer-jqueryaddons.js web/static/designer-components.js web/static/designer-templates.js web/static/designer-image-directories.js web/static/designer.js >web/minified/designer.combined.js
+echo "Preminifier running..."
+ruby scripts/preminifier/premin.rb <web/minified/designer.combined.js >web/minified/designer.premin.js 2>web/minified/designer.premin.txt
+# echo "Preminifier skipped."
+# cat web/minified/designer.combined.js >web/minified/designer.premin.js
+
 echo "Closure Compiler running..."
-closure --compilation_level SIMPLE_OPTIMIZATIONS $pp --js web/static/designer-jqueryaddons.js --js web/static/designer-components.js --js web/static/designer-templates.js --js web/static/designer-image-directories.js --js web/static/designer.js --js_output_file web/minified/designer.premin.js
-cat web/static/lib/jquery-1.4.2.min.js web/static/lib/jquery-ui-1.8.custom.min.js web/static/lib/underscore.min.js web/static/lib/jquery.cookie.min.js web/minified/designer.premin.js | perl -pe "s,stock/,stock.${STOCK_IMAGES_SHA}/,g" >web/minified/designer.min.js
+# cat web/minified/designer.premin.js >web/minified/designer.closure.js
+closure --compilation_level SIMPLE_OPTIMIZATIONS $pp --js web/minified/designer.premin.js --js_output_file web/minified/designer.closure.js
+cat web/static/lib/jquery-1.4.2.min.js web/static/lib/jquery-ui-1.8.custom.min.js web/static/lib/underscore.min.js web/minified/designer.closure.js | perl -pe "s,stock/,stock.${STOCK_IMAGES_SHA}/,g" >web/minified/designer.min.js
 
 echo "YUI CSS Compressor running..."
 (yui web/static/lib/animations.css; yui web/static/theme/theme-common.css; yui web/static/theme/theme-dashboard.css; yui web/static/theme/theme-designer.css) | perl -pe "s,images/,images.${THEME_IMAGES_SHA}/,g" >web/minified/theme.min.css
@@ -35,5 +42,6 @@ cat web/designer.html | grep -v 'designer-.*\.js\|lib/.*\.js\|animations.css\|th
 
 MASTER_SHA=$(echo "$JSSHA:$THEMESHA:$IPHONESHA" | openssl sha1)
 
+ls -l web/minified/designer.combined.js web/minified/designer.closure.js
 echo "App version hash: ${MASTER_SHA}."
 echo "Build done."

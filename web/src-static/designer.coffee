@@ -48,11 +48,11 @@ jQuery ($) ->
     }
     
     SERVER_MODES = {
-        anonymous: {
+        'anonymous': {
             supportsImageEffects: yes
 
             adjustUI: (userData) ->
-                $('.login-button').attr 'href', userData.login_url
+                $('.login-button').attr 'href', userData['login_url']
                 
             startDesigner: (userData) ->
                 createNewApplication()
@@ -66,11 +66,11 @@ jQuery ($) ->
             deleteCustomImage: (imageId, callback) ->
         }
         
-        authenticated: {
+        'authenticated': {
             supportsImageEffects: yes
 
             adjustUI: (userData) ->
-                $('.logout-button').attr 'href', userData.logout_url
+                $('.logout-button').attr 'href', userData['logout_url']
                 
             startDesigner: (userData) ->
                 switchToDashboard()
@@ -90,7 +90,7 @@ jQuery ($) ->
                                 else
                                     alert "Other error: ${r.error}"
                         else
-                            callback(r.id)
+                            callback(r['id'])
                     error: (xhr, status, e) ->
                         alert "Failed to save the application: ${status} - ${e}"
                         # TODO ERROR HANDLING!
@@ -108,7 +108,7 @@ jQuery ($) ->
                                 else
                                     alert "Other error: ${r.error}"
                         else
-                            callback(r.apps)
+                            callback(r['apps'])
                     error: (xhr, status, e) ->
                         alert "Failed to save the application: ${status} - ${e}"
                         # TODO ERROR HANDLING!
@@ -150,7 +150,7 @@ jQuery ($) ->
                                 else
                                     alert "Other error: ${r.error}"
                         else
-                            callback(r.images)
+                            callback(r['images'])
                     error: (xhr, status, e) ->
                         alert "Failed to retrieve a list of images: ${status} - ${e}"
                         # TODO ERROR HANDLING!
@@ -195,7 +195,7 @@ jQuery ($) ->
                 }
         }
         
-        local: {
+        'local': {
             supportsImageEffects: no
 
             adjustUI: (userData) ->
@@ -208,7 +208,7 @@ jQuery ($) ->
                 #
 
             loadApplications: (callback) ->
-                callback { apps: [ { id: 42, body: MakeApp.appTemplates.basic } ] }
+                callback { 'apps': [ { 'id': 42, 'body': MakeApp.appTemplates.basic } ] }
 
             uploadImageFile: (fileName, file, callback) ->
             loadCustomImages: (callback) ->
@@ -250,7 +250,7 @@ jQuery ($) ->
     ##  utilities
     
     aOrAn: (s) ->
-        if s[0] in {a: yes, e: yes, i: yes, o: yes, u: yes} then "an ${s}" else "a ${s}"
+        if s[0] in {'a': yes, 'e': yes, 'i': yes, 'o': yes, 'u': yes} then "an ${s}" else "a ${s}"
 
     ##########################################################################################################
     ##  external representation
@@ -276,56 +276,114 @@ jQuery ($) ->
             else throw "error loading app: invalid action ${action['action']}"
 
     internalizeLocation: (location, parent) ->
+        location ||= {}
         {
-            x: (location?.x || 0) + (parent?.abspos?.x || 0)
-            y: (location?.y || 0) + (parent?.abspos?.y || 0)
+            x: (location['x'] || 0) + (parent?.abspos?.x || 0)
+            y: (location['y'] || 0) + (parent?.abspos?.y || 0)
         }
 
     externalizeLocation: (abspos, parent) ->
         {
-            x: abspos.x - (parent?.abspos?.x || 0)
-            y: abspos.y - (parent?.abspos?.y || 0)
+            'x': abspos.x - (parent?.abspos?.x || 0)
+            'y': abspos.y - (parent?.abspos?.y || 0)
         }
-    
+
+    externalizeSize: (size) ->
+        {
+            'w': size.w
+            'h': size.h
+        }
+
     internalizeSize: (size) ->
         {
-            w: size?.w || size?.width || null
-            h: size?.h || size?.height || null
+            w: if size then size['w'] || size['width']  else null
+            h: if size then size['h'] || size['height'] else null
+        }
+
+    internalizeStyle: (style) ->
+        {
+            fontSize: style['fontSize']
+            textColor: style['textColor']
+            fontBold: style['fontBold']
+            fontItalic: style['fontItalic']
+            textShadowStyleName: style['textShadowStyleName']
+            background: style['background']
+        }
+
+    externalizeStyle: (style) ->
+        {
+            'fontSize': style.fontSize
+            'textColor': style.textColor
+            'fontBold': style.fontBold
+            'fontItalic': style.fontItalic
+            'textShadowStyleName': style.textShadowStyleName
+            'background': style.background
+        }
+
+    externalizeImage: (image) ->
+        {
+            'kind': image.kind
+            'group': image.group
+            'name': image.name
+            'id': image.id
+        }
+
+    internalizeImage: (image) ->
+        {
+            kind: image['kind']
+            group: image['group']
+            name: image['name']
+            id: image['id']
         }
     
     externalizeComponent: (c) ->
         rc: {
-            type: c.type.name
-            location: externalizeLocation c.abspos, c.parent
-            effsize: cloneObj c.effsize
-            size: cloneObj c.size
-            styleName: c.styleName
-            style: cloneObj c.style
-            text: c.text
+            'type': c.type.name || c.type
+            'location': externalizeLocation c.abspos, c.parent
+            'effsize': externalizeSize c.effsize
+            'size': externalizeSize c.size
+            'styleName': c.styleName
+            'style': externalizeStyle c.style
+            'text': c.text
             'action': externalizeAction c.action
-            children: (externalizeComponent(child) for child in c.children || [])
+            'children': (externalizeComponent(child) for child in c.children || [])
         }
-        rc.state: c.state if c.state?
-        rc.image: c.image if c.image?
+        rc['state']: c.state if c.state?
+        rc['image']: externalizeImage(c.image) if c.image?
+        rc
+
+    externalizePaletteComponent: (c) ->
+        rc: {
+            'type': c.type
+            'location': externalizeLocation(c.location || { x: 0, y: 0 }, null)
+            'size': externalizeSize(c.size || { w: null, h: null })
+            'styleName': c.styleName
+            'style': externalizeStyle(c.style || {})
+            'text': c.text
+            'action': externalizeAction c.action
+            'children': (externalizePaletteComponent(child) for child in c.children || [])
+        }
+        rc['state']: c.state if c.state?
+        rc['image']: externalizeImage(c.image) if c.image?
         rc
         
     internalizeComponent: (c, parent) ->
         rc: {
-            type: Types[c.type]
-            abspos: internalizeLocation c.location, parent
-            size: internalizeSize c.size
-            styleName: c.styleName
+            type: Types[c['type']]
+            abspos: internalizeLocation c['location'], parent
+            size: internalizeSize c['size']
+            styleName: c['styleName']
             action: internalizeAction c['action']
             inDocument: yes
             parent: parent
         }
-        rc.children: (internalizeComponent(child, rc) for child in c.children || [])
+        rc.children: (internalizeComponent(child, rc) for child in c['children'] || [])
         if not rc.type
             console.log "Missing type for component:"
             console.log c
-            throw "Missing type: ${c.type}"
-        rc.state: c.state if c.state?
-        rc.image: c.image if c.image?
+            throw "Missing type: ${c['type']}"
+        rc.state: c['state']
+        rc.image: internalizeImage(c['image']) if c['image']?
         if rc.image?.constructor is String
             if rc.image.substr(0, STOCK_DIR.length) == STOCK_DIR
                 path: rc.image.substr(STOCK_DIR.length)
@@ -338,23 +396,23 @@ jQuery ($) ->
                 rc.image: { kind: 'custom', id: decodeURIComponent encodedId }
             else
                 throw "Invalid image reference: ${rc.image}"
-        rc.style: $.extend({}, (if rc.type.textStyleEditable then DEFAULT_TEXT_STYLES else {}), rc.type.style || {}, c.style || {})
-        rc.text: c.text || rc.type.defaultText if rc.type.supportsText
+        rc.style: $.extend({}, (if rc.type.textStyleEditable then DEFAULT_TEXT_STYLES else {}), rc.type.style || {}, internalizeStyle(c['style'] || {}))
+        rc.text: c['text'] || rc.type.defaultText if rc.type.supportsText
         rc
         
     externalizeScreen: (screen) ->
         {
-            rootComponent: externalizeComponent(screen.rootComponent)
-            name: screen.name
-            html: screen.html || ''
+            'rootComponent': externalizeComponent(screen.rootComponent)
+            'name': screen.name
+            'html': screen.html || ''
         }
         
     internalizeScreen: (screen) ->
-        rootComponent: internalizeComponent(screen.rootComponent || DEFAULT_ROOT_COMPONENT, null)
+        rootComponent: internalizeComponent(screen['rootComponent'] || DEFAULT_ROOT_COMPONENT, null)
         screen: {
             rootComponent: rootComponent
-            html: screen.html || ''
-            name: screen.name || null
+            html: screen['html'] || ''
+            name: screen['name'] || null
             nextId: 1
         }
         traverse rootComponent, (c) -> assignNameIfStillUnnamed c, screen
@@ -362,16 +420,16 @@ jQuery ($) ->
     
     externalizeApplication: (app) ->
         {
-            name: app.name
-            screens: (externalizeScreen(s) for s in app.screens)
+            'name': app.name
+            'screens': (externalizeScreen(s) for s in app.screens)
         }
         
     internalizeApplication: (app) ->
-        screens: (internalizeScreen(s) for s in app.screens)
+        screens: (internalizeScreen(s) for s in app['screens'])
         _(screens).each (screen, index) ->
             screen.name ||= "Screen ${index+1}"
         {
-            name: app.name
+            name: app['name']
             screens: screens
         }
     
@@ -1730,11 +1788,11 @@ jQuery ($) ->
         ctg.itemsNode: items: $('<div />').addClass('items').appendTo(group)
         func ||= ((ct, n) ->)
         for compTemplate in ctg.items
-            c: cloneTemplateComponent compTemplate
+            c: cloneTemplateComponent(externalizePaletteComponent(compTemplate))
             n: renderStaticComponentHierarchy c
             $(n).attr('title', compTemplate.label || c.type.label)
             $(n).addClass('item').appendTo(items)
-            bindPaletteItem n, compTemplate
+            bindPaletteItem n, externalizePaletteComponent(compTemplate)
             func compTemplate, n
 
     renderPaletteGroup: (ctg) ->
@@ -2248,7 +2306,12 @@ jQuery ($) ->
     
     updateCustomImages: ->
         serverMode.loadCustomImages (images) ->
-            customImages: images
+            customImages: ({
+                id: img['id']
+                width: img['width']
+                height: img['height']
+                fileName: img['fileName']
+            } for img in images)
             updateCustomImagesPalette()
     
     $('body').each ->
@@ -2475,8 +2538,8 @@ jQuery ($) ->
         serverMode.loadApplications (apps) ->
             $('#apps-list .app').remove()
             applicationList: for appData in apps
-                appId: appData.id
-                app: JSON.parse(appData.body)
+                appId: appData['id']
+                app: JSON.parse(appData['body'])
                 app: internalizeApplication(app)
                 an: domTemplate('app-template')
                 $('.caption', $(an)).html(app.name)
@@ -2498,6 +2561,7 @@ jQuery ($) ->
     switchToDashboard: ->
         $(".screen").hide()
         $('#dashboard-screen').show()
+        console.log "switchToDashboard"
         refreshApplicationList()
     
     $('#new-app-button').click (e) ->
@@ -2509,10 +2573,13 @@ jQuery ($) ->
         switchToDashboard()
     
     loadDesigner: (userData) ->
-        $("body").removeClass("anonymous-user authenticated-user").addClass("${userData.status}-user")
-        serverMode = SERVER_MODES[userData.status]
+        console.log userData
+        $("body").removeClass("anonymous-user authenticated-user").addClass("${userData['status']}-user")
+        serverMode = SERVER_MODES[userData['status']]
+        console.log serverMode
         serverMode.adjustUI userData
         serverMode.startDesigner userData
+        console.log "done"
         
     $('#welcome-continue-link').click ->
         $('#welcome-screen').fadeOut()
@@ -2542,16 +2609,16 @@ jQuery ($) ->
         adjustDeviceImagePosition()
     
     if window.location.href.match /^file:/
-        serverMode: SERVER_MODES.local
+        serverMode: SERVER_MODES['local']
     else
-        serverMode: SERVER_MODES.anonymous
+        serverMode: SERVER_MODES['anonymous']
 
     initComponentTypes()
     initPalette()
     hookKeyboardShortcuts()
 
     if window.location.href.match /^file:/
-        loadDesigner { status: 'local' }
+        loadDesigner { 'status': 'local' }
     else
         $.ajax {
             url: '/user-info.json'

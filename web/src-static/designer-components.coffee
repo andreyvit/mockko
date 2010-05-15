@@ -767,7 +767,7 @@ window.MakeApp.paletteDefinition: [
 ]
 
 MakeApp.textShadowStyles: {
-    none: {
+    'none': {
         label: 'none'
         css: {
             'text-shadow': 'none'
