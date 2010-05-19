@@ -15,8 +15,8 @@
     'image': {
         type: 'image'
         label: 'Image'
-        widthPolicy: { fixedSize: 30 }
-        heightPolicy: { fixedSize: 30 }
+        widthPolicy: { fixedSize: 30, userSize: yes }
+        heightPolicy: { fixedSize: 30, userSize: yes }
         supportsImage: yes
         supportsImageReplacement: no
         tagName: 'img'
