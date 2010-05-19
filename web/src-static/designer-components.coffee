@@ -27,7 +27,7 @@
         label: 'Text'
         defaultText: "Some text"
         widthPolicy: { autoSize: 'browser' }
-        heightPolicy: { fixedSize: 20 }
+        heightPolicy: { autoSize: 'browser' }
         wantsSmartAlignment: yes
     }
     'rect': {
