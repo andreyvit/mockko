@@ -549,7 +549,7 @@ jQuery ($) ->
         deleteComponentWithoutTransaction rootc, true
         componentsChanged()
 
-    moveComponent: (comp, offset) ->
+    moveComponentBy: (comp, offset) ->
         beginUndoTransaction "keyboard moving of ${friendlyComponentName comp}"
         traverse comp, (c) -> c.abspos: ptSum(c.abspos, offset)
         traverse comp, componentPositionChangedPernamently
@@ -2307,7 +2307,7 @@ jQuery ($) ->
         else
             # TODO: detect if part of stack
             amount: if e.shiftKey then 10 else 1
-            moveComponent comp, ptMul(movement.offset, amount)
+            moveComponentBy comp, ptMul(movement.offset, amount)
 
     hookKeyboardShortcuts: ->
         $('body').keydown (e) ->
