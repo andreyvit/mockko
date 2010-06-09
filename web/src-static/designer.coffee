@@ -1261,20 +1261,27 @@ jQuery ($) ->
             alignment: possibleAlignmentOf(c).bestDefiniteGuess()
             originalRect: rectOf c
 
+        realign: ->
+            if c.type.wantsSmartAlignment
+                updateEffectiveSize c
+                if newPos: alignment.adjustedPosition(originalRect, c.effsize)
+                    c.abspos: newPos
+                    renderComponentPosition c
+                    updateHoverPanelPosition()
+
         $(textNodeOfComponent c).startInPlaceEditing {
             before: -> c.dirtyText: yes; $(c.node).addClass 'editing';    activateMode { debugname: "In-Place Text Edit" }
             after:  -> c.dirtyText: no;  $(c.node).removeClass 'editing'; deactivateMode()
             accept: (newText) ->
+                if newText is ''
+                    newText: "Text"
                 runTransaction "text change in ${friendlyComponentName c}", ->
                     c.text: newText
+                    c.dirtyText: no
                     renderComponentVisualProperties c
+                    realign()
             changed: ->
-                if c.type.wantsSmartAlignment
-                    updateEffectiveSize c
-                    if newPos: alignment.adjustedPosition(originalRect, c.effsize)
-                        c.abspos: newPos
-                        renderComponentPosition c
-                        updateHoverPanelPosition()
+                realign()
         }
 
 

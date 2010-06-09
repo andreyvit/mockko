@@ -207,14 +207,14 @@ jQuery.fn.startInPlaceEditing: (->
             [cancelActiveEditor, acceptActiveEditor]: [nop, nop]
             stopEditing()
             checkChange()
-            options.accept($el.html())
+            options.accept($el.text() || '')
             options.after($el[0])
 
         checkChange: ->
             currentHTML: $el.html()
             if currentHTML isnt previouslySeenHTML
                 previouslySeenHTML: currentHTML
-                options.changed(currentHTML)
+                options.changed($el.text() || '')
 
         handleKeyDown: (e) ->
             setTimeout checkChange, 1
