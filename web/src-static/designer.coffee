@@ -1194,6 +1194,7 @@ jQuery ($) ->
             [vmode, hmode]: [adjustVerticalSizingMode(hoveredComponent, vmode), adjustHorizontalSizingMode(hoveredComponent, hmode)]
             disabled: (vmode is 'c' and hmode is 'c')
             $(handle).css({ left: pos.x, top: pos.y }).alterClass('disabled', disabled)
+        $('#hover-panel .duplicate-handle').alterClass('disabled', hoveredComponent.type.singleInstance)
     
     componentHovered: (c) ->
         return unless c.node?  # the component is being deleted right now
