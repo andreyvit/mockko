@@ -585,6 +585,12 @@ jQuery ($) ->
     findChildByType: (parent, type) ->
         _(parent.children).detect (child) -> child.type is type
 
+    commitMoves: (moves, exclusions, delay) ->
+        if moves.length > 0
+            liveMover: newLiveMover exclusions
+            liveMover.moveComponents moves
+            liveMover.commit(delay)
+
     ##########################################################################################################
     ##  component management
     
@@ -651,11 +657,18 @@ jQuery ($) ->
 
         newComp: internalizeComponent(externalizeComponent(comp), comp.parent)
         traverse newComp, (c) -> c.id: null  # make sure all ids are reassigned
-        newPos: pickPositionForDuplicateComponent newComp, comp
-        if newPos is null
+
+        effect: computeDuplicationEffect newComp, comp
+        if effect is null
             alert "Cannot duplicate the component because another copy does not fit into the designer"
             return
-        moveComponent newComp, newPos
+
+        newRect: effect.rect
+        if newRect.w != comp.effsize.w or newRect.h != comp.effsize.h
+            newComp.size: { w: newRect.w, h: newRect.h }
+
+        commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION
+        moveComponent newComp, newRect
 
         comp.parent.children.push newComp
         $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
@@ -928,44 +941,6 @@ jQuery ($) ->
         delta: ptDiff(newPos, comp.abspos)
         traverse comp, (child) -> child.abspos: ptSum(child.abspos, delta)
 
-    pickPositionForDuplicateComponent: (newComp, oldComp) ->
-        oldComp ||= newComp
-        rect: rectOf(oldComp)
-        rect.y += rect.h
-        stacking: handleStacking oldComp, rect, allStacks, 'duplicate'
-
-        if stacking.targetRect
-            # part of stack, so add directly below
-            liveMover: newLiveMover [newComp]
-            liveMover.moveComponents stacking.moves
-            liveMover.commit(STACKED_COMP_TRANSITION_DURATION)
-            
-            return { x: stacking.targetRect.x, y: stacking.targetRect.y }
-        else
-            usableBounds: rectOf activeScreen.rootComponent
-
-            rect: rectOf(oldComp)
-            while rect.x+rect.w <= usableBounds.x+usableBounds.w - DUPLICATE_COMPONENT_MIN_EDGE_INSET_X
-                found: findComponentOccupyingRect rect
-                return rect unless found
-                rect.x += found.effsize.w + DUPLICATE_COMPONENT_OFFSET_X
-
-            rect: rectOf(oldComp)
-            while rect.y+rect.h <= usableBounds.y+usableBounds.h - DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y
-                found: findComponentOccupyingRect rect
-                return rect unless found
-                rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
-
-            # when everything else fails, just pick a position not occupied by exact duplicate
-            rect: rectOf(oldComp)
-            while rect.y+rect.h <= usableBounds.y+usableBounds.h
-                found: no
-                traverse activeScreen.rootComponent, (c) -> found: c if c.abspos.x == rect.x && c.abspos.y == rect.y
-                found: null if found is activeScreen.rootComponent  # handle (0,0) case
-                return rect unless found
-                rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
-            return null
-
     findComponentOccupyingRect: (r, exclusionSet) ->
         match: null
         traverse activeScreen.rootComponent, (comp) ->
@@ -1116,14 +1091,14 @@ jQuery ($) ->
         res.push to if inclTo
         return res
 
-    findStackByProximity: (rect) ->
+    findStackByProximity: (rect, stacks) ->
         _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20
             
     handleStacking: (comp, rect, stacks, action) ->
         return { moves: [] } unless comp.type.name in TABLE_TYPES
         
         sourceStack: if action == 'duplicate' then null else comp.stack
-        targetStack: if rect? then findStackByProximity(rect) else null
+        targetStack: if rect? then findStackByProximity(rect, stacks) else null
         
         handleVerticalStacking comp, rect, sourceStack, targetStack
 
@@ -1580,6 +1555,15 @@ jQuery ($) ->
             sortedItems: _(items).sortBy (child) -> child.abspos.x
             index: pickHorizontalPositionBetween(rect, sortedItems).index
             sortedItems.slice(0, index).concat([comp]).concat(sortedItems.slice(index))
+
+    newItemsForHorizontalStackDuplication: (items, oldComp, newComp) ->
+        items: _(items).sortBy (child) -> child.abspos.x
+        index: _(items).indexOf oldComp
+        if index < 0
+            items.concat([newComp])
+        else
+            items.slice(0, index).concat([newComp]).concat(items.slice(index))
+
     computeDropEffectFromNewRects: (items, newRects, comp) ->
         throw "lengths do not match" unless items.length == newRects.length
         effect: { moves: [], rect: null }
@@ -1589,100 +1573,6 @@ jQuery ($) ->
             else
                 effect.moves.push { comp: item, abspos: { x:rect.x, y:rect.y }, size: { w:rect.w, h:rect.h } }
         effect
-
-    determineDragEffect: (comp, rect, moveOptions) ->
-        if pin: comp.type.pin
-            target: activeScreen.rootComponent
-        else if comp.type.name in TABLE_TYPES
-            target: activeScreen.rootComponent
-        else if comp.type.name is 'tab-bar-item'
-            target: findChildByType(activeScreen.rootComponent, Types['tabBar'])
-            if not target
-                return null
-
-            newChildren: newItemsForHorizontalStack target.children, comp, rect
-            itemRects: positionTabBarItems newChildren.length, rectOf(target)
-            { rect, moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
-            return { isAnchored:yes, target, rect, moves }
-        else
-            target: findBestTargetContainerForRect(rect, [comp])
-
-        if comp.type.singleInstance
-            for child in target.children
-                if child.type is comp.type
-                    return null
-
-        if pin: comp.type.pin
-            rect: pin.computeRect allowedArea, comp, (otherPin) ->
-                for child in target.children
-                    if child.type.pin is otherPin
-                        return rectOf(child)
-                null
-            moves: []
-            for dependantPin in pin.dependantPins
-                for child in target.children
-                    if child.type.pin is dependantPin
-                        newRect: child.type.pin.computeRect allowedArea, child, (otherPin) ->
-                            return rect if otherPin is pin
-                            for otherChild in target.children
-                                if otherChild.type.pin is otherPin
-                                    return rectOf(otherChild)
-                            null
-                        moves.push { comp: child, abspos: newRect }
-            return { isAnchored: yes, target, rect, moves }
-
-        stacking: handleStacking comp, rect, allStacks
-
-        isAnchored: no
-        if stacking.targetRect?
-            aps: []
-            rect = stacking.targetRect
-            isAnchored: yes
-        else
-            aps: _(computeAllSnappingPositions(target)).reject (a) -> comp == a.comp
-            aa: _.flatten(computeSnappings(ap, rect) for ap in aps)
-
-            best: { horz: null, vert: null }
-            unless moveOptions.disableSnapping
-                best: {
-                    horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
-                    vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
-                }
-
-                console.log "(${rect.x}, ${rect.y}, w ${rect.w}, h ${rect.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
-
-                if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
-                if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
-
-            xa: applySnapping best.vert, rect if best.vert
-            ya: applySnapping best.horz, rect if best.horz
-            # isAnchored: xa or ya
-        
-        { isAnchored, target, rect, moves: stacking.moves }
-
-    computeDeletionEffect: (comp) ->
-        moves: []
-        if pin: comp.type.pin
-            target: comp.parent
-            unless target is null
-                for dependantPin in pin.dependantPins
-                    for child in target.children
-                        if child.type.pin is dependantPin
-                            newRect: child.type.pin.computeRect allowedArea, child, (otherPin) ->
-                                return null if otherPin is pin
-                                for otherChild in target.children
-                                    if otherChild.type.pin is otherPin
-                                        return rectOf(otherChild)
-                                null
-                            moves.push { comp: child, abspos: newRect }
-        else if comp.type.name is 'tab-bar-item'
-            target: comp.parent
-            unless target is null
-                newChildren: newItemsForHorizontalStack target.children, comp, null
-                itemRects: positionTabBarItems newChildren.length, rectOf(target)
-                { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
-
-        { moves }
 
     startDragging: (comp, options, initialMoveOptions) ->
         origin: $('#design-area').offset()
@@ -1732,7 +1622,7 @@ jQuery ($) ->
             [rect, unsnappedRect, ok] = updateRectangleAndClipToArea(pt)
 
             if ok
-                if effect: determineDragEffect comp, rect, moveOptions
+                if effect: computeDropEffect comp, rect, moveOptions
                     { target, isAnchored, rect, moves }: effect
                 else
                     ok: no
@@ -1790,6 +1680,181 @@ jQuery ($) ->
         moveTo(options.startPt, initialMoveOptions)
 
         { moveTo, dropAt, cancel }
+
+
+    ##########################################################################################################
+    ##  Layouts & Effects Computation
+
+    class PinnedLayout
+
+        computeDropTarget: (comp, rect, moveOptions) ->
+            activeScreen.rootComponent
+
+        computeDropEffect: (target, comp, rect, moveOptions) ->
+            pin: comp.type.pin
+            rect: pin.computeRect allowedArea, comp, (otherPin) ->
+                for child in target.children
+                    if child.type.pin is otherPin
+                        return rectOf(child)
+                null
+            moves: []
+            for dependantPin in pin.dependantPins
+                for child in target.children
+                    if child.type.pin is dependantPin
+                        newRect: child.type.pin.computeRect allowedArea, child, (otherPin) ->
+                            return rect if otherPin is pin
+                            for otherChild in target.children
+                                if otherChild.type.pin is otherPin
+                                    return rectOf(otherChild)
+                            null
+                        moves.push { comp: child, abspos: newRect }
+            { isAnchored: yes, target, rect, moves }
+
+        computeDuplicationEffect: (oldComp, newComp) ->
+            null
+
+        computeDeletionEffect: (comp) ->
+            target: comp.parent
+            pin: comp.type.pin
+            moves: []
+            for dependantPin in pin.dependantPins
+                for child in target.children
+                    if child.type.pin is dependantPin
+                        newRect: child.type.pin.computeRect allowedArea, child, (otherPin) ->
+                            return null if otherPin is pin
+                            for otherChild in target.children
+                                if otherChild.type.pin is otherPin
+                                    return rectOf(otherChild)
+                            null
+                        moves.push { comp: child, abspos: newRect }
+            { moves }
+
+    class TabBarItemLayout
+
+        computeDropTarget: (comp, rect, moveOptions) ->
+            findChildByType(activeScreen.rootComponent, Types['tabBar'])
+
+        computeDropEffect: (target, comp, rect, moveOptions) ->
+            newChildren: newItemsForHorizontalStack target.children, comp, rect
+            itemRects: positionTabBarItems newChildren.length, rectOf(target)
+            { rect, moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
+            { isAnchored: yes, target, rect, moves }
+
+        computeDuplicationEffect: (oldComp, newComp) ->
+            unless target: oldComp.parent
+                return null
+            newChildren: newItemsForHorizontalStackDuplication target.children, oldComp, newComp
+            itemRects: positionTabBarItems newChildren.length, rectOf(target)
+            computeDropEffectFromNewRects newChildren, itemRects, newComp
+
+        computeDeletionEffect: (comp) ->
+            target: comp.parent
+            newChildren: newItemsForHorizontalStack target.children, comp, null
+            itemRects: positionTabBarItems newChildren.length, rectOf(target)
+            { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
+
+    class RegularLayout
+
+        computeDropTarget: (comp, rect, moveOptions) ->
+            findBestTargetContainerForRect(rect, [comp])
+
+        computeDropEffect: (target, comp, rect, moveOptions) ->
+            stacking: handleStacking comp, rect, allStacks
+            if stacking.targetRect?
+                { isAnchored: yes, target, rect: stacking.targetRect, moves: stacking.moves }
+            else
+                aps: _(computeAllSnappingPositions(target)).reject (a) -> comp == a.comp
+                aa: _.flatten(computeSnappings(ap, rect) for ap in aps)
+
+                best: { horz: null, vert: null }
+                unless moveOptions.disableSnapping
+                    best: {
+                        horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
+                        vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
+                    }
+
+                    console.log "(${rect.x}, ${rect.y}, w ${rect.w}, h ${rect.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+
+                    if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
+                    if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
+
+                xa: applySnapping best.vert, rect if best.vert
+                ya: applySnapping best.horz, rect if best.horz
+                # isAnchored: xa or ya
+                { isAnchored: no, target, rect, moves: [] }
+
+        computeDuplicationEffect: (oldComp, newComp) ->
+            rect: rectOf(oldComp)
+            rect.y += rect.h
+            stacking: handleStacking oldComp, rect, allStacks, 'duplicate'
+
+            if stacking.targetRect
+                return { rect: stacking.targetRect, moves: stacking.moves }
+            else
+                usableBounds: rectOf activeScreen.rootComponent
+
+                rect: rectOf(oldComp)
+                while rect.x+rect.w <= usableBounds.x+usableBounds.w - DUPLICATE_COMPONENT_MIN_EDGE_INSET_X
+                    found: findComponentOccupyingRect rect
+                    return { rect, moves: [] } unless found
+                    rect.x += found.effsize.w + DUPLICATE_COMPONENT_OFFSET_X
+
+                rect: rectOf(oldComp)
+                while rect.y+rect.h <= usableBounds.y+usableBounds.h - DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y
+                    found: findComponentOccupyingRect rect
+                    return { rect, moves: [] } unless found
+                    rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
+
+                # when everything else fails, just pick a position not occupied by exact duplicate
+                rect: rectOf(oldComp)
+                while rect.y+rect.h <= usableBounds.y+usableBounds.h
+                    found: no
+                    traverse activeScreen.rootComponent, (c) -> found: c if c.abspos.x == rect.x && c.abspos.y == rect.y
+                    found: null if found is activeScreen.rootComponent  # handle (0,0) case
+                    return { rect, moves: [] } unless found
+                    rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
+                return null
+
+        computeDeletionEffect: (comp) ->
+            { moves: [] }
+
+    class TableRowLayout extends RegularLayout
+
+        computeDropTarget: (comp, rect, moveOptions) ->
+            activeScreen.rootComponent
+
+    computeLayout: (comp) ->
+        if pin: comp.type.pin
+            new PinnedLayout()
+        else if comp.type.name in TABLE_TYPES
+            new TableRowLayout()
+        else if comp.type.name is 'tab-bar-item'
+            new TabBarItemLayout()
+        else
+            new RegularLayout()
+
+    computeDropEffect: (comp, rect, moveOptions) ->
+        layout: computeLayout comp
+        target: layout.computeDropTarget comp, rect, moveOptions
+        if target is null
+            return null
+        else
+            if comp.type.singleInstance
+                for child in target.children
+                    if child.type is comp.type
+                        return null
+
+            return layout.computeDropEffect target, comp, rect, moveOptions
+
+    computeDuplicationEffect: (newComp, oldComp) ->
+        oldComp ||= newComp
+        computeLayout(oldComp).computeDuplicationEffect oldComp, newComp
+
+    computeDeletionEffect: (comp) ->
+        return { moves: [] } unless comp.parent
+
+        layout: computeLayout comp
+        layout.computeDeletionEffect comp
 
 
     ##########################################################################################################
@@ -2737,11 +2802,16 @@ jQuery ($) ->
                 targetCont.children.push newComp
                 $(targetCont.node).append renderInteractiveComponentHeirarchy newComp
                 
-                newPos: pickPositionForDuplicateComponent newComp
-                if newPos is null
+                effect: computeDuplicationEffect newComp
+                if effect is null
                     alert "Cannot paste the components because they do not fit into the designer"
                     return
-                moveComponent newComp, newPos
+                commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION
+                newRect: effect.rect
+
+                moveComponent newComp, newRect
+                if newRect.w != newComp.effsize.w or newRect.h != newComp.effsize.h
+                    newComp.size: { w: newRect.w, h: newRect.h }
                 traverse newComp, (child) -> renderComponentPosition child; updateEffectiveSize child
                 traverse newComp, (child) -> assignNameIfStillUnnamed child, activeScreen
 

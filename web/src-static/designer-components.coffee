@@ -382,16 +382,16 @@ window.MakeApp.paletteDefinition: [
                         type: 'tab-bar-item'
                         text: "Tab 1"
                         image: { kind: 'stock', group: 'glyphish/icons', name: '53-house.png' }
-                        location: { x: 100, y: 3 }
-                        size: { width: null, height: null }
+                        location: { x: 5, y: 3 }
+                        size: { w: 154, h: null }
                         state: on
                     }
                     {
                         type: 'tab-bar-item'
                         text: "Tab 2"
                         image: { kind: 'stock', group: 'glyphish/icons', name: '83-calendar.png' }
-                        location: { x: 162, y: 3 }
-                        size: { width: null, height: null }
+                        location: { x: 161, y: 3 }
+                        size: { w: 154, h: null }
                         state: off
                     }
                 ]
