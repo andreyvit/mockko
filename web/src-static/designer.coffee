@@ -582,6 +582,9 @@ jQuery ($) ->
     sizeOf: (c) -> { w: c.effsize.w, h: c.effsize.h }
     rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
 
+    findChildByType: (parent, type) ->
+        _(parent.children).detect (child) -> child.type is type
+
     ##########################################################################################################
     ##  component management
     
@@ -812,12 +815,14 @@ jQuery ($) ->
     
     componentPositionChangedWhileDragging: (c) ->
         renderComponentPosition c
+        renderComponentSize c
         if c is hoveredComponent
             updateHoverPanelPosition()
             updatePositionInspector()
     
     componentPositionChangedPernamently: (c) ->
         renderComponentPosition c
+        updateEffectiveSize c
         if c is hoveredComponent
             updateHoverPanelPosition()
             updatePositionInspector()
@@ -995,14 +1000,18 @@ jQuery ($) ->
         
     renderComponentSize: (c, cn) ->
         ct: c.type
+        size: c.dragsize || c.size
         effsize: {
-            w: recomputeEffectiveSizeInDimension c.size.w, ct.widthPolicy, 320
-            h: recomputeEffectiveSizeInDimension c.size.h, ct.heightPolicy, 460
+            w: recomputeEffectiveSizeInDimension size.w, ct.widthPolicy, 320
+            h: recomputeEffectiveSizeInDimension size.h, ct.heightPolicy, 460
         }
         $(cn || c.node).css({ width: sizeToPx(effsize.w), height: sizeToPx(effsize.h) })
         return effsize
         
     updateEffectiveSize: (c) ->
+        if c.dragsize
+            renderComponentSize c
+            return
         c.effsize: renderComponentSize c
         # get browser-computed size if needed
         if c.effsize.w is null then c.effsize.w = c.node.offsetWidth
@@ -1117,6 +1126,33 @@ jQuery ($) ->
         targetStack: if rect? then findStackByProximity(rect) else null
         
         handleVerticalStacking comp, rect, sourceStack, targetStack
+
+    pickHorizontalPositionBetween: (rect, items) ->
+        throw "cannot work with empty list of items" if items.length is 0
+        [prevItem, prevItemRect]: [null, null]
+        index: 0
+        positions: for item in items.concat(null)
+            itemRect: if item then rectOf(item) else null
+            coord: switch
+                when itemRect && prevItemRect then (prevItemRect.x+prevItemRect.w + itemRect.x) / 2
+                when itemRect then itemRect.x
+                when prevItemRect then prevItemRect.x+prevItemRect.w
+                else throw "impossible case"
+            [after, before] : [prevItem, item]
+            [prevItem, prevItemRect] : [item, itemRect]
+            { coord, after, before, index:index++ }
+
+        center: rect.x + rect.w / 2
+        _(positions).min (pos) -> Math.abs(center - pos.coord)
+
+    pickHorizontalRectAmong: (rect, items) ->
+        throw "cannot work with empty list of items" if items.length is 0
+        index: 0
+        positions: for item in items
+            { rect:(if item.abspos then rectOf(item) else item), item, index:index++ }
+
+        center: rect.x + rect.w / 2
+        _(positions).min (pos) -> Math.abs(pos.rect.x+pos.rect.w/2 - center)
 
     handleVerticalStacking: (comp, rect, sourceStack, targetStack) ->
         if sourceStack && sourceStack.items.length == 1
@@ -1469,6 +1505,7 @@ jQuery ($) ->
                         return skipTraversingChildren
                     if c.dragpos
                         c.dragpos: null
+                        c.dragsize: null
                         c.dragParent: null
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedWhileDragging c
@@ -1479,6 +1516,7 @@ jQuery ($) ->
                         offset: m.offset || subPtPt(m.abspos, c.abspos)
                         traverse c, (child) ->
                             child.dragpos: { x: child.abspos.x + offset.x; y: child.abspos.y + offset.y }
+                            child.dragsize: m.size || null
                             child.dragParent: child.parent
                             componentPositionChangedWhileDragging child
 
@@ -1492,6 +1530,7 @@ jQuery ($) ->
                         return skipTraversingChildren
                     if c.dragpos
                         c.dragpos: null
+                        c.dragsize: null
                         c.dragParent: null
                         $(c.node).removeClass 'stacked'
                         componentPositionChangedWhileDragging c
@@ -1500,7 +1539,10 @@ jQuery ($) ->
                 traverse activeScreen.rootComponent, (c) ->
                     if c.dragpos
                         c.abspos = c.dragpos
+                        if c.dragsize
+                            c.size: c.dragsize
                         c.dragpos: null
+                        c.dragsize: null
                         c.dragParent: null
                         componentPositionChangedPernamently c
 
@@ -1508,11 +1550,60 @@ jQuery ($) ->
                 if delay? then setTimeout(cleanup, delay) else cleanup()
         }
 
+    positionTabBarItems: (count, tabBarRect) ->
+        [hinset, hgap, vinset]: [5, 2, 3]
+        itemSize: { w: (tabBarRect.w - 2*hinset - hgap*(count-1)) / count
+                    h: Types['tab-bar-item'].heightPolicy.fixedSize }
+        pt: { x: tabBarRect.x + hinset, y: tabBarRect.y + vinset }
+        switch count
+            when 0 then []
+            when 1 then [rectFromPtAndSize(pt, itemSize)]
+            else
+                index: 0
+                while index++ < count
+                    r: rectFromPtAndSize(pt, itemSize)
+                    pt.x += itemSize.w + hgap
+                    r
+
+    newItemsForHorizontalStack: (items, comp, rect) ->
+        if _(items).include(comp)
+            filteredItems: _(_(items).without(comp)).sortBy (child) -> child.abspos.x
+            if rect
+                sortedItems: _(items).sortBy (child) -> child.abspos.x
+                index: pickHorizontalRectAmong(rect, sortedItems).index
+                filteredItems.slice(0, index).concat([comp]).concat(filteredItems.slice(index))
+            else
+                filteredItems
+        else if items.length is 0
+            [comp]
+        else
+            sortedItems: _(items).sortBy (child) -> child.abspos.x
+            index: pickHorizontalPositionBetween(rect, sortedItems).index
+            sortedItems.slice(0, index).concat([comp]).concat(sortedItems.slice(index))
+    computeDropEffectFromNewRects: (items, newRects, comp) ->
+        throw "lengths do not match" unless items.length == newRects.length
+        effect: { moves: [], rect: null }
+        for [item, rect] in _.zip(items, newRects)
+            if comp? and item is comp
+                effect.rect: rect
+            else
+                effect.moves.push { comp: item, abspos: { x:rect.x, y:rect.y }, size: { w:rect.w, h:rect.h } }
+        effect
+
     determineDragEffect: (comp, rect, moveOptions) ->
         if pin: comp.type.pin
             target: activeScreen.rootComponent
         else if comp.type.name in TABLE_TYPES
             target: activeScreen.rootComponent
+        else if comp.type.name is 'tab-bar-item'
+            target: findChildByType(activeScreen.rootComponent, Types['tabBar'])
+            if not target
+                return null
+
+            newChildren: newItemsForHorizontalStack target.children, comp, rect
+            itemRects: positionTabBarItems newChildren.length, rectOf(target)
+            { rect, moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
+            return { isAnchored:yes, target, rect, moves }
         else
             target: findBestTargetContainerForRect(rect, [comp])
 
@@ -1522,7 +1613,6 @@ jQuery ($) ->
                     return null
 
         if pin: comp.type.pin
-            isAnchored: yes
             rect: pin.computeRect allowedArea, comp, (otherPin) ->
                 for child in target.children
                     if child.type.pin is otherPin
@@ -1539,7 +1629,7 @@ jQuery ($) ->
                                     return rectOf(otherChild)
                             null
                         moves.push { comp: child, abspos: newRect }
-            return { isAnchored, target, rect, moves }
+            return { isAnchored: yes, target, rect, moves }
 
         stacking: handleStacking comp, rect, allStacks
 
@@ -1585,6 +1675,13 @@ jQuery ($) ->
                                         return rectOf(otherChild)
                                 null
                             moves.push { comp: child, abspos: newRect }
+        else if comp.type.name is 'tab-bar-item'
+            target: comp.parent
+            unless target is null
+                newChildren: newItemsForHorizontalStack target.children, comp, null
+                itemRects: positionTabBarItems newChildren.length, rectOf(target)
+                { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
+
         { moves }
 
     startDragging: (comp, options, initialMoveOptions) ->
@@ -1650,6 +1747,7 @@ jQuery ($) ->
             liveMover.moveComponents moves
 
             comp.dragpos = { x: rect.x, y: rect.y }
+            comp.dragsize: { w: rect.w, h: rect.h }
             comp.dragParent: null
 
             if wasAnchored and not isAnchored
@@ -1710,9 +1808,12 @@ jQuery ($) ->
                     c.node.parentNode.removeChild(c.node)
                 c.parent.node.appendChild(c.node)
 
+                if c.dragsize
+                    c.size: c.dragsize
                 shift: ptDiff c.dragpos, c.abspos
                 traverse c, (cc) -> cc.abspos: ptSum cc.abspos, shift
                 c.dragpos: null
+                c.dragsize: null
                 c.dragParent: null
 
                 traverse c, (child) -> child.inDocument: yes
