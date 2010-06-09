@@ -620,6 +620,9 @@ jQuery ($) ->
         newComp: internalizeComponent(externalizeComponent(comp), comp.parent)
         traverse newComp, (c) -> c.id: null  # make sure all ids are reassigned
         newPos: pickPositionForDuplicateComponent newComp, comp
+        if newPos is null
+            alert "Cannot duplicate the component because another copy does not fit into the designer"
+            return
         moveComponent newComp, newPos
 
         comp.parent.children.push newComp
@@ -921,12 +924,13 @@ jQuery ($) ->
 
             # when everything else fails, just pick a position not occupied by exact duplicate
             rect: rectOf(oldComp)
-            while true
+            while rect.y+rect.h <= usableBounds.y+usableBounds.h
                 found: no
                 traverse activeScreen.rootComponent, (c) -> found: c if c.abspos.x == rect.x && c.abspos.y == rect.y
                 found: null if found is activeScreen.rootComponent  # handle (0,0) case
                 return rect unless found
                 rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
+            return null
 
     findComponentOccupyingRect: (r, exclusionSet) ->
         match: null
@@ -2484,6 +2488,9 @@ jQuery ($) ->
                 $(targetCont.node).append renderInteractiveComponentHeirarchy newComp
                 
                 newPos: pickPositionForDuplicateComponent newComp
+                if newPos is null
+                    alert "Cannot paste the components because they do not fit into the designer"
+                    return
                 moveComponent newComp, newPos
                 traverse newComp, (child) -> renderComponentPosition child; updateEffectiveSize child
                 traverse newComp, (child) -> assignNameIfStillUnnamed child, activeScreen
