@@ -574,7 +574,14 @@ jQuery ($) ->
     bottomRightOf:     (r) -> { x: r.x+r.w, y: r.y+r.h }
 
     centerOfRect: (r) -> { x: r.x + r.w / 2, y: r.y + r.h / 2 }
-    
+
+
+    ##########################################################################################################
+    ##  Component Utilities
+
+    sizeOf: (c) -> { w: c.effsize.w, h: c.effsize.h }
+    rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
+
     ##########################################################################################################
     ##  component management
     
@@ -1437,9 +1444,6 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  General Dragging
-
-    sizeOf: (c) -> { w: c.effsize.w, h: c.effsize.h }
-    rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
 
     newLiveMover: (excluded) ->
         excludedSet: setOf excluded
