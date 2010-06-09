@@ -1,32 +1,38 @@
 
 window.Pins: {
     bottom: {
-        computeRect: (area, comp, findPinned) ->
+        computeRect: (area, comp, findRectOfPinned) ->
             hp: comp.type.heightPolicy
             h: hp.fixedSize.portrait || hp.fixedSize
             { x: area.x, w: area.w, y: area.y+area.h-h, h: h }
+        dependantPins: []
     }
     top: {
-        computeRect: (area, comp, findPinned) ->
+        computeRect: (area, comp, findRectOfPinned) ->
             hp: comp.type.heightPolicy
             h: hp.fixedSize.portrait || hp.fixedSize
             { x: area.x, w: area.w, y: area.y, h: h }
+        dependantPins: []
     }
     secondTop: {
-        computeRect: (area, comp, findPinned) ->
+        computeRect: (area, comp, findRectOfPinned) ->
             hp: comp.type.heightPolicy
             h: hp.fixedSize.portrait || hp.fixedSize
-            pinned: findPinned(Pins.top)
-            { x: area.x, w: area.w, y: (if pinned then pinned.abspos.y+pinned.effsize.h else area.y), h: h }
+            pinned: findRectOfPinned(Pins.top)
+            { x: area.x, w: area.w, y: (if pinned then pinned.y+pinned.h else area.y), h: h }
+        dependantPins: []
     }
     secondBottom: {
-        computeRect: (area, comp, findPinned) ->
+        computeRect: (area, comp, findRectOfPinned) ->
             hp: comp.type.heightPolicy
             h: hp.fixedSize.portrait || hp.fixedSize
-            pinned: findPinned(Pins.bottom)
-            { x: area.x, w: area.w, y: (if pinned then pinned.abspos.y else area.y+area.h)-h, h: h }
+            pinned: findRectOfPinned(Pins.bottom)
+            { x: area.x, w: area.w, y: (if pinned then pinned.y else area.y+area.h)-h, h: h }
+        dependantPins: []
     }
 }
+Pins.top.dependantPins.push Pins.secondTop
+Pins.bottom.dependantPins.push Pins.secondBottom
 
 (window.MakeApp ||= {}).componentTypes: {
     'background': {

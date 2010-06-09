@@ -608,10 +608,11 @@ jQuery ($) ->
     deleteComponentWithoutTransaction: (rootc, animated) ->
         return if rootc.type.unmovable
 
+        effect: computeDeletionEffect rootc
         stacking: handleStacking rootc, null, allStacks
         
         liveMover: newLiveMover [rootc]
-        liveMover.moveComponents stacking.moves
+        liveMover.moveComponents stacking.moves.concat(effect.moves)
         liveMover.commit(animated && STACKED_COMP_TRANSITION_DURATION)
 
         _(rootc.parent.children).removeValue rootc
@@ -1448,6 +1449,8 @@ jQuery ($) ->
         {
             moveComponents: (moves) ->
                 for m in moves
+                    if m.comp
+                        m.comps: [m.comp]
                     for c in m.comps
                         if inSet c, excludedSet
                             throw "Component ${c.id} cannot be moved because it has been excluded!"
@@ -1467,8 +1470,9 @@ jQuery ($) ->
                 for m in moves
                     for c in m.comps
                         $(c.node).addClass 'stacked'
+                        offset: m.offset || subPtPt(m.abspos, c.abspos)
                         traverse c, (child) ->
-                            child.dragpos: { x: child.abspos.x + m.offset.x; y: child.abspos.y + m.offset.y }
+                            child.dragpos: { x: child.abspos.x + offset.x; y: child.abspos.y + offset.y }
                             child.dragParent: child.parent
                             componentPositionChangedWhileDragging child
 
@@ -1505,9 +1509,20 @@ jQuery ($) ->
             rect: pin.computeRect allowedArea, comp, (otherPin) ->
                 for child in target.children
                     if child.type.pin is otherPin
-                        return child
+                        return rectOf(child)
                 null
-            return { isAnchored, target, rect, moves: [] }
+            moves: []
+            for dependantPin in pin.dependantPins
+                for child in target.children
+                    if child.type.pin is dependantPin
+                        newRect: child.type.pin.computeRect allowedArea, child, (otherPin) ->
+                            return rect if otherPin is pin
+                            for otherChild in target.children
+                                if otherChild.type.pin is otherPin
+                                    return rectOf(otherChild)
+                            null
+                        moves.push { comp: child, abspos: newRect }
+            return { isAnchored, target, rect, moves }
 
         if comp.type.name in TABLE_TYPES
             target: activeScreen.rootComponent
@@ -1542,6 +1557,23 @@ jQuery ($) ->
             # isAnchored: xa or ya
         
         { isAnchored, target, rect, moves: stacking.moves }
+
+    computeDeletionEffect: (comp) ->
+        moves: []
+        if pin: comp.type.pin
+            target: comp.parent
+            unless target is null
+                for dependantPin in pin.dependantPins
+                    for child in target.children
+                        if child.type.pin is dependantPin
+                            newRect: child.type.pin.computeRect allowedArea, child, (otherPin) ->
+                                return null if otherPin is pin
+                                for otherChild in target.children
+                                    if otherChild.type.pin is otherPin
+                                        return rectOf(otherChild)
+                                null
+                            moves.push { comp: child, abspos: newRect }
+        { moves }
 
     startDragging: (comp, options, initialMoveOptions) ->
         origin: $('#design-area').offset()
@@ -1592,7 +1624,9 @@ jQuery ($) ->
 
             if ok
                 { target, isAnchored, rect, moves }: determineDragEffect comp, rect, moveOptions
-                liveMover.moveComponents moves
+            else
+                { moves }: computeDeletionEffect comp
+            liveMover.moveComponents moves
 
             comp.dragpos = { x: rect.x, y: rect.y }
             comp.dragParent: null
@@ -1622,7 +1656,7 @@ jQuery ($) ->
                 liveMover.commit()
                 true
             else
-                liveMover.rollback()
+                liveMover.commit()
                 false
 
         cancel: ->
