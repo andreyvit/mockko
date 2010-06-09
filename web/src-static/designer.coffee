@@ -687,7 +687,17 @@ jQuery ($) ->
         
     renderComponentPosition: (c, cn) ->
         ct: c.type
-        relpos: if c.dragpos then externalizeLocation(c.dragpos, c.dragParent) else externalizeLocation(c.abspos, c.parent)
+        relpos: switch
+            when c.dragpos
+                {
+                    'x': c.dragpos.x - ((c.dragParent?.dragpos || c.dragParent?.abspos)?.x || 0)
+                    'y': c.dragpos.y - ((c.dragParent?.dragpos || c.dragParent?.abspos)?.y || 0)
+                }
+            else
+                {
+                    'x': c.abspos.x - ((c.parent?.dragpos && false || c.parent?.abspos)?.x || 0)
+                    'y': c.abspos.y - ((c.parent?.dragpos && false || c.parent?.abspos)?.y || 0)
+                }
         
         $(cn || c.node).css({
             left:   "${relpos.x}px"
@@ -1400,15 +1410,18 @@ jQuery ($) ->
 
         {
             moveComponents: (moves) ->
-                componentSet: setOf _.flatten(m.comps for m in moves)
                 for m in moves
                     for c in m.comps
                         if inSet c, excludedSet
                             throw "Component ${c.id} cannot be moved because it has been excluded!"
+                componentSet: setOf _.flatten(m.comps for m in moves)
+
                 traverse activeScreen.rootComponent, (c) ->
                     if inSet c, excludedSet
                         return skipTraversingChildren
-                    if c.dragpos and not inSet c, componentSet
+                    if inSet c, componentSet
+                        return skipTraversingChildren
+                    if c.dragpos
                         c.dragpos: null
                         c.dragParent: null
                         $(c.node).removeClass 'stacked'
@@ -1417,9 +1430,10 @@ jQuery ($) ->
                 for m in moves
                     for c in m.comps
                         $(c.node).addClass 'stacked'
-                        c.dragpos: { x: c.abspos.x + m.offset.x; y: c.abspos.y + m.offset.y }
-                        c.dragParent: c.parent
-                        componentPositionChangedWhileDragging c
+                        traverse c, (child) ->
+                            child.dragpos: { x: child.abspos.x + m.offset.x; y: child.abspos.y + m.offset.y }
+                            child.dragParent: child.parent
+                            componentPositionChangedWhileDragging child
 
             rollback: ->
                 traverse activeScreen.rootComponent, (c) ->
