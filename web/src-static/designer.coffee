@@ -1685,12 +1685,21 @@ jQuery ($) ->
                 minimumSize: comp.type.minimumSize || { w: 4, h: 4 }
 
                 maxSizeDecrease: { x: baseSize.w - minimumSize.w; y : baseSize.h - minimumSize.h }
+
+                maxSizeIncrease: { x: INF; y: INF }
+                maxSizeIncrease.x: switch options.hmode
+                    when 'l' then originalPos.x - allowedArea.x
+                    else          allowedArea.x+allowedArea.w - (originalPos.x+baseSize.w)
+                maxSizeIncrease.y: switch options.vmode
+                    when 't' then originalPos.y - allowedArea.y
+                    else          allowedArea.y+allowedArea.h - (originalPos.y+baseSize.h)
+
                 switch options.hmode
-                    when 'l' then delta.x: Math.min delta.x,  maxSizeDecrease.x
-                    else          delta.x: Math.max delta.x, -maxSizeDecrease.x
+                    when 'l' then delta.x: Math.max(-maxSizeIncrease.x, Math.min( maxSizeDecrease.x, delta.x))
+                    else          delta.x: Math.min( maxSizeIncrease.x, Math.max(-maxSizeDecrease.x, delta.x))
                 switch options.vmode
-                    when 't' then delta.y: Math.min delta.y,  maxSizeDecrease.y
-                    else          delta.y: Math.max delta.y, -maxSizeDecrease.y
+                    when 't' then delta.y: Math.max(-maxSizeIncrease.y, Math.min( maxSizeDecrease.y, delta.y))
+                    else          delta.y: Math.min( maxSizeIncrease.y, Math.max(-maxSizeDecrease.y, delta.y))
 
                 [newSize.w, newPos.x]: switch
                     when delta.w is 0 or options.hmode is 'c' then [originalSize.w, originalPos.x]
