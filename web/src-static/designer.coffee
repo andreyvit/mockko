@@ -2380,6 +2380,7 @@ jQuery ($) ->
             e.dataTransfer.dropEffect: 'copy'
             false
         this.ondrop: (e) ->
+            return unless e.dataTransfer?.files?.length
             console.log "drop"
             e.preventDefault()
             errors: []
