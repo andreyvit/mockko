@@ -1573,6 +1573,10 @@ jQuery ($) ->
                 liveMover.rollback()
                 false
 
+        cancel: ->
+            $(comp.node).removeClass 'dragging cannot-drop'
+            liveMover.rollback()
+
         if comp.node.parentNode
             comp.node.parentNode.removeChild(comp.node)
         activeScreen.rootComponent.node.appendChild(comp.node)
@@ -1580,7 +1584,7 @@ jQuery ($) ->
 
         moveTo(options.startPt)
 
-        { moveTo: moveTo, dropAt: dropAt }
+        { moveTo, dropAt, cancel }
 
 
     ##########################################################################################################
@@ -1626,6 +1630,7 @@ jQuery ($) ->
         
         activateMode {
             debugname: "Existing Component Dragging"
+            cancelOnMouseUp: yes
             mousemove: (e) ->
                 pt: { x: e.pageX, y: e.pageY }
                 if dragger is null
@@ -1643,6 +1648,13 @@ jQuery ($) ->
                         deleteComponent c
                 deactivateMode()
                 true
+
+            cancel: ->
+                if dragger isnt null
+                    dragger.cancel()
+                c.dragpos: null
+                c.dragParent: null
+                componentPositionChangedWhileDragging c
         }
         
     activateNewComponentDragging: (startPt, c) ->
@@ -1655,6 +1667,7 @@ jQuery ($) ->
         
         activateMode {
             debugname: "New Component Dragging"
+            cancelOnMouseUp: yes
             mousemove: (e) ->
                 dragger.moveTo { x: e.pageX, y: e.pageY }
                 true
@@ -1668,6 +1681,10 @@ jQuery ($) ->
                         $(c.node).remove()
                 deactivateMode()
                 true
+
+            cancel: ->
+                $(c.node).fadeOut 250, ->
+                    $(c.node).remove()
         }
 
     startResizing: (comp, startPt, options) ->
@@ -1732,6 +1749,7 @@ jQuery ($) ->
         resizer: startResizing comp, startPt, options
         activateMode {
             debugname: "Resizing"
+            cancelOnMouseUp: yes
             mousemove: (e) ->
                 resizer.moveTo { x:e.pageX, y:e.pageY }
                 true
@@ -1793,6 +1811,15 @@ jQuery ($) ->
             e.preventDefault() if handled
             undefined
     }
+
+    $('body').mouseup (e) ->
+        # console.log "mouseup on document"
+        cancelMode() if activeMode()?.cancelOnMouseUp
+
+    $(document).mouseout (e) ->
+        if e.target is document.documentElement
+            # console.log "mouseout on window"
+            cancelMode() if activeMode()?.cancelOnMouseUp
 
     ##########################################################################################################
     ##  palette
