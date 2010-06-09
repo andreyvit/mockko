@@ -284,6 +284,10 @@ class RunAppHandler(RequestHandler):
         body_json = app.body
         content = json.loads(body_json)
         
+        body = "\n".join([s['html'] for s in content['screens']])
+        body = body.replace('"static', '"/static')
+        body = body.replace('"images', '"/images')
+
         html="""
         <!DOCTYPE html>
         <html>
@@ -301,6 +305,6 @@ class RunAppHandler(RequestHandler):
             %(content)s
           </body>
         </html>
-""" % dict(title=content['name'], content="\n".join([s['html'] for s in content['screens']]))
+""" % dict(title=content['name'], content=body)
         
         return Response(html, mimetype="text/html")
