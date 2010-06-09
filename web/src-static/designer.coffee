@@ -340,7 +340,7 @@ jQuery ($) ->
         rc: {
             'type': c.type.name || c.type
             'location': externalizeLocation c.abspos, c.parent
-            'effsize': externalizeSize c.effsize
+            # 'effsize': externalizeSize c.effsize
             'size': externalizeSize c.size
             'styleName': c.styleName
             'style': externalizeStyle c.style
@@ -2229,7 +2229,7 @@ jQuery ($) ->
                 if not dispatchToMode ModeMethods.screenclick, screen
                     switchToScreen screen
                 false
-        $('.caption', screen.node).dblclick -> startRenamingScreen screen; false
+        $('.caption', screen.node).click -> startRenamingScreen screen; false
         
     updateScreenList: ->
         $('#screens-list > .app-screen').remove()
@@ -2397,7 +2397,7 @@ jQuery ($) ->
     renderApplicationName: ->
         $('#app-name-content').html(application.name)
 
-    $('#app-name-content').dblclick ->
+    $('#app-name-content').click ->
         $('#app-name-content').startInPlaceEditing {
             accept: (newText) ->
                 runTransaction "application rename", ->
@@ -2755,6 +2755,7 @@ jQuery ($) ->
         $('.caption', app.node).startInPlaceEditing {
             accept: (newText) ->
                 app.content.name: newText
+                console.log app.content
                 serverMode.saveApplicationChanges externalizeApplication(app.content), app.id, (newId) ->
                     refreshApplicationList()
         }
@@ -2862,7 +2863,7 @@ jQuery ($) ->
         $('.content', an).click ->
             loadApplication app.content, app.id
             switchToDesign()
-        $('.caption', an).dblclick ->
+        $('.caption', an).click ->
             startDashboardApplicationNameEditing app
             false
 
