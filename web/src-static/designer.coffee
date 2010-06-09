@@ -643,7 +643,7 @@ jQuery ($) ->
         componentsChanged()
 
     duplicateComponent: (comp) ->
-        return if comp.type.unmovable
+        return if comp.type.unmovable || comp.type.singleInstance
         beginUndoTransaction "duplicate ${friendlyComponentName comp}"
 
         newComp: internalizeComponent(externalizeComponent(comp), comp.parent)
