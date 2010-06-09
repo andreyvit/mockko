@@ -551,8 +551,28 @@ jQuery ($) ->
     distancePtToPtMod: (a, b) -> Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))
     distancePtToPtSqr: (a, b) -> Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y))
 
-    centerOfRect: (r) -> { x: r.x + r.w / 2, y: r.y + r.h / 2 }
+    ZeroPt:        { x: 0, y: 0 }
+    ptToString:    (pt) -> "(${pt.x},${pt.y})"
+    distancePtPt1: (a, b) -> Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))
+    distancePtPt2: (a, b) -> Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y))
+    addPtPt:       (a, b) -> { x: a.x + b.x, y: a.y + b.y }
+    subPtPt:       (a, b) -> { x: a.x - b.x, y: a.y - b.y }
+    mulPtSize:     (p, s) -> { x: p.x * s.w, y: p.y * s.h }
+    ptFromLT:      (lt) -> { x: lt.left, y: lt.top }
+
+    ZeroSize:     { w: 0, h: 0 }
+    sizeToString: (size) -> "${size.w}x${size.h}"
+    domSize:      (node) -> { w: node.offsetWidth, h: node.offsetHeight }
     centerOfSize: (s) -> { x: s.w / 2, y: s.h / 2 }
+
+    rectToString:      (r) -> "(${r.x},${r.y} ${r.w}x${r.h})"
+    rectFromPtAndSize: (p, s) -> { x:p.x, y:p.y, w:s.w, h:s.h }
+    addRectPt:         (r, p) -> { x:r.x+p.x, y:r.y+p.y, w:r.w, h:r.h }
+    subRectPt:         (r, p) -> { x:r.x-p.x, y:r.y-p.y, w:r.w, h:r.h }
+    topLeftOf:         (r) -> { x: r.x, y: r.y }
+    bottomRightOf:     (r) -> { x: r.x+r.w, y: r.y+r.h }
+
+    centerOfRect: (r) -> { x: r.x + r.w / 2, y: r.y + r.h / 2 }
     
     ##########################################################################################################
     ##  component management
