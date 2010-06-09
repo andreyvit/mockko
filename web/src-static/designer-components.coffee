@@ -80,6 +80,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         widthPolicy: { autoSize: 'fill' }
         heightPolicy: { fixedSize: 20 }
         pin: Pins.top
+        singleInstance: yes
     }
     'tabBar': {
         label: 'Tab Bar'
@@ -87,6 +88,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         heightPolicy: { fixedSize: 49 }
         container: yes
         pin: Pins.bottom
+        singleInstance: yes
     }
     'tab-bar-item': {
         label: 'Tab Bar Item'
@@ -113,6 +115,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         heightPolicy: { fixedSize: { portrait: 44, landscape: 44 } }
         container: yes
         pin: Pins.secondTop
+        singleInstance: yes
     }
     'backButton': {
         label: 'Back Button'
@@ -148,6 +151,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         heightPolicy: { fixedSize: { portrait: 44, landscape: 44 } }
         container: yes
         pin: Pins.secondBottom
+        singleInstance: yes
     }
     'roundedButton': {
         label: 'Rounded Button'

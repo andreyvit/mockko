@@ -567,6 +567,7 @@ jQuery ($) ->
 
     rectToString:      (r) -> "(${r.x},${r.y} ${r.w}x${r.h})"
     rectFromPtAndSize: (p, s) -> { x:p.x, y:p.y, w:s.w, h:s.h }
+    dupRect:           (r)    -> { x:r.x, y:r.y, w:r.w, h:r.h }
     addRectPt:         (r, p) -> { x:r.x+p.x, y:r.y+p.y, w:r.w, h:r.h }
     subRectPt:         (r, p) -> { x:r.x-p.x, y:r.y-p.y, w:r.w, h:r.h }
     topLeftOf:         (r) -> { x: r.x, y: r.y }
@@ -1505,6 +1506,17 @@ jQuery ($) ->
     determineDragEffect: (comp, rect, moveOptions) ->
         if pin: comp.type.pin
             target: activeScreen.rootComponent
+        else if comp.type.name in TABLE_TYPES
+            target: activeScreen.rootComponent
+        else
+            target: findBestTargetContainerForRect(rect, [comp])
+
+        if comp.type.singleInstance
+            for child in target.children
+                if child.type is comp.type
+                    return null
+
+        if pin: comp.type.pin
             isAnchored: yes
             rect: pin.computeRect allowedArea, comp, (otherPin) ->
                 for child in target.children
@@ -1523,11 +1535,6 @@ jQuery ($) ->
                             null
                         moves.push { comp: child, abspos: newRect }
             return { isAnchored, target, rect, moves }
-
-        if comp.type.name in TABLE_TYPES
-            target: activeScreen.rootComponent
-        else
-            target: findBestTargetContainerForRect(rect, [comp])
 
         stacking: handleStacking comp, rect, allStacks
 
@@ -1598,6 +1605,7 @@ jQuery ($) ->
             r: sizeOf comp
             r.x: pt.x - origin.left - r.w * hotspot.x
             r.y: pt.y - origin.top  - r.h * hotspot.y
+            unsnappedRect: dupRect r
 
             insideArea: {
                 x: (allowedArea.x <= r.x <= allowedArea.x+allowedArea.w-r.w)
@@ -1616,16 +1624,24 @@ jQuery ($) ->
                 if snapToArea.bottom then r.y = allowedArea.y+allowedArea.h - r.h
                 insideArea.x = insideArea.y = yes
 
-            [r, insideArea.x && insideArea.y]
+            [r, unsnappedRect, insideArea.x && insideArea.y]
 
         moveTo: (pt, moveOptions) ->
-            [rect, ok] = updateRectangleAndClipToArea(pt)
-            $(comp.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
+            [rect, unsnappedRect, ok] = updateRectangleAndClipToArea(pt)
 
             if ok
-                { target, isAnchored, rect, moves }: determineDragEffect comp, rect, moveOptions
+                if effect: determineDragEffect comp, rect, moveOptions
+                    { target, isAnchored, rect, moves }: effect
+                else
+                    ok: no
+                    moves: []
             else
                 { moves }: computeDeletionEffect comp
+
+            unless ok
+                rect: unsnappedRect
+
+            $(comp.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
             liveMover.moveComponents moves
 
             comp.dragpos = { x: rect.x, y: rect.y }
