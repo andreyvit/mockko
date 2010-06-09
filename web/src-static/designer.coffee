@@ -1472,7 +1472,7 @@ jQuery ($) ->
                 if delay? then setTimeout(cleanup, delay) else cleanup()
         }
 
-    startDragging: (comp, options) ->
+    startDragging: (comp, options, initialMoveOptions) ->
         origin: $('#design-area').offset()
 
         if comp.inDocument
@@ -1515,7 +1515,7 @@ jQuery ($) ->
 
             [r, insideArea.x && insideArea.y]
 
-        moveTo: (pt) ->
+        moveTo: (pt, moveOptions) ->
             [r, ok] = updateRectangleAndClipToArea(pt)
             $(comp.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
@@ -1535,15 +1535,17 @@ jQuery ($) ->
                     aps: _(computeAllSnappingPositions(target)).reject (a) -> comp == a.comp
                     aa: _.flatten(computeSnappings(ap, r) for ap in aps)
 
-                    best: {
-                        horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
-                        vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
-                    }
+                    best: { horz: null, vert: null }
+                    unless moveOptions.disableSnapping
+                        best: {
+                            horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
+                            vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
+                        }
 
-                    console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+                        console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
 
-                    if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
-                    if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
+                        if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
+                        if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
 
                     xa: applySnapping best.vert, r if best.vert
                     ya: applySnapping best.horz, r if best.horz
@@ -1563,10 +1565,10 @@ jQuery ($) ->
 
             if ok then { target: target } else null
 
-        dropAt: (pt) ->
+        dropAt: (pt, moveOptions) ->
             $(comp.node).removeClass 'dragging'
 
-            if res: moveTo pt
+            if res: moveTo pt, moveOptions
                 effects: []
                 if comp.type is Types.image and res.target.type.supportsImageReplacement
                     effects.push newSetImageEffect(res.target, comp)
@@ -1589,7 +1591,7 @@ jQuery ($) ->
         activeScreen.rootComponent.node.appendChild(comp.node)
         traverse comp, (child) -> updateEffectiveSize child  # we might have just added a new component
 
-        moveTo(options.startPt)
+        moveTo(options.startPt, initialMoveOptions)
 
         { moveTo, dropAt, cancel }
 
@@ -1630,6 +1632,11 @@ jQuery ($) ->
                 componentsChanged()
         }
 
+    computeMoveOptions: (e) ->
+        {
+            disableSnapping: !!e.ctrlKey
+        }
+
     activateExistingComponentDragging: (c, startPt) ->
         dragger: null
         
@@ -1643,13 +1650,13 @@ jQuery ($) ->
                 if dragger is null
                     return if Math.abs(pt.x - startPt.x) <= 1 and Math.abs(pt.y - startPt.y) <= 1
                     beginUndoTransaction "movement of ${friendlyComponentName c}"
-                    dragger: startDragging c, { startPt: startPt }
-                dragger.moveTo pt
+                    dragger: startDragging c, { startPt: startPt }, computeMoveOptions(e)
+                dragger.moveTo pt, computeMoveOptions(e)
                 true
                 
             mouseup: (e) ->
                 if dragger isnt null
-                    if dragger.dropAt { x: e.pageX, y: e.pageY }
+                    if dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
                         componentsChanged()
                     else
                         deleteComponent c
@@ -1664,11 +1671,11 @@ jQuery ($) ->
                 componentPositionChangedWhileDragging c
         }
         
-    activateNewComponentDragging: (startPt, c) ->
+    activateNewComponentDragging: (startPt, c, e) ->
         beginUndoTransaction "creation of ${friendlyComponentName c}"
         cn: renderInteractiveComponentHeirarchy c
         
-        dragger: startDragging c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }
+        dragger: startDragging c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }, computeMoveOptions(e)
         
         window.status = "Dragging a new component."
         
@@ -1676,11 +1683,11 @@ jQuery ($) ->
             debugname: "New Component Dragging"
             cancelOnMouseUp: yes
             mousemove: (e) ->
-                dragger.moveTo { x: e.pageX, y: e.pageY }
+                dragger.moveTo { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
                 true
                 
             mouseup: (e) ->
-                ok: dragger.dropAt { x: e.pageX, y: e.pageY }
+                ok: dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
                 if ok
                     componentsChanged()
                 else
@@ -1842,7 +1849,7 @@ jQuery ($) ->
             if e.which is 1
                 e.preventDefault()
                 c: cloneTemplateComponent compTemplate
-                activateNewComponentDragging { x: e.pageX, y: e.pageY }, c
+                activateNewComponentDragging { x: e.pageX, y: e.pageY }, c, e
             
     renderPaletteGroupContent: (ctg, group, func) ->
         $('<div />').addClass('header').html(ctg.name).appendTo(group)
