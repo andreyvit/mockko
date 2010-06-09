@@ -1077,13 +1077,19 @@ jQuery ($) ->
             item: item.nextStackSibling
         res.push to if inclTo
         return res
+
+    findStackByProximity: (rect) ->
+        _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20
             
     handleStacking: (comp, rect, stacks, action) ->
         return { moves: [] } unless comp.type.name in TABLE_TYPES
         
         sourceStack: if action == 'duplicate' then null else comp.stack
-        targetStack: if rect? then _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20 else null
+        targetStack: if rect? then findStackByProximity(rect) else null
+        
+        handleVerticalStacking comp, rect, sourceStack, targetStack
 
+    handleVerticalStacking: (comp, rect, sourceStack, targetStack) ->
         if sourceStack && sourceStack.items.length == 1
             if targetStack is sourceStack
                 targetStack: null
@@ -1472,6 +1478,51 @@ jQuery ($) ->
                 if delay? then setTimeout(cleanup, delay) else cleanup()
         }
 
+    determineDragEffect: (comp, rect, moveOptions) ->
+        if pin: comp.type.pin
+            target: activeScreen.rootComponent
+            isAnchored: yes
+            rect: pin.computeRect allowedArea, comp, (otherPin) ->
+                for child in target.children
+                    if child.type.pin is otherPin
+                        return child
+                null
+            return { isAnchored, target, rect, moves: [] }
+
+        if comp.type.name in TABLE_TYPES
+            target: activeScreen.rootComponent
+        else
+            target: findBestTargetContainerForRect(rect, [comp])
+
+        stacking: handleStacking comp, rect, allStacks
+
+        isAnchored: no
+        if stacking.targetRect?
+            aps: []
+            rect = stacking.targetRect
+            isAnchored: yes
+        else
+            aps: _(computeAllSnappingPositions(target)).reject (a) -> comp == a.comp
+            aa: _.flatten(computeSnappings(ap, rect) for ap in aps)
+
+            best: { horz: null, vert: null }
+            unless moveOptions.disableSnapping
+                best: {
+                    horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
+                    vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
+                }
+
+                console.log "(${rect.x}, ${rect.y}, w ${rect.w}, h ${rect.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+
+                if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
+                if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
+
+            xa: applySnapping best.vert, rect if best.vert
+            ya: applySnapping best.horz, rect if best.horz
+            # isAnchored: xa or ya
+        
+        { isAnchored, target, rect, moves: stacking.moves }
+
     startDragging: (comp, options, initialMoveOptions) ->
         origin: $('#design-area').offset()
 
@@ -1516,42 +1567,14 @@ jQuery ($) ->
             [r, insideArea.x && insideArea.y]
 
         moveTo: (pt, moveOptions) ->
-            [r, ok] = updateRectangleAndClipToArea(pt)
+            [rect, ok] = updateRectangleAndClipToArea(pt)
             $(comp.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
 
             if ok
-                stacking: handleStacking comp, r, allStacks
-                liveMover.moveComponents stacking.moves
+                { target, isAnchored, rect, moves }: determineDragEffect comp, rect, moveOptions
+                liveMover.moveComponents moves
 
-                target: findBestTargetContainerForRect(r, [comp])
-                target = activeScreen.rootComponent if comp.type.name in TABLE_TYPES
-
-                isAnchored: no
-                if stacking.targetRect?
-                    aps: []
-                    r = stacking.targetRect
-                    isAnchored: yes
-                else
-                    aps: _(computeAllSnappingPositions(target)).reject (a) -> comp == a.comp
-                    aa: _.flatten(computeSnappings(ap, r) for ap in aps)
-
-                    best: { horz: null, vert: null }
-                    unless moveOptions.disableSnapping
-                        best: {
-                            horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
-                            vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
-                        }
-
-                        console.log "(${r.x}, ${r.y}, w ${r.w}, h ${r.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
-
-                        if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
-                        if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
-
-                    xa: applySnapping best.vert, r if best.vert
-                    ya: applySnapping best.horz, r if best.horz
-                    # isAnchored: xa or ya
-
-            comp.dragpos = { x: r.x, y: r.y }
+            comp.dragpos = { x: rect.x, y: rect.y }
             comp.dragParent: null
 
             if wasAnchored and not isAnchored

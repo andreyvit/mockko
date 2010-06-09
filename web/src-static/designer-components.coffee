@@ -1,4 +1,33 @@
 
+window.Pins: {
+    bottom: {
+        computeRect: (area, comp, findPinned) ->
+            hp: comp.type.heightPolicy
+            h: hp.fixedSize.portrait || hp.fixedSize
+            { x: area.x, w: area.w, y: area.y+area.h-h, h: h }
+    }
+    top: {
+        computeRect: (area, comp, findPinned) ->
+            hp: comp.type.heightPolicy
+            h: hp.fixedSize.portrait || hp.fixedSize
+            { x: area.x, w: area.w, y: area.y, h: h }
+    }
+    secondTop: {
+        computeRect: (area, comp, findPinned) ->
+            hp: comp.type.heightPolicy
+            h: hp.fixedSize.portrait || hp.fixedSize
+            pinned: findPinned(Pins.top)
+            { x: area.x, w: area.w, y: (if pinned then pinned.abspos.y+pinned.effsize.h else area.y), h: h }
+    }
+    secondBottom: {
+        computeRect: (area, comp, findPinned) ->
+            hp: comp.type.heightPolicy
+            h: hp.fixedSize.portrait || hp.fixedSize
+            pinned: findPinned(Pins.bottom)
+            { x: area.x, w: area.w, y: (if pinned then pinned.abspos.y else area.y+area.h)-h, h: h }
+    }
+}
+
 (window.MakeApp ||= {}).componentTypes: {
     'background': {
         type: 'background'
@@ -44,12 +73,14 @@
         label: 'Status Bar'
         widthPolicy: { autoSize: 'fill' }
         heightPolicy: { fixedSize: 20 }
+        pin: Pins.top
     }
     'tabBar': {
         label: 'Tab Bar'
         widthPolicy: { autoSize: 'fill' }
         heightPolicy: { fixedSize: 49 }
         container: yes
+        pin: Pins.bottom
     }
     'tab-bar-item': {
         label: 'Tab Bar Item'
@@ -75,6 +106,7 @@
         widthPolicy: { autoSize: 'fill' }
         heightPolicy: { fixedSize: { portrait: 44, landscape: 44 } }
         container: yes
+        pin: Pins.secondTop
     }
     'backButton': {
         label: 'Back Button'
@@ -109,6 +141,7 @@
         widthPolicy: { autoSize: 'fill' }
         heightPolicy: { fixedSize: { portrait: 44, landscape: 44 } }
         container: yes
+        pin: Pins.secondBottom
     }
     'roundedButton': {
         label: 'Rounded Button'
