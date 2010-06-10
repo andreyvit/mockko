@@ -1659,7 +1659,7 @@ jQuery ($) ->
                 if comp.type is Types.image and res.target.type.supportsImageReplacement
                     effects.push newSetImageEffect(res.target, comp)
                 else
-                    effects.push newDropOnTargetEffect(comp, res.target)
+                    effects.push newDropOnTargetEffect(comp, res.target, originalSize, originalEffSize)
                 for e in effects
                     e.apply()
                 liveMover.commit()
@@ -1676,6 +1676,8 @@ jQuery ($) ->
             comp.node.parentNode.removeChild(comp.node)
         activeScreen.rootComponent.node.appendChild(comp.node)
         traverse comp, (child) -> updateEffectiveSize child  # we might have just added a new component
+        originalSize: comp.size
+        originalEffSize: comp.effsize
 
         moveTo(options.startPt, initialMoveOptions)
 
@@ -1853,7 +1855,7 @@ jQuery ($) ->
     ##  Dragging Specifics
 
 
-    newDropOnTargetEffect: (c, target) ->
+    newDropOnTargetEffect: (c, target, originalSize, originalEffSize) ->
         {
             apply: ->
                 if c.parent != target
@@ -1866,7 +1868,10 @@ jQuery ($) ->
                 c.parent.node.appendChild(c.node)
 
                 if c.dragsize
-                    c.size: c.dragsize
+                    c.size: {
+                        w: if c.dragsize.w is originalEffSize.w then originalSize.w else c.dragsize.w
+                        h: if c.dragsize.h is originalEffSize.h then originalSize.h else c.dragsize.h
+                    }
                 shift: ptDiff c.dragpos, c.abspos
                 traverse c, (cc) -> cc.abspos: ptSum cc.abspos, shift
                 c.dragpos: null
@@ -1922,6 +1927,7 @@ jQuery ($) ->
             cancel: ->
                 if dragger isnt null
                     dragger.cancel()
+                c.dragsize: null
                 c.dragpos: null
                 c.dragParent: null
                 componentPositionChangedWhileDragging c
