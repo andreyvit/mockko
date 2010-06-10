@@ -308,6 +308,7 @@ jQuery ($) ->
             fontItalic: style['fontItalic']
             textShadowStyleName: style['textShadowStyleName']
             background: style['background']
+            imageEffect: style['imageEffect']
         }
 
     externalizeStyle: (style) ->
@@ -318,6 +319,7 @@ jQuery ($) ->
             'fontItalic': style.fontItalic
             'textShadowStyleName': style.textShadowStyleName
             'background': style.background
+            'imageEffect': style.imageEffect
         }
 
     externalizeImage: (image) ->
