@@ -1375,84 +1375,82 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Snapping
 
-    computeSnappingPositionsOfComponent: (c) ->
-        r: rectOf c
+    class Snapping
+        constructor: (magnet, anchor) ->
+            @magnet: magnet
+            @anchor: anchor
+            @affects: magnet.affects
+            @distance: Math.abs(@magnet.coord - @anchor.coord)
+        isValid: ->
+            @distance <= CONF_SNAPPING_DISTANCE
+
+    Snappings: {}
+
+    class Snappings.left extends Snapping
+        apply: (rect) -> rect.x: @anchor.coord
+    class Snappings.right extends Snapping
+        apply: (rect) -> rect.x: @anchor.coord - rect.w
+    class Snappings.xcenter extends Snapping
+        apply: (rect) -> rect.x: @anchor.coord - rect.w/2
+
+    class Snappings.top extends Snapping
+        apply: (rect) -> rect.y: @anchor.coord
+    class Snappings.bottom extends Snapping
+        apply: (rect) -> rect.y: @anchor.coord - rect.h
+    class Snappings.ycenter extends Snapping
+        apply: (rect) -> rect.y: @anchor.coord - rect.h/2
+
+    Snappings.left.snapsTo:    (anchor) -> anchor.snappingClass is Snappings.left or anchor.snappingClass is Snappings.right
+    Snappings.right.snapsTo:   (anchor) -> anchor.snappingClass is Snappings.left or anchor.snappingClass is Snappings.right
+    Snappings.xcenter.snapsTo: (anchor) -> anchor.snappingClass is Snappings.xcenter
+    _([Snappings.left, Snappings.right, Snappings.xcenter]).each (s) -> s.affects: 'x'
+
+    Snappings.top.snapsTo:     (anchor) -> anchor.snappingClass is Snappings.top or anchor.snappingClass is Snappings.bottom
+    Snappings.bottom.snapsTo:  (anchor) -> anchor.snappingClass is Snappings.top or anchor.snappingClass is Snappings.bottom
+    Snappings.ycenter.snapsTo: (anchor) -> anchor.snappingClass is Snappings.ycenter
+    _([Snappings.top, Snappings.bottom, Snappings.ycenter]).each (s) -> s.affects: 'y'
+
+    Anchors: {}
+    class Anchors.singlecoord
+        constructor: (comp, snappingClass, coord) ->
+            @comp:    comp
+            @coord:   coord
+            @snappingClass: snappingClass
+            @affects: @snappingClass.affects
+        snapTo: (anchor) ->
+            if @snappingClass.snapsTo anchor
+                new @snappingClass(this, anchor)
+            else
+                null
+
+    computeOuterAnchors: (comp, r) ->
         _.compact [
-            { orient: 'vert', type: 'edge', c: c, coord: r.x } if r.x > allowedArea.x
-            { orient: 'vert', type: 'edge', c: c, coord: r.x + r.w } if r.x+r.w < allowedArea.x+allowedArea.w
-            { orient: 'vert', type: 'center', c: c, coord: r.x + r.w / 2 }
-            { orient: 'horz', type: 'edge', c: c, coord: r.y } if r.y > allowedArea.y
-            { orient: 'horz', type: 'edge', c: c, coord: r.y + r.h } if r.y+r.h < allowedArea.y+allowedArea.h
-            { orient: 'horz', type: 'center', c: c, coord: r.y + r.h / 2 }
+            new Anchors.singlecoord(comp, Snappings.left,    r.x)            if r.x > allowedArea.x
+            new Anchors.singlecoord(comp, Snappings.right,   r.x + r.w)      if r.x+r.w < allowedArea.x+allowedArea.w
+            new Anchors.singlecoord(comp, Snappings.xcenter, r.x + r.w / 2)
+            new Anchors.singlecoord(comp, Snappings.top,     r.y)            if r.y > allowedArea.y
+            new Anchors.singlecoord(comp, Snappings.bottom,  r.y + r.h)      if r.y+r.h < allowedArea.y+allowedArea.h
+            new Anchors.singlecoord(comp, Snappings.ycenter, r.y + r.h / 2)
         ]
 
-    computeChildrenSnappingPositionsOfContainer: (c) -> computeSnappingPositionsOfComponent c
+    computeInnerAnchors: (comp) ->
+        anchors: _.flatten(computeOuterAnchors(child, rectOf(child)) for child in comp.children)
+        anchors.concat computeOuterAnchors(comp, rectOf(comp))
 
-    computeAllSnappingPositions: (pc) ->
-        comps: pc.children
-        r: _.flatten(computeSnappingPositionsOfComponent c for c in comps)
-        if pc is null then r else r.concat computeChildrenSnappingPositionsOfContainer pc
+    computeMagnets: (comp, rect) -> computeOuterAnchors(comp, rect)
 
-    computeSnappings: (ap, r) ->
-        switch ap.type
-            when 'edge'
-                switch ap.orient
-                    when 'vert'
-                        [
-                            {
-                                atype: 'left'
-                                dist: Math.abs(ap.coord - r.x)
-                                coord: ap.coord
-                                orient: ap.orient
-                            }
-                            {
-                                atype: 'right'
-                                dist: Math.abs(ap.coord - (r.x + r.w))
-                                coord: ap.coord
-                                orient: ap.orient
-                            }
-                        ]
-                    when 'horz'
-                        [
-                            {
-                                atype: 'top'
-                                dist: Math.abs(ap.coord - r.y)
-                                coord: ap.coord
-                                orient: ap.orient
-                            }
-                            {
-                                atype: 'bottom'
-                                dist: Math.abs(ap.coord - (r.y + r.h))
-                                coord: ap.coord
-                                orient: ap.orient
-                            }
-                        ]
-            when 'center'
-                if ap.orient == 'vert'
-                    [{
-                        atype: 'xcenter'
-                        dist: Math.abs(ap.coord - (r.x + r.w/2))
-                        coord: ap.coord
-                        orient: ap.orient
-                    }]
-                else
-                    [{
-                        atype: 'ycenter'
-                        dist: Math.abs(ap.coord - (r.y + r.h/2))
-                        coord: ap.coord
-                        orient: ap.orient
-                    }]
+    computeSnappings: (anchors, magnets) ->
+        snappings: []
+        for magnet in magnets
+            for anchor in anchors
+                if snapping: magnet.snapTo anchor
+                    snappings.push snapping
+        snappings
 
-    applySnapping: (a, r) ->
-        switch a.atype
-            when 'left'   then r.x = a.coord
-            when 'right'  then r.x = a.coord - r.w
-            when 'top'    then r.y = a.coord
-            when 'bottom' then r.y = a.coord - r.h
-            when 'xcenter' then r.x = a.coord - r.w/2
-            when 'ycenter' then r.y = a.coord - r.h/2
-            else return false
-        true
+    chooseSnappings: (snappings) ->
+        bestx: _.min(_.select(snappings, (s) -> s.isValid() and s.affects is 'x'), (s) -> s.distance)
+        besty: _.min(_.select(snappings, (s) -> s.isValid() and s.affects is 'y'), (s) -> s.distance)
+        _.compact [bestx, besty]
 
 
     ##########################################################################################################
@@ -1765,24 +1763,16 @@ jQuery ($) ->
             if stacking.targetRect?
                 { isAnchored: yes, target, rect: stacking.targetRect, moves: stacking.moves }
             else
-                aps: _(computeAllSnappingPositions(target)).reject (a) -> comp == a.comp
-                aa: _.flatten(computeSnappings(ap, rect) for ap in aps)
+                anchors: _(computeInnerAnchors(target)).reject (a) -> comp == a.comp
+                magnets: computeMagnets(comp, rect)
+                snappings: computeSnappings(anchors, magnets)
 
-                best: { horz: null, vert: null }
                 unless moveOptions.disableSnapping
-                    best: {
-                        horz: _(a for a in aa when a.orient is 'horz').min((a) -> a.dist)
-                        vert: _(a for a in aa when a.orient is 'vert').min((a) -> a.dist)
-                    }
+                    snappings: chooseSnappings snappings
+                    # console.log "(${rect.x}, ${rect.y}, w ${rect.w}, h ${rect.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
+                    for snapping in snappings
+                        snapping.apply rect
 
-                    console.log "(${rect.x}, ${rect.y}, w ${rect.w}, h ${rect.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
-
-                    if best.horz and best.horz.dist > CONF_SNAPPING_DISTANCE then best.horz = null
-                    if best.vert and best.vert.dist > CONF_SNAPPING_DISTANCE then best.vert = null
-
-                xa: applySnapping best.vert, rect if best.vert
-                ya: applySnapping best.horz, rect if best.horz
-                # isAnchored: xa or ya
                 { isAnchored: no, target, rect, moves: [] }
 
         computeDuplicationEffect: (oldComp, newComp) ->
