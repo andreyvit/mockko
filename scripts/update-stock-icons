@@ -8,7 +8,9 @@ tab="    "
     echo "${tab}'$folder': ["
     path="web/static/stock/$folder"
     for file in $(cd $path; ls -1 *.png | sort -n); do
-      echo "${tab}${tab}{ f: '${file}' }"
+      size="$(scripts/get-image-size.py "$path/$file")"
+      echo "${tab}${tab}{ f: '${file}', s: '${size}' }"
+      echo "${size} ${file}" >&2
     done
     echo "${tab}]"
   done

@@ -769,6 +769,13 @@ jQuery ($) ->
         return null unless c.type.supportsImage
         if c.type.imageSelector then $(c.type.imageSelector, cn)[0] else cn
 
+    imageSizeForImage: (image, effect) ->
+        return image.size unless serverMode.supportsImageEffects
+        switch effect
+            when 'iphone-tabbar-active'   then { w: 35, h: 35 }
+            when 'iphone-tabbar-inactive' then { w: 35, h: 32 }
+            else image.size
+
     imageUrlForImage: (image, effect) ->
         switch image.kind
             when 'custom'
@@ -1764,7 +1771,7 @@ jQuery ($) ->
             if stacking.targetRect?
                 { isAnchored: yes, target, rect: stacking.targetRect, moves: stacking.moves }
             else
-                anchors: _(computeInnerAnchors(target)).reject (a) -> comp == a.comp
+                anchors: _(computeInnerAnchors(target, comp)).reject (a) -> comp == a.comp
                 magnets: computeMagnets(comp, rect)
                 snappings: computeSnappings(anchors, magnets)
 
@@ -2133,12 +2140,14 @@ jQuery ($) ->
     fillPalette: ->
         for grp in MakeApp.stockImageGroups
             items: for fileData in MakeApp.imageDirectories[grp.path]
-                [w, h]: _(grp.size.split("x")).map (s) -> parseInt(s)
+                [w, h]: _(fileData.s.split("x")).map (s) -> parseInt(s)
+                size: { w: w, h: h }
+                image: { kind: 'stock', group: grp.path, name: fileData.f, size }
                 {
                     type: 'image'
                     label: fileData.f.replace(/\.png$/, '')
-                    image: { kind: 'stock', group: grp.path, name: fileData.f }
-                    size: { w: w, h: h }
+                    image
+                    size: imageSizeForImage image, grp.imageEffect
                     style: {
                         imageEffect: grp.imageEffect
                     }

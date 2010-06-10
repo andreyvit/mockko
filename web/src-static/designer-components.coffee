@@ -872,21 +872,18 @@ MakeApp.stockImageGroups: [
     {
         name: "glyphish-icons"
         label: "Glyphish Nav Bar Icons"
-        size: '30x30'
         path: 'glyphish/icons'
         imageEffect: 'iphone-tabbar-active'
     }
     {
         name: "glyphish-mini-icons"
         label: "Glyphish Toolbar Icons"
-        size: '20x20'
         path: 'glyphish/mini-icons'
         imageEffect: 'iphone-tabbar-inactive'
     }
     {
         name: "iphone-accessories"
         label: "iPhone Accessory Icons"
-        size: '25x26'
         path: 'iphone-accessories'
         imageEffect: null
     }
