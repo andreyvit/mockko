@@ -222,6 +222,9 @@ jQuery ($) ->
             BACKGROUND_STYLES[bg.name]: bg
     )()
 
+    encodeNameForId: (name) ->
+        encodeURIComponent(name).replace('%', '_')
+
     ACTIONS: {
         switchScreen: {
             extname: 'switch-screen'
@@ -232,6 +235,8 @@ jQuery ($) ->
                     action: this
                     screenName: screen.name
                 }
+            encodeActionAsURL: (act) ->
+                "screen:${encodeNameForId(act.screenName)}"
         }
     }
 
@@ -792,6 +797,12 @@ jQuery ($) ->
     renderImageDefault: (comp, node, imageUrl) ->
         $(imageNodeOfComponent comp, node).css { backgroundImage: "url(${imageUrl})"}
 
+    encodeActionAsURL: (comp) ->
+        if comp.action?
+            comp.action.action.encodeActionAsURL(comp.action)
+        else
+            ""
+
     renderComponentStyle: (c, cn) ->
         cn ||= c.node
 
@@ -825,6 +836,12 @@ jQuery ($) ->
         if c.image?
             imageUrl: imageUrlForImage(c.image, style.imageEffect || null)
             (c.type.renderImage || renderImageDefault)(c, cn, imageUrl)
+        actionURL: encodeActionAsURL(c)
+        $(cn).attr('action', actionURL)
+        $(cn).alterClass('has-action', actionURL != '')
+
+        if c is activeScreen?.rootComponent
+            renderScreenRootComponentId activeScreen
 
     renderComponentVisualProperties: (c, cn) ->
         renderComponentStyle c, cn
@@ -850,6 +867,9 @@ jQuery ($) ->
             updatePositionInspector()
             
     componentStyleChanged: (c) ->
+        renderComponentStyle c
+
+    componentActionChanged: (c) ->
         renderComponentStyle c
 
 
@@ -1677,7 +1697,7 @@ jQuery ($) ->
 
             if res: moveTo pt, moveOptions
                 effects: []
-                if comp.type is Types.image and res.target.type.supportsImageReplacement
+                if comp.type is Types['image'] and res.target.type.supportsImageReplacement
                     effects.push newSetImageEffect(res.target, comp)
                 else
                     effects.push newDropOnTargetEffect(comp, res.target, originalSize, originalEffSize)
@@ -2235,8 +2255,12 @@ jQuery ($) ->
         rerenderScreenContent screen
         sn
 
+    renderScreenRootComponentId: (screen) ->
+        $(screen.rootComponent.node).attr('id', 'screen-' + encodeNameForId(screen.name))
+
     renderScreenName: (screen) ->
         $('.caption', screen.node).html screen.name
+        renderScreenRootComponentId screen
 
     rerenderScreenContent: (screen) ->
         $(screen.node).find('.component').remove()
@@ -2263,6 +2287,7 @@ jQuery ($) ->
                 if comp.action && comp.action.action is ACTIONS.switchScreen
                         if newName: renames[comp.action.screenName]
                             comp.action.screenName: newName
+                            componentActionChanged comp
 
     keepingScreenNamesNormalized: (func) ->
         _(application.screens).each (screen, index) -> screen.originalName: screen.name; screen.nameIsBasedOnIndex: (screen.name is "Screen ${index+1}")
@@ -2558,6 +2583,7 @@ jQuery ($) ->
             screenclick: (screen) ->
                 runTransaction "action change", ->
                     c.action: ACTIONS.switchScreen.create(screen)
+                    componentActionChanged c
                     deactivateMode()
                     updateActionInspector()
             activated:   -> updateActionInspector()
@@ -2573,6 +2599,7 @@ jQuery ($) ->
             if enabled: not c.type.forbidsAction
                 runTransaction "clearing action of ${friendlyComponentName c}", ->
                     c.action: null
+                    componentActionChanged c
                     updateActionInspector()
 
     $('#set-action-button').click (e) ->

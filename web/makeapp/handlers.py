@@ -297,6 +297,20 @@ class RunAppHandler(RequestHandler):
             <meta name="apple-mobile-web-app-status-bar-style" content="default" />
             <link charset='utf-8' href='/static/iphone/iphone.css' media='screen' rel='stylesheet' title='no title' type='text/css' />
             <script charset='utf-8' src='/static/lib/jquery-1.4.2.js' type='text/javascript'></script>
+            <script>
+                jQuery(function($) {
+                    $('.has-action').click(function() {
+                        var action = $(this).attr('action');
+                        var m;
+                        if (m = action.match(/^screen:(.*)$/)) {
+                            var screenId = "screen-" + m[1];
+                            console.log("Jumping to #" + screenId);
+                            $('.c-background').hide();
+                            $('#' + screenId).show();
+                        }
+                    });
+                });
+            </script>
             <title>
               %(title)s
             </title>

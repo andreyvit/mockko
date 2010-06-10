@@ -3,13 +3,13 @@ window.MakeApp ||= {};
 window.MakeApp.appTemplates = {};
 
 window.MakeApp.appTemplates.simple: {
-    screens: [{
-        components: [
+    'screens': [{
+        'components': [
             {
-                type: 'barButton',
-                text: 'Back',
-                location: { x: 50, y: 100 }
-                size: {}
+                'type': 'barButton',
+                'text': 'Back',
+                'location': { 'x': 50, 'y': 100 }
+                'size': {}
             }
         ]
     }]
@@ -17,29 +17,23 @@ window.MakeApp.appTemplates.simple: {
 
 
 window.MakeApp.appTemplates.basic = {
-    screens: [
+    'screens': [
         {
-            components: [
+            'components': [
                 {
-                    type: "background"
-                    styleName: "striped"
-                    size: { width: 320, height: 480 }
-                    location: { x: 0, y: 0 }
-                    id: "root"
+                    'type': "background"
+                    'styleName': "striped"
+                    'location': { x: 0, y: 0 }
                 }
                 {
-                    type: "statusBar",
-                    styleName: "grey"
-                    size: { width: null, height: null }
-                    location: { x: 0, y: 0 }
-                    id: "c13"
+                    'type': "statusBar",
+                    'styleName': "grey"
+                    'location': { x: 0, y: 0 }
                 }
                 {
-                    type: "navBar",
-                    styleName: "grey"
-                    size: { width: null, height: null }
-                    location: { x: 0, y: 20 }
-                    id: "c14"
+                    'type': "navBar",
+                    'styleName': "grey"
+                    'location': { x: 0, y: 20 }
                 }
             ]
         }
