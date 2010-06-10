@@ -1687,7 +1687,7 @@ jQuery ($) ->
 
     class PinnedLayout
 
-        computeDropTarget: (comp, rect, moveOptions) ->
+        computeDropTarget: (target, comp, rect, moveOptions) ->
             activeScreen.rootComponent
 
         computeDropEffect: (target, comp, rect, moveOptions) ->
@@ -1731,7 +1731,7 @@ jQuery ($) ->
 
     class TabBarItemLayout
 
-        computeDropTarget: (comp, rect, moveOptions) ->
+        computeDropTarget: (target, comp, rect, moveOptions) ->
             findChildByType(activeScreen.rootComponent, Types['tabBar'])
 
         computeDropEffect: (target, comp, rect, moveOptions) ->
@@ -1755,8 +1755,7 @@ jQuery ($) ->
 
     class RegularLayout
 
-        computeDropTarget: (comp, rect, moveOptions) ->
-            findBestTargetContainerForRect(rect, [comp])
+        computeDropTarget: (target, comp, rect, moveOptions) -> target
 
         computeDropEffect: (target, comp, rect, moveOptions) ->
             stacking: handleStacking comp, rect, allStacks
@@ -1812,10 +1811,10 @@ jQuery ($) ->
 
     class TableRowLayout extends RegularLayout
 
-        computeDropTarget: (comp, rect, moveOptions) ->
+        computeDropTarget: (target, comp, rect, moveOptions) ->
             activeScreen.rootComponent
 
-    computeLayout: (comp) ->
+    computeLayout: (comp, target) ->
         if pin: comp.type.pin
             new PinnedLayout()
         else if comp.type.name in TABLE_TYPES
@@ -1826,8 +1825,9 @@ jQuery ($) ->
             new RegularLayout()
 
     computeDropEffect: (comp, rect, moveOptions) ->
-        layout: computeLayout comp
-        target: layout.computeDropTarget comp, rect, moveOptions
+        target: findBestTargetContainerForRect(rect, [comp])
+        layout: computeLayout comp, target
+        target: layout.computeDropTarget target, comp, rect, moveOptions
         if target is null
             return null
         else
