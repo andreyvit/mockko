@@ -1418,7 +1418,7 @@ jQuery ($) ->
     _([Snappings.top, Snappings.bottom, Snappings.ycenter]).each (s) -> s.affects: 'y'
 
     Anchors: {}
-    class Anchors.singlecoord
+    class Anchors.line
         constructor: (comp, snappingClass, coord) ->
             @comp:    comp
             @coord:   coord
@@ -1432,17 +1432,31 @@ jQuery ($) ->
 
     computeOuterAnchors: (comp, r) ->
         _.compact [
-            new Anchors.singlecoord(comp, Snappings.left,    r.x)            if r.x > allowedArea.x
-            new Anchors.singlecoord(comp, Snappings.right,   r.x + r.w)      if r.x+r.w < allowedArea.x+allowedArea.w
-            new Anchors.singlecoord(comp, Snappings.xcenter, r.x + r.w / 2)
-            new Anchors.singlecoord(comp, Snappings.top,     r.y)            if r.y > allowedArea.y
-            new Anchors.singlecoord(comp, Snappings.bottom,  r.y + r.h)      if r.y+r.h < allowedArea.y+allowedArea.h
-            new Anchors.singlecoord(comp, Snappings.ycenter, r.y + r.h / 2)
+            new Anchors.line(comp, Snappings.left,    r.x)            if r.x > allowedArea.x
+            new Anchors.line(comp, Snappings.right,   r.x + r.w)      if r.x+r.w < allowedArea.x+allowedArea.w
+            new Anchors.line(comp, Snappings.xcenter, r.x + r.w / 2)
+            new Anchors.line(comp, Snappings.top,     r.y)            if r.y > allowedArea.y
+            new Anchors.line(comp, Snappings.bottom,  r.y + r.h)      if r.y+r.h < allowedArea.y+allowedArea.h
+            new Anchors.line(comp, Snappings.ycenter, r.y + r.h / 2)
         ]
 
-    computeInnerAnchors: (comp) ->
+    computeInnerAnchors: (comp, forComp) ->
         anchors: _.flatten(computeOuterAnchors(child, rectOf(child)) for child in comp.children)
-        anchors.concat computeOuterAnchors(comp, rectOf(comp))
+        rect: rectOf(comp)
+        anchors: anchors.concat computeOuterAnchors(comp, rect)
+        if comp.type.name is 'plain-row'
+            anchors.push new Anchors.line(comp, Snappings.left, rect.x + 8)
+            anchors.push new Anchors.line(comp, Snappings.left, rect.x + 43)
+            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 8)
+            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 8-8-10)
+            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 43)
+        if comp.type.name is 'roundrect-row'
+            anchors.push new Anchors.line(comp, Snappings.left, rect.x + 20)
+            anchors.push new Anchors.line(comp, Snappings.left, rect.x + 55)
+            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 20)
+            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 20-8-10)
+            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 55)
+        anchors
 
     computeMagnets: (comp, rect) -> computeOuterAnchors(comp, rect)
 
