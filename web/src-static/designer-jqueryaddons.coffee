@@ -68,11 +68,17 @@ $.fn.showAsContextMenuAt: (pt, context) ->
 
 $.fn.bindContextMenu: (menu, context) ->
     this.bind {
-        contextmenu: -> false
-        mouseup: (e) ->
+        'contextmenu': (e) ->
+            # e.cancelBubble = true
+            # e.returnValue = false
+            # if e.stopPropagation then e.stopPropagation()
+            # if e.preventDefault then e.preventDefault()
+            setTimeout (-> $(menu).showAsContextMenuAt e, context), 0
+            false
+        'mouseup': (e) ->
             if e.which is 3
-                $(menu).showAsContextMenuAt e, context
-                false
+                e.stopPropagation()
+                return
     }
 
 window.stringSetWith: (list) ->
@@ -237,25 +243,25 @@ jQuery.fn.startInPlaceEditing: (->
 
 (($) ->
     hiddenCopyTextArea: null
-    $ -> hiddenCopyTextArea: $("<textarea />", { css: { 'display': 'none', 'z-index': 9999, position: 'absolute', 'left': 0, 'top': 0, 'width': 0, 'height': 0 }}).appendTo($("body"))
+    $ -> hiddenCopyTextArea: $("<textarea />", { css: { 'display': 'none', 'z-index': 9999, 'position': 'absolute', 'left': 0, 'top': 0, 'width': 0, 'height': 0 }}).appendTo($("body"))
     hideTextArea: -> hiddenCopyTextArea.hide()
 
     $.fn.copiableAsText: (options) ->
         options: { gettext: options } if options.constructor is Function
 
         this.each ->
-            this.onbeforecopy: this.onbeforecut: (e) ->
+            this['onbeforecopy']: this['onbeforecut']: (e) ->
                 data: options.gettext(this)
                 hiddenCopyTextArea.val(data || '').show().focus()
                 hiddenCopyTextArea[0].select()
                 console.log "Preparing to copy text: ${data}"
-            this.oncopy: (e) ->
+            this['oncopy']: (e) ->
                 setTimeout hideTextArea, 10
-            this.oncut: (e) ->
+            this['oncut']: (e) ->
                 setTimeout hideTextArea, 10
                 options.aftercut() if options.aftercut
             if options.paste
-                this.onpaste: (e) ->
+                this['onpaste']: (e) ->
                     e.preventDefault()
                     if data: e.clipboardData.getData("text/plain")
                         options.paste(data)

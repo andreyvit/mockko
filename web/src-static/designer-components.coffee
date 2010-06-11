@@ -191,7 +191,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         label: 'Header'
         defaultText: "B"
         widthPolicy: { autoSize: 'fill' }
-        heightPolicy: { userSize: true, fixedSize: 20 }
+        heightPolicy: { fixedSize: 20 }
         style: {
             textColor: '#fff'
             fontSize: 16
@@ -871,13 +871,13 @@ MakeApp.backgroundStyles: [
 MakeApp.stockImageGroups: [
     {
         name: "glyphish-icons"
-        label: "Glyphish Nav Bar Icons"
+        label: "Glyphish Tav Bar Icons"
         path: 'glyphish/icons'
         imageEffect: 'iphone-tabbar-active'
     }
     {
         name: "glyphish-mini-icons"
-        label: "Glyphish Toolbar Icons"
+        label: "Glyphish Toolbar & Navbar Icons"
         path: 'glyphish/mini-icons'
         imageEffect: 'iphone-tabbar-inactive'
     }

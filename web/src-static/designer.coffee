@@ -605,7 +605,6 @@ jQuery ($) ->
     
     storeAndBindComponentNode: (c, cn) ->
         c.node = cn
-        $(cn).bind 'contextmenu', -> false
         $(cn).dblclick -> handleComponentDoubleClick c; false
     
     skipTraversingChildren: {}
@@ -1007,7 +1006,7 @@ jQuery ($) ->
         size: c.dragsize || c.size
         effsize: {
             w: recomputeEffectiveSizeInDimension size.w, ct.widthPolicy, 320
-            h: recomputeEffectiveSizeInDimension size.h, ct.heightPolicy, 460
+            h: recomputeEffectiveSizeInDimension size.h, ct.heightPolicy, 480
         }
         $(cn || c.node).css({ width: sizeToPx(effsize.w), height: sizeToPx(effsize.h) })
         return effsize
@@ -1415,8 +1414,10 @@ jQuery ($) ->
 
     class Snappings.left extends Snapping
         apply: (rect) -> rect.x: @anchor.coord
+    class Snappings.leftonly extends Snappings.left
     class Snappings.right extends Snapping
         apply: (rect) -> rect.x: @anchor.coord - rect.w
+    class Snappings.rightonly extends Snappings.right
     class Snappings.xcenter extends Snapping
         apply: (rect) -> rect.x: @anchor.coord - rect.w/2
 
@@ -1427,8 +1428,8 @@ jQuery ($) ->
     class Snappings.ycenter extends Snapping
         apply: (rect) -> rect.y: @anchor.coord - rect.h/2
 
-    Snappings.left.snapsTo:    (anchor) -> anchor.snappingClass is Snappings.left or anchor.snappingClass is Snappings.right
-    Snappings.right.snapsTo:   (anchor) -> anchor.snappingClass is Snappings.left or anchor.snappingClass is Snappings.right
+    Snappings.left.snapsTo:    (anchor) -> anchor.snappingClass is Snappings.left or anchor.snappingClass is Snappings.right or anchor.snappingClass is Snappings.leftonly
+    Snappings.right.snapsTo:   (anchor) -> anchor.snappingClass is Snappings.left or anchor.snappingClass is Snappings.right or anchor.snappingClass is Snappings.rightonly
     Snappings.xcenter.snapsTo: (anchor) -> anchor.snappingClass is Snappings.xcenter
     _([Snappings.left, Snappings.right, Snappings.xcenter]).each (s) -> s.affects: 'x'
 
@@ -1465,17 +1466,17 @@ jQuery ($) ->
         rect: rectOf(comp)
         anchors: anchors.concat computeOuterAnchors(comp, rect)
         if comp.type.name is 'plain-row'
-            anchors.push new Anchors.line(comp, Snappings.left, rect.x + 8)
-            anchors.push new Anchors.line(comp, Snappings.left, rect.x + 43)
-            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 8)
-            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 8-8-10)
-            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 43)
+            anchors.push new Anchors.line(comp, Snappings.leftonly, rect.x + 8)
+            anchors.push new Anchors.line(comp, Snappings.leftonly, rect.x + 43)
+            anchors.push new Anchors.line(comp, Snappings.rightonly, rect.x+rect.w - 8)
+            anchors.push new Anchors.line(comp, Snappings.rightonly, rect.x+rect.w - 8-8-10)
+            anchors.push new Anchors.line(comp, Snappings.rightonly, rect.x+rect.w - 43)
         if comp.type.name is 'roundrect-row'
-            anchors.push new Anchors.line(comp, Snappings.left, rect.x + 20)
-            anchors.push new Anchors.line(comp, Snappings.left, rect.x + 55)
-            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 20)
-            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 20-8-10)
-            anchors.push new Anchors.line(comp, Snappings.left, rect.x+rect.w - 55)
+            anchors.push new Anchors.line(comp, Snappings.leftonly, rect.x + 20)
+            anchors.push new Anchors.line(comp, Snappings.leftonly, rect.x + 55)
+            anchors.push new Anchors.line(comp, Snappings.rightonly, rect.x+rect.w - 20)
+            anchors.push new Anchors.line(comp, Snappings.rightonly, rect.x+rect.w - 20-8-10)
+            anchors.push new Anchors.line(comp, Snappings.rightonly, rect.x+rect.w - 55)
         anchors
 
     computeMagnets: (comp, rect) -> computeOuterAnchors(comp, rect)
@@ -2120,13 +2121,19 @@ jQuery ($) ->
 
         mouseup: (e) ->
             comp: findComponentOfNode(e.target)
-            if e.button == 2
+            if e.which is 3
                 return if e.shiftKey
-                handled: dispatchToMode(ModeMethods.contextmenu, e, comp) || defaultContextMenu(e, comp)
+                e.stopPropagation()
             else
                 handled: dispatchToMode(ModeMethods.mouseup, e, comp) || defaultMouseUp(e, comp)
-            e.preventDefault() if handled
+                e.preventDefault() if handled
             undefined
+
+        'contextmenu': (e) ->
+            comp: findComponentOfNode(e.target)
+            console.log ["contextmenu", e]
+            setTimeout (-> dispatchToMode(ModeMethods.contextmenu, e, comp) || defaultContextMenu(e, comp)), 1
+            false
     }
 
     $('body').mouseup (e) ->
