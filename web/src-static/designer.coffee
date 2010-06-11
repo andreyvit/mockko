@@ -1707,6 +1707,9 @@ jQuery ($) ->
                 liveMover.commit()
                 true
             else
+                comp.dragpos: null
+                comp.dragsize: null
+                comp.dragParent: null
                 liveMover.commit()
                 false
 
