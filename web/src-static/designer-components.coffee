@@ -428,14 +428,14 @@ window.MakeApp.paletteDefinition: [
                         type: 'backButton'
                         styleName: 'normal'
                         text: "Back"
-                        location: { x: 7, y: 7 }
+                        location: { x: 5, y: 7 }
                         size: { width: null, height: null }
                     }
                     {
                         type: 'barButton'
                         styleName: 'normal'
                         text: "Edit"
-                        location: { x: 262, y: 7 }
+                        location: { x: 269, y: 7 }
                         size: { width: null, height: null }
                     }
                 ]
@@ -469,7 +469,7 @@ window.MakeApp.paletteDefinition: [
                         type: 'barButton'
                         styleName: 'black'
                         text: "Edit"
-                        location: { x: 262, y: 7 }
+                        location: { x: 269, y: 7 }
                         size: { width: null, height: null }
                     }
                 ]
@@ -503,7 +503,7 @@ window.MakeApp.paletteDefinition: [
                         type: 'barButton'
                         styleName: 'black'
                         text: "Edit"
-                        location: { x: 262, y: 7 }
+                        location: { x: 269, y: 7 }
                         size: { width: null, height: null }
                     }
                 ]

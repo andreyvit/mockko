@@ -581,6 +581,7 @@ jQuery ($) ->
     bottomRightOf:     (r) -> { x: r.x+r.w, y: r.y+r.h }
 
     centerOfRect: (r) -> { x: r.x + r.w / 2, y: r.y + r.h / 2 }
+    centerSizeInRect:  (s, r) -> rectFromPtAndSize { x: r.x + (r.w-s.w) / 2, y: r.y + (r.h-s.h)/2 }, s
 
 
     ##########################################################################################################
@@ -929,6 +930,17 @@ jQuery ($) ->
             unless inSet comp, exclusionSet
                 if doesRectIntersectRect r, rectOf comp
                     match: r  # don't return yet to find the innermost match
+        match
+
+    findComponentByTypeIntersectingRect: (type, rect, exclusionSet) ->
+        match: null
+        traverse activeScreen.rootComponent, (comp) ->
+            if inSet comp, exclusionSet
+                return skipTraversingChildren
+            if not doesRectIntersectRect rect, rectOf comp
+                return skipTraversingChildren
+            if comp.type is type
+                match: comp
         match
 
     compWithChildrenAndParents: (comp) ->
@@ -1477,6 +1489,9 @@ jQuery ($) ->
             anchors.push new Anchors.line(comp, Snappings.rightonly, rect.x+rect.w - 20)
             anchors.push new Anchors.line(comp, Snappings.rightonly, rect.x+rect.w - 20-8-10)
             anchors.push new Anchors.line(comp, Snappings.rightonly, rect.x+rect.w - 55)
+        if comp.type.name is 'navBar'
+            anchors.push new Anchors.line(comp, Snappings.leftonly, rect.x + 5)
+            anchors.push new Anchors.line(comp, Snappings.rightonly, rect.x+rect.w - 5)
         anchors
 
     computeMagnets: (comp, rect) -> computeOuterAnchors(comp, rect)
@@ -1872,7 +1887,10 @@ jQuery ($) ->
             new RegularLayout()
 
     computeDropEffect: (comp, rect, moveOptions) ->
-        target: findBestTargetContainerForRect(rect, [comp])
+        if comp.type.name is 'image' and (candidate: findComponentByTypeIntersectingRect(Types['tab-bar-item'], rect, setOf [comp]))
+            target: candidate
+            return { target, moves: [], isAnchored: yes, rect: centerSizeInRect(comp.effsize, rectOf target) }
+        target: findBestTargetContainerForRect(rect, [comp]) unless target
         layout: computeLayout comp, target
         target: layout.computeDropTarget target, comp, rect, moveOptions
         if target is null
@@ -2133,6 +2151,7 @@ jQuery ($) ->
             undefined
 
         'contextmenu': (e) ->
+            return if e.shiftKey
             comp: findComponentOfNode(e.target)
             console.log ["contextmenu", e]
             setTimeout (-> dispatchToMode(ModeMethods.contextmenu, e, comp) || defaultContextMenu(e, comp)), 1
@@ -3012,6 +3031,8 @@ jQuery ($) ->
         serverMode: SERVER_MODES['local']
     else
         serverMode: SERVER_MODES['anonymous']
+        if window.location.href.match /^http:\/\/localhost/
+            SERVER_MODES['anonymous'].supportsImageEffects: SERVER_MODES['authenticated'].supportsImageEffects: no
 
     initComponentTypes()
     initPalette()
