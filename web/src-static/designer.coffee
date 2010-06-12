@@ -1597,6 +1597,18 @@ jQuery ($) ->
                     pt.x += itemSize.w + hgap
                     r
 
+    positionToolbarItems: (children, outerRect) ->
+        return [] if children.length is 0
+
+        totalW: _(children).reduce 0, (memo, child) -> memo + child.effsize.w
+        hgap = (outerRect.w - totalW) / (children.length + 1)
+
+        x: outerRect.x + hgap
+        for child in children
+            r: rectFromPtAndSize { x: x, y: outerRect.y + (outerRect.h-child.effsize.h)/2 }, child.effsize
+            x += child.effsize.w + hgap
+            r
+
     newItemsForHorizontalStack: (items, comp, rect) ->
         if _(items).include(comp)
             filteredItems: _(_(items).without(comp)).sortBy (child) -> child.abspos.x
@@ -1815,6 +1827,27 @@ jQuery ($) ->
             itemRects: positionTabBarItems newChildren.length, rectOf(target)
             { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
 
+    class ToolbarContentLayout
+
+        computeDropEffect: (target, comp, rect, moveOptions) ->
+            newChildren: newItemsForHorizontalStack target.children, comp, rect
+            itemRects: positionToolbarItems newChildren, rectOf(target)
+            { rect, moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
+            { isAnchored: yes, target, rect, moves }
+
+        computeDuplicationEffect: (oldComp, newComp) ->
+            unless target: oldComp.parent
+                return null
+            newChildren: newItemsForHorizontalStackDuplication target.children, oldComp, newComp
+            itemRects: positionToolbarItems newChildren, rectOf(target)
+            computeDropEffectFromNewRects newChildren, itemRects, newComp
+
+        computeDeletionEffect: (comp) ->
+            target: comp.parent
+            newChildren: newItemsForHorizontalStack target.children, comp, null
+            itemRects: positionToolbarItems newChildren, rectOf(target)
+            { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
+
     class RegularLayout
 
         computeDropTarget: (target, comp, rect, moveOptions) -> target
@@ -1883,16 +1916,20 @@ jQuery ($) ->
             new TableRowLayout()
         else if comp.type.name is 'tab-bar-item'
             new TabBarItemLayout()
+        else if target.type.name is 'toolbar'
+            new ToolbarContentLayout()
         else
             new RegularLayout()
 
     computeDropEffect: (comp, rect, moveOptions) ->
-        if comp.type.name is 'image' and (candidate: findComponentByTypeIntersectingRect(Types['tab-bar-item'], rect, setOf [comp]))
-            target: candidate
+        if comp.type.name is 'image' and (target: findComponentByTypeIntersectingRect(Types['tab-bar-item'], rect, setOf [comp]))
             return { target, moves: [], isAnchored: yes, rect: centerSizeInRect(comp.effsize, rectOf target) }
-        target: findBestTargetContainerForRect(rect, [comp]) unless target
-        layout: computeLayout comp, target
-        target: layout.computeDropTarget target, comp, rect, moveOptions
+        if target: findComponentByTypeIntersectingRect(Types['toolbar'], rect, setOf [comp])
+            layout: new ToolbarContentLayout()
+        else
+            target: findBestTargetContainerForRect(rect, [comp]) unless target
+            layout: computeLayout comp, target
+            target: layout.computeDropTarget target, comp, rect, moveOptions
         if target is null
             return null
         else
@@ -1910,7 +1947,7 @@ jQuery ($) ->
     computeDeletionEffect: (comp) ->
         return { moves: [] } unless comp.parent
 
-        layout: computeLayout comp
+        layout: computeLayout comp, comp.parent
         layout.computeDeletionEffect comp
 
 
