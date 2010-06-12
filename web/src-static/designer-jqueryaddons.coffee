@@ -251,17 +251,21 @@ jQuery.fn.startInPlaceEditing: (->
 
         this.each ->
             this['onbeforecopy']: this['onbeforecut']: (e) ->
+                return if options.shouldProcessCopy && !options.shouldProcessCopy()
                 data: options.gettext(this)
                 hiddenCopyTextArea.val(data || '').show().focus()
                 hiddenCopyTextArea[0].select()
                 console.log "Preparing to copy text: ${data}"
             this['oncopy']: (e) ->
+                return if options.shouldProcessCopy && !options.shouldProcessCopy()
                 setTimeout hideTextArea, 10
             this['oncut']: (e) ->
+                return if options.shouldProcessCopy && !options.shouldProcessCopy()
                 setTimeout hideTextArea, 10
                 options.aftercut() if options.aftercut
             if options.paste
                 this['onpaste']: (e) ->
+                    return if options.shouldProcessPaste && !options.shouldProcessPaste()
                     e.preventDefault()
                     if data: e.clipboardData.getData("text/plain")
                         options.paste(data)

@@ -46,7 +46,9 @@ jQuery ($) ->
         abspos: { x: 0, y: 0 }
         id: "root"
     }
-    
+
+    SAMPLE_APPS: ( { 'body': body, 'sample': yes } for body in MakeApp.sampleApplications )
+
     SERVER_MODES = {
         'anonymous': {
             supportsImageEffects: yes
@@ -202,13 +204,17 @@ jQuery ($) ->
                 #
                 
             startDesigner: (userData) ->
-                createNewApplication()
+                # createNewApplication()
+                switchToDashboard()
                 
             saveApplicationChanges: (app, appId, callback) ->
                 #
 
             loadApplications: (callback) ->
-                callback { 'apps': [ { 'id': 42, 'body': MakeApp.appTemplates.basic } ] }
+                callback [
+                    # { 'id': 42, 'body': JSON.stringify(MakeApp.appTemplates.basic) }
+                    # { 'id': 43, 'body': JSON.stringify(MakeApp.appTemplates.basic) }
+                ]
 
             uploadImageFile: (fileName, file, callback) ->
             loadCustomImages: (callback) ->
@@ -606,7 +612,9 @@ jQuery ($) ->
     
     storeAndBindComponentNode: (c, cn) ->
         c.node = cn
-        $(cn).dblclick -> handleComponentDoubleClick c; false
+        $(cn).dblclick ->
+            return if componentBeingDoubleClickEdited isnt null
+            handleComponentDoubleClick c; false
     
     skipTraversingChildren: {}
     # traverse(comp-or-array-of-comps, [parent], func)
@@ -1357,8 +1365,17 @@ jQuery ($) ->
                     updateHoverPanelPosition()
 
         $(textNodeOfComponent c).startInPlaceEditing {
-            before: -> c.dirtyText: yes; $(c.node).addClass 'editing';    activateMode { debugname: "In-Place Text Edit" }
-            after:  -> c.dirtyText: no;  $(c.node).removeClass 'editing'; deactivateMode()
+            before: ->
+                c.dirtyText: yes;
+                $(c.node).addClass 'editing';
+                activateMode { debugname: "In-Place Text Edit" }
+                componentBeingDoubleClickEdited: c
+            after:  ->
+                c.dirtyText: no
+                $(c.node).removeClass 'editing'
+                deactivateMode()
+                if componentBeingDoubleClickEdited is c
+                    componentBeingDoubleClickEdited: null
             accept: (newText) ->
                 if newText is ''
                     newText: "Text"
@@ -1916,7 +1933,7 @@ jQuery ($) ->
             new TableRowLayout()
         else if comp.type.name is 'tab-bar-item'
             new TabBarItemLayout()
-        else if target.type.name is 'toolbar'
+        else if target and target.type.name is 'toolbar'
             new ToolbarContentLayout()
         else
             new RegularLayout()
@@ -1942,7 +1959,7 @@ jQuery ($) ->
 
     computeDuplicationEffect: (newComp, oldComp) ->
         oldComp ||= newComp
-        computeLayout(oldComp).computeDuplicationEffect oldComp, newComp
+        computeLayout(oldComp, oldComp.parent).computeDuplicationEffect oldComp, newComp
 
     computeDeletionEffect: (comp) ->
         return { moves: [] } unless comp.parent
@@ -2524,10 +2541,7 @@ jQuery ($) ->
         
     $('#share-button').click (e) ->
         e.preventDefault(); e.stopPropagation()
-        if paletteWanted
-            paletteWanted = no
-            updatePaletteVisibility 'wanted'
-        
+
         if $('#share-popover').is(':visible')
             $('#share-popover').hidePopOver()
         else
@@ -2546,6 +2560,7 @@ jQuery ($) ->
                 good: no
             loadApplication internalizeApplication(app), applicationId if app
         $('#share-popover textarea').css('background-color', if good then 'white' else '#ffeeee')
+        undefined
     
     for event in ['change', 'blur', 'keydown', 'keyup', 'keypress', 'focus', 'mouseover', 'mouseout', 'paste', 'input']
         $('#share-popover textarea').bind event, checkApplicationLoading
@@ -2941,6 +2956,8 @@ jQuery ($) ->
         gettext: -> JSON.stringify(externalizeComponent(comp)) if comp: componentToActUpon()
         aftercut: -> cutComponents [comp] if comp: componentToActUpon()
         paste: (text) -> pasteJSON text
+        shouldProcessCopy: -> componentToActUpon() isnt null and componentBeingDoubleClickEdited is null
+        shouldProcessPaste: -> componentBeingDoubleClickEdited is null
     }
 
 
@@ -2960,7 +2977,7 @@ jQuery ($) ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
             'Amazing', 'Awesome', 'Fantastic', 'Beautiful', 'Unbelievable', 'Remarkable']
         names: ("${adj} App" for adj in adjs)
-        usedNames: setOf(app.content.name for app in (applicationList || []))
+        usedNames: setOf(_.compact(app.content.name for app in (applicationList || [])))
         names: _(names).reject (n) -> n in usedNames
         if names.length == 0
             "Yet Another App"
@@ -2988,22 +3005,30 @@ jQuery ($) ->
                 updateApplicationListWidth()
 
     updateApplicationListWidth: ->
-        $('#apps-list-container').css 'width', (160+60) * $('#apps-list-container .app').length
+        # 250 is the width of #sample-apps-separator
+        $('#apps-list-container').css 'width', (160+60) * $('#apps-list-container .app').length + 250
+
+    renderApplication: (appData, destination) ->
+        appId: appData['id']
+        app: JSON.parse(appData['body'])
+        console.log app
+        app: internalizeApplication(app)
+        an: domTemplate('app-template')
+        $('.caption', $(an)).html(app.name)
+        renderScreenComponents(app.screens[0], $('.content .rendered', an))
+        $(an).appendTo(destination)
+        app: { id: appId, content: app }
+        bindApplication app, an
+        app
 
     refreshApplicationList: (callback) ->
         serverMode.loadApplications (apps) ->
             $('#apps-list .app').remove()
-            applicationList: for appData in apps
-                appId: appData['id']
-                app: JSON.parse(appData['body'])
-                app: internalizeApplication(app)
-                an: domTemplate('app-template')
-                $('.caption', $(an)).html(app.name)
-                renderScreenComponents(app.screens[0], $('.content .rendered', an))
-                $(an).appendTo('#apps-list #apps-list-container')
-                app: { id: appId, content: app }
-                bindApplication app, an
-                app
+            applicationList: for appData in apps when not appData['sample']
+                renderApplication appData, '#apps-list-container'
+            $('#sample-apps-separator').detach().appendTo('#apps-list-container')
+            for appData in apps.concat(SAMPLE_APPS) when appData['sample']
+                renderApplication appData, '#apps-list-container'
             updateApplicationListWidth()
             callback(applicationList) if callback
     
