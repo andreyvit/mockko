@@ -84,7 +84,7 @@ def minify_javascript orig_source, stoplists, mode, debug=false
     end
   end
 
-  source, fragments = orig_source.shadow(%r!/\*.*?\*/!m, %r!(\(|,)\s*?/([^/\\]|\\.)+/\w*!, %r!//.*$!, /(["'])[^\1]*?\1/, *special_stoplist)
+  source, fragments = orig_source.shadow(%r!/\*.*?\*/!m, %r!(\(|,)\s*?/([^/\\]|\\.)+/\w*!, %r!(^|[^:])//.*$!, /(["'])(?:[^\\\1]|\\.)*?\1/, *special_stoplist)
 
   next_id = 1
   identifiers = {}
