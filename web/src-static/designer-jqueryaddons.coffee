@@ -190,6 +190,8 @@ jQuery.fn.startInPlaceEditing: (->
             setTimeout((-> $el.focus()), 1)
             document.addEventListener 'keydown', handleKeyDown, true
             document.addEventListener 'mousedown', handleMouseDown, true
+            document.addEventListener 'mousemove', handleMouseMoveOrUp, true
+            document.addEventListener 'mouseup', handleMouseMoveOrUp, true
             $el.bind 'blur.in-place-editor', ->
                 acceptActiveEditor(); true
             $el.bind 'change.in-place-editor', -> alert 'change!'
@@ -200,6 +202,8 @@ jQuery.fn.startInPlaceEditing: (->
             $el[0].blur()
             document.removeEventListener 'keydown', handleKeyDown, true
             document.removeEventListener 'mousedown', handleMouseDown, true
+            document.removeEventListener 'mousemove', handleMouseMoveOrUp, true
+            document.removeEventListener 'mouseup', handleMouseMoveOrUp, true
             $el.unbind '.in-place-editor'
 
         cancelActiveEditor: ->
@@ -235,6 +239,11 @@ jQuery.fn.startInPlaceEditing: (->
                 e.stopPropagation(); true
             else
                 acceptActiveEditor(); true
+
+        handleMouseMoveOrUp: (e) ->
+            if e.target is $el[0]
+                e.stopPropagation()
+                return
 
         startEditing()
         options.before($el[0])
