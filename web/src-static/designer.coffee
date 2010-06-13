@@ -2517,9 +2517,10 @@ jQuery ($) ->
         updateScreenList()
         switchToScreen application.screens[0]
         
-    saveApplicationChanges: ->
+    saveApplicationChanges: (callback) ->
         serverMode.saveApplicationChanges externalizeApplication(application), applicationId, (newId) ->
             applicationId: newId
+            if callback then callback()
 
     renderApplicationName: ->
         $('#app-name-content').html(application.name)
@@ -2864,13 +2865,20 @@ jQuery ($) ->
             throw "This hack only works for the current screen"
         screen.html: screen.rootComponent.node.outerHTML
 
-    $('#run-button').click (e) ->
-        e.preventDefault(); e.stopPropagation()
+    runCurrentApplication: ->
         $('#run-screen').show()
         url: window.location.href.replace(/\/dev.*$/, '/').replace(/#.*$/, '') + "R" + applicationId
         console.log url
         $('#run-address-label a').attr('href', url).html(url)
         $('#run-iframe').attr 'src', url
+
+    $('#run-button').click (e) ->
+        e.preventDefault(); e.stopPropagation()
+        if applicationId?
+            runCurrentApplication()
+        else
+            saveApplicationChanges ->
+                runCurrentApplication()
 
     $('#run-stop-button').click ->
         $('#run-screen').hide()
