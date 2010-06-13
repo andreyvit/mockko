@@ -1,7 +1,18 @@
-#! /bin/sh
-(coffee -wc --growl web/src-static/*.coffee -o web/static/) &
+#!/bin/sh
+
+if [ $(uname -s) = Darwin ]; then
+  COFFEE_ARGS=--growl
+fi
+
+(coffee -wc $COFFEE_ARGS web/src-static/*.coffee -o web/static/) &
+echo $! > watch.pids
 (lessc -w web/src-static/theme-common.less web/static/theme/theme-common.css) &
+echo $! >> watch.pids
 (lessc -w web/src-static/theme-designer.less web/static/theme/theme-designer.css) &
+echo $! >> watch.pids
 (lessc -w web/src-static/theme-dashboard.less web/static/theme/theme-dashboard.css) &
+echo $! >> watch.pids
 (lessc -w web/src-static/iphone.less web/static/iphone/iphone.css) &
+echo $! >> watch.pids
 (./haml_w) &
+echo $! >> watch.pids

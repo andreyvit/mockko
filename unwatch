@@ -1,3 +1,2 @@
-#! /bin/bash
-killall ruby
-killall node
+#!/bin/sh
+kill $(cat watch.pids)
