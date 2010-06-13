@@ -1776,105 +1776,94 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Layouts & Effects Computation
 
-    class PinnedLayout
+    class Layout
+        constructor: (target) ->
+            @target: target
 
-        computeDropTarget: (target, comp, rect, moveOptions) ->
-            activeScreen.rootComponent
+    class PinnedLayout extends Layout
 
-        computeDropEffect: (target, comp, rect, moveOptions) ->
+        computeDropEffect: (comp, rect, moveOptions) ->
             pin: comp.type.pin
-            rect: pin.computeRect allowedArea, comp, (otherPin) ->
-                for child in target.children
+            rect: pin.computeRect allowedArea, comp, (otherPin) =>
+                for child in @target.children
                     if child.type.pin is otherPin
                         return rectOf(child)
                 null
             moves: []
             for dependantPin in pin.dependantPins
-                for child in target.children
+                for child in @target.children
                     if child.type.pin is dependantPin
-                        newRect: child.type.pin.computeRect allowedArea, child, (otherPin) ->
+                        newRect: child.type.pin.computeRect allowedArea, child, (otherPin) =>
                             return rect if otherPin is pin
-                            for otherChild in target.children
+                            for otherChild in @target.children
                                 if otherChild.type.pin is otherPin
                                     return rectOf(otherChild)
                             null
                         moves.push { comp: child, abspos: newRect }
-            { isAnchored: yes, target, rect, moves }
+            { isAnchored: yes, rect, moves }
 
         computeDuplicationEffect: (oldComp, newComp) ->
             null
 
         computeDeletionEffect: (comp) ->
-            target: comp.parent
             pin: comp.type.pin
             moves: []
             for dependantPin in pin.dependantPins
-                for child in target.children
+                for child in @target.children
                     if child.type.pin is dependantPin
-                        newRect: child.type.pin.computeRect allowedArea, child, (otherPin) ->
+                        newRect: child.type.pin.computeRect allowedArea, child, (otherPin) =>
                             return null if otherPin is pin
-                            for otherChild in target.children
+                            for otherChild in @target.children
                                 if otherChild.type.pin is otherPin
                                     return rectOf(otherChild)
                             null
                         moves.push { comp: child, abspos: newRect }
             { moves }
 
-    class TabBarItemLayout
+    class TabBarItemLayout extends Layout
 
-        computeDropTarget: (target, comp, rect, moveOptions) ->
-            findChildByType(activeScreen.rootComponent, Types['tabBar'])
-
-        computeDropEffect: (target, comp, rect, moveOptions) ->
-            newChildren: newItemsForHorizontalStack target.children, comp, rect
-            itemRects: positionTabBarItems newChildren.length, rectOf(target)
+        computeDropEffect: (comp, rect, moveOptions) ->
+            newChildren: newItemsForHorizontalStack @target.children, comp, rect
+            itemRects: positionTabBarItems newChildren.length, rectOf(@target)
             { rect, moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
-            { isAnchored: yes, target, rect, moves }
+            { isAnchored: yes, rect, moves }
 
         computeDuplicationEffect: (oldComp, newComp) ->
-            unless target: oldComp.parent
-                return null
-            newChildren: newItemsForHorizontalStackDuplication target.children, oldComp, newComp
-            itemRects: positionTabBarItems newChildren.length, rectOf(target)
+            newChildren: newItemsForHorizontalStackDuplication @target.children, oldComp, newComp
+            itemRects: positionTabBarItems newChildren.length, rectOf(@target)
             computeDropEffectFromNewRects newChildren, itemRects, newComp
 
         computeDeletionEffect: (comp) ->
-            target: comp.parent
-            newChildren: newItemsForHorizontalStack target.children, comp, null
-            itemRects: positionTabBarItems newChildren.length, rectOf(target)
+            newChildren: newItemsForHorizontalStack @target.children, comp, null
+            itemRects: positionTabBarItems newChildren.length, rectOf(@target)
             { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
 
-    class ToolbarContentLayout
+    class ToolbarContentLayout extends Layout
 
-        computeDropEffect: (target, comp, rect, moveOptions) ->
-            newChildren: newItemsForHorizontalStack target.children, comp, rect
-            itemRects: positionToolbarItems newChildren, rectOf(target)
+        computeDropEffect: (comp, rect, moveOptions) ->
+            newChildren: newItemsForHorizontalStack @target.children, comp, rect
+            itemRects: positionToolbarItems newChildren, rectOf(@target)
             { rect, moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
-            { isAnchored: yes, target, rect, moves }
+            { isAnchored: yes, rect, moves }
 
         computeDuplicationEffect: (oldComp, newComp) ->
-            unless target: oldComp.parent
-                return null
-            newChildren: newItemsForHorizontalStackDuplication target.children, oldComp, newComp
-            itemRects: positionToolbarItems newChildren, rectOf(target)
+            newChildren: newItemsForHorizontalStackDuplication @target.children, oldComp, newComp
+            itemRects: positionToolbarItems newChildren, rectOf(@target)
             computeDropEffectFromNewRects newChildren, itemRects, newComp
 
         computeDeletionEffect: (comp) ->
-            target: comp.parent
-            newChildren: newItemsForHorizontalStack target.children, comp, null
-            itemRects: positionToolbarItems newChildren, rectOf(target)
+            newChildren: newItemsForHorizontalStack @target.children, comp, null
+            itemRects: positionToolbarItems newChildren, rectOf(@target)
             { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
 
-    class RegularLayout
+    class RegularLayout extends Layout
 
-        computeDropTarget: (target, comp, rect, moveOptions) -> target
-
-        computeDropEffect: (target, comp, rect, moveOptions) ->
+        computeDropEffect: (comp, rect, moveOptions) ->
             stacking: handleStacking comp, rect, allStacks
             if stacking.targetRect?
-                { isAnchored: yes, target, rect: stacking.targetRect, moves: stacking.moves }
+                { isAnchored: yes, rect: stacking.targetRect, moves: stacking.moves }
             else
-                anchors: _(computeInnerAnchors(target, comp)).reject (a) -> comp == a.comp
+                anchors: _(computeInnerAnchors(@target, comp)).reject (a) -> comp == a.comp
                 magnets: computeMagnets(comp, rect)
                 snappings: computeSnappings(anchors, magnets)
 
@@ -1884,7 +1873,7 @@ jQuery ($) ->
                     for snapping in snappings
                         snapping.apply rect
 
-                { isAnchored: no, target, rect, moves: [] }
+                { isAnchored: no, rect, moves: [] }
 
         computeDuplicationEffect: (oldComp, newComp) ->
             rect: rectOf(oldComp)
@@ -1924,48 +1913,57 @@ jQuery ($) ->
     class TableRowLayout extends RegularLayout
 
         computeDropTarget: (target, comp, rect, moveOptions) ->
-            activeScreen.rootComponent
+            
 
-    computeLayout: (comp, target) ->
+    # either target or rect is specified
+    computeLayout: (comp, target, rect) ->
+        return null unless target? or rect?
         if pin: comp.type.pin
-            new PinnedLayout()
+            new PinnedLayout(activeScreen.rootComponent)
         else if comp.type.name in TABLE_TYPES
-            new TableRowLayout()
+            new TableRowLayout(activeScreen.rootComponent)
         else if comp.type.name is 'tab-bar-item'
-            new TabBarItemLayout()
-        else if target and target.type.name is 'toolbar'
-            new ToolbarContentLayout()
+            if target: findChildByType(activeScreen.rootComponent, Types['tabBar'])
+                new TabBarItemLayout(target)
+            else
+                null
+        else if (target and target.type.name is 'toolbar') or (rect and (target: findComponentByTypeIntersectingRect(Types['toolbar'], rect, setOf [comp])))
+            new ToolbarContentLayout(target)
+        else if rect and (target: findBestTargetContainerForRect rect, [comp])
+            new RegularLayout(target)
         else
-            new RegularLayout()
+            null
 
     computeDropEffect: (comp, rect, moveOptions) ->
         if comp.type.name is 'image' and (target: findComponentByTypeIntersectingRect(Types['tab-bar-item'], rect, setOf [comp]))
             return { target, moves: [], isAnchored: yes, rect: centerSizeInRect(comp.effsize, rectOf target) }
-        if target: findComponentByTypeIntersectingRect(Types['toolbar'], rect, setOf [comp])
-            layout: new ToolbarContentLayout()
-        else
-            target: findBestTargetContainerForRect(rect, [comp]) unless target
-            layout: computeLayout comp, target
-            target: layout.computeDropTarget target, comp, rect, moveOptions
-        if target is null
-            return null
-        else
+        
+        if layout: computeLayout comp, null, rect
             if comp.type.singleInstance
-                for child in target.children
+                for child in layout.target.children
                     if child.type is comp.type
                         return null
 
-            return layout.computeDropEffect target, comp, rect, moveOptions
+            eff: layout.computeDropEffect comp, rect, moveOptions
+            eff.target: layout.target
+            return eff
+        else
+            return null
 
     computeDuplicationEffect: (newComp, oldComp) ->
         oldComp ||= newComp
-        computeLayout(oldComp, oldComp.parent).computeDuplicationEffect oldComp, newComp
+        if layout: computeLayout(oldComp, oldComp.parent)
+            layout.computeDuplicationEffect oldComp, newComp
+        else
+            { moves: [] }
 
     computeDeletionEffect: (comp) ->
         return { moves: [] } unless comp.parent
 
-        layout: computeLayout comp, comp.parent
-        layout.computeDeletionEffect comp
+        if layout: computeLayout comp, comp.parent
+            layout.computeDeletionEffect comp
+        else
+            { moves: [] }
 
 
     ##########################################################################################################
