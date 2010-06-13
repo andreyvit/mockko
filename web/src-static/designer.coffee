@@ -3082,6 +3082,12 @@ jQuery ($) ->
             devicePos.y: (paneSize.h - deviceSize.h) / 2
         
         $('#device-panel').css({ left: devicePos.x, top: devicePos.y })
+
+    unless $.browser.webkit
+        $('#welcome-screen .buttons').hide()
+        $('#welcome-screen .unsupported').show()
+        $('#welcome-screen').show()
+        return
         
     $(window).resize ->
         # resizePalette()
