@@ -1,0 +1,8 @@
+== Prerequisites ==
+
+* HAML
+ ruby rubygems libssm-ruby
+* CoffeeScript (trunk)
+ coffeescript, nodejs (>= 0.1.98)
+* LessCSS
+ less
