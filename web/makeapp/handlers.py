@@ -11,12 +11,26 @@ from tipfy.ext.jinja2 import render_response
 from django.utils import simplejson as json
 
 from google.appengine.api import users
-from google.appengine.api import images
+from google.appengine.api import images, mail
 from google.appengine.ext import db
 from google.appengine.ext.deferred import defer
 from google.appengine.ext.webapp.util import login_required
 
 from makeapp.models import Account, App, Image, ImageData
+
+def notify_admins_about_new_user_signup(user):
+    mail.send_mail_to_admins(sender="Mockko <andreyvit@gmail.com>",
+                  subject="[Mockko] new user signed up: %s" % user.email(),
+                  body="""Dear Creators,
+
+Another human being is about to discover just how awesome our
+iPhone mock-up tool is.
+
+Say hello to %s!
+
+-- Your Mockko.
+    """ % user.email())
+    
 
 class HomeHandler(RequestHandler):
   
@@ -72,6 +86,7 @@ class SaveAppHandler(RequestHandler):
             if account is None:
                 account = Account(user=user)
                 account.put()
+                notify_admins_about_new_user_signup(user)
             if app_id == 'new':
                 app = App(name=body['name'], created_by=account.key(), editors=[account.key()])
             else:
