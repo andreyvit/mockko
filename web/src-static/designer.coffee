@@ -2657,6 +2657,7 @@ jQuery ($) ->
         $('#text-color-input').val(textColor || '') unless activeMode()?.isTextColorEditingMode
         $('#pick-color-button').alterClass('disabled', textColor is null or !textStyleEditable)
         $('#pick-color-swatch').css 'background-color', (if textColor then '#'+textColor else 'transparent')
+        setColorToPicker(textColor) if textColor
         if textColor is null and $('#color-picker').is(':visible')
             $('#color-picker').hide()
 
@@ -2678,27 +2679,30 @@ jQuery ($) ->
             }
             $('#color-picker').show()
 
-    initColorPicker: ->
+    ignorePickerUpdates: no
+
+    setColorToPicker: (color) ->
+        ignorePickerUpdates: yes
+        $.jPicker.List[0].color.active.val('hex', color)
         ignorePickerUpdates: no
 
-        commitTextColor: (fromPicker) ->
-            if (fromPicker or activeMode()?.isTextColorEditingMode) and (c: componentToActUpon())
-                originalColor: $('#text-color-input').val()
-                color: formatHexColor originalColor
-                $('#text-color-input').alterClass('invalid', color is null)
+    commitTextColor: (fromPicker) ->
+        if (fromPicker or activeMode()?.isTextColorEditingMode) and (c: componentToActUpon())
+            originalColor: $('#text-color-input').val()
+            color: formatHexColor originalColor
+            $('#text-color-input').alterClass('invalid', color is null)
 
-                if color and color isnt c.style.textColor
-                    runTransaction "color change", ->
-                        c.style.textColor: '#' + color
-                    renderComponentStyle c
+            if color and color isnt c.style.textColor
+                runTransaction "color change", ->
+                    c.style.textColor: '#' + color
+                renderComponentStyle c
 
-                if color and color isnt originalColor
-                    $('#text-color-input').val(color)
+            if color and color isnt originalColor
+                $('#text-color-input').val(color)
 
-                unless fromPicker
-                    ignorePickerUpdates: yes
-                    $.jPicker.List[0].color.active.val('hex', color)
-                    ignorePickerUpdates: no
+            setColorToPicker(color) unless fromPicker
+
+    initColorPicker: ->
 
         $('#text-color-input').livechange -> commitTextColor(false); true
         
