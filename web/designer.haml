@@ -15,6 +15,7 @@
     %script(src="./static/designer-jqueryaddons.js" type="text/javascript" charset="utf-8")
     %script(src="./static/designer-components.js" type="text/javascript" charset="utf-8")
     %script(src="./static/designer-templates.js" type="text/javascript" charset="utf-8")
+    %script(src="./static/lib/jpicker.js" type="text/javascript" charset="utf-8")
     %script(src="./static/designer-image-directories.js" type="text/javascript" charset="utf-8")
     %script(src="./static/designer.js" type="text/javascript" charset="utf-8")
     %title
@@ -127,6 +128,12 @@
             %li#shadow-none(title="None") N
             %li#shadow-dark-above(title="Dark, above object") A
             %li#shadow-light-below(title="Light, below object") B
+          %ul#color-style-group
+            .descr
+              = "#"
+              %input#text-color-input(value="e0e0e0")
+            %li#pick-color-button(title="Pick Color")
+              #pick-color-swatch.color-swatch
         #insp-position-pane.pane
           %ul
             %li#insp-rel-pos-li
@@ -144,6 +151,7 @@
             %li#no-action-button Do Nothing
             %li#set-action-button Switch To Screen
             #chosen-action-label (no action set)
+    #color-picker
 
     #welcome-screen.screen
       #welcome-popup

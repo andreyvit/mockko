@@ -613,7 +613,7 @@ jQuery ($) ->
     storeAndBindComponentNode: (c, cn) ->
         c.node = cn
         $(cn).dblclick ->
-            return if componentBeingDoubleClickEdited isnt null
+            return if componentBeingDoubleClickEdited is c
             handleComponentDoubleClick c; false
     
     skipTraversingChildren: {}
@@ -1372,7 +1372,13 @@ jQuery ($) ->
             before: ->
                 c.dirtyText: yes;
                 $(c.node).addClass 'editing';
-                activateMode { debugname: "In-Place Text Edit" }
+                activateMode {
+                    isInsideTextField: yes
+                    debugname: "In-Place Text Edit"
+                    mousedown: -> false
+                    mousemove: -> false
+                    mouseup: -> false
+                }
                 componentBeingDoubleClickEdited: c
             after:  ->
                 c.dirtyText: no
@@ -2621,12 +2627,20 @@ jQuery ($) ->
             $('#insp-rel-pos').html "&mdash;"
             $('#insp-abs-pos').html "&mdash;"
             $('#insp-size').html "&mdash;"
-            
+
+    formatHexColor: (color) ->
+        if (m: color.match(/^\s*([a-hA-H0-9]{6})\s*$/)) or (m: color.match(/^\s*#([a-hA-H0-9]{6})\s*/))
+            return m[1].toLowerCase()
+        if (m: color.match(/^\s*([a-hA-H0-9]{3})\s*$/)) or (m: color.match(/^\s*#([a-hA-H0-9]{3})\s*/))
+            return (m[1][0] + m[1][0] + m[1][1] + m[1][1] + m[1][2] + m[1][2]).toLowerCase()
+        return null
+
     updateTextInspector: ->
         pixelSize: null
         textStyleEditable: no
         bold: no
         italic: no
+        textColor: null
         if c: componentToActUpon()
             tn: textNodeOfComponent c
             if tn
@@ -2634,11 +2648,83 @@ jQuery ($) ->
                 pixelSize: parseInt cs.fontSize
                 bold: cs.fontWeight is 'bold'
                 italic: cs.fontStyle is 'italic'
+                textColor: if c.style.textColor then formatHexColor c.style.textColor else null
             textStyleEditable: c.type.textStyleEditable
         $('#pixel-size-label').html(if pixelSize then "${pixelSize} px" else "")
         $('#insp-text-pane li')[if textStyleEditable then 'removeClass' else 'addClass']('disabled')
         $('#text-bold')[if bold then 'addClass' else 'removeClass']('active')
         $('#text-italic')[if italic then 'addClass' else 'removeClass']('active')
+        $('#text-color-input').val(textColor || '') unless activeMode()?.isTextColorEditingMode
+        $('#pick-color-button').alterClass('disabled', textColor is null or !textStyleEditable)
+        $('#pick-color-swatch').css 'background-color', (if textColor then '#'+textColor else 'transparent')
+        if textColor is null and $('#color-picker').is(':visible')
+            $('#color-picker').hide()
+
+    $('#pick-color-button').click ->
+        if $('#color-picker').is(':visible')
+            $('#color-picker').hide()
+        else if $('#pick-color-button').is(':not(.disabled)')
+            offsets: {
+                button: $('#pick-color-button').offset()
+                pickerParent: $('#color-picker').parent().offset()
+            }
+            pickerSize: {
+                width: $('#color-picker').outerWidth()
+                height: $('#color-picker').outerHeight()
+            }
+            $('#color-picker').css {
+                left: offsets.button.left - pickerSize.width/2  - offsets.pickerParent.left
+                top:  offsets.button.top  - pickerSize.height - 10 - offsets.pickerParent.top
+            }
+            $('#color-picker').show()
+
+    initColorPicker: ->
+        ignorePickerUpdates: no
+
+        commitTextColor: (fromPicker) ->
+            if (fromPicker or activeMode()?.isTextColorEditingMode) and (c: componentToActUpon())
+                originalColor: $('#text-color-input').val()
+                color: formatHexColor originalColor
+                $('#text-color-input').alterClass('invalid', color is null)
+
+                if color and color isnt c.style.textColor
+                    runTransaction "color change", ->
+                        c.style.textColor: '#' + color
+                    renderComponentStyle c
+
+                if color and color isnt originalColor
+                    $('#text-color-input').val(color)
+
+                unless fromPicker
+                    ignorePickerUpdates: yes
+                    $.jPicker.List[0].color.active.val('hex', color)
+                    ignorePickerUpdates: no
+
+        $('#text-color-input').livechange -> commitTextColor(false); true
+        
+        commit: (color, context) ->
+            return if ignorePickerUpdates
+            $('#text-color-input').val color.val('hex')
+            commitTextColor(true)
+
+        $('#color-picker').jPicker {
+            images: {
+                clientPath: 'static/theme/images/jpicker/'
+            }
+        }, commit, commit
+    initColorPicker()
+
+    $('#text-color-input').focus ->
+        activateMode {
+            isTextColorEditingMode: yes
+            isInsideTextField: yes
+            after:  ->
+                $('#color-picker').hide(200)
+                updateTextInspector()
+            cancel: -> $('#text-color-input').blur()
+            mousemove: -> false
+            mouseup: -> false
+        }
 
     updateActionInspector: ->
         enabled: no
@@ -2849,7 +2935,7 @@ jQuery ($) ->
 
     hookKeyboardShortcuts: ->
         $('body').keydown (e) ->
-            return if componentBeingDoubleClickEdited isnt null
+            return if activeMode()?.isInsideTextField
             act: componentToActUpon()
             switch e.which
                 when $.KEY_ESC then dispatchToMode(ModeMethods.escdown, e) || deselectComponent(); false
@@ -2966,8 +3052,8 @@ jQuery ($) ->
         gettext: -> JSON.stringify(externalizeComponent(comp)) if comp: componentToActUpon()
         aftercut: -> cutComponents [comp] if comp: componentToActUpon()
         paste: (text) -> pasteJSON text
-        shouldProcessCopy: -> componentToActUpon() isnt null and componentBeingDoubleClickEdited is null
-        shouldProcessPaste: -> componentBeingDoubleClickEdited is null
+        shouldProcessCopy: -> componentToActUpon() isnt null and !activeMode()?.isInsideTextField
+        shouldProcessPaste: -> !activeMode()?.isInsideTextField
     }
 
 

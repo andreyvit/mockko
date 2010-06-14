@@ -312,3 +312,15 @@ unless window.console?
     window.console: {
         log: ->
     }
+
+$.fn.livechange: (handler) ->
+    this.each ->
+        $self: $(this)
+        lastValue: null
+        checkForChanges: ->
+            if (val: $self.val()) isnt lastValue
+                lastValue: val
+                handler(val)
+        for event in ['change', 'blur', 'keydown', 'keyup', 'keypress', 'focus', 'mouseover', 'mouseout', 'paste', 'input']
+            $self.bind "${event}.livechange", checkForChanges
+

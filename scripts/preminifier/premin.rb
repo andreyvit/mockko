@@ -489,7 +489,7 @@ STOPLISTS = {
       text toggle toggleClass trigger triggerHandler unbind unload val width wrap wrapAll wrapInner/,
     %w/$.fn $.fn.showTags jQuery.fn jQuery.fn.showTags/,
     %w/closest success/,
-    %w/sortable has/],
+    %w/sortable has webkit/],
   :undescore => %w/_ each map reduce reduceRight detect select reject all any include invoke
       pluck max min sortBy sortedIndex toArray size
       first rest last compact flatten without uniq intersect zip indexOf lastIndexOf range
