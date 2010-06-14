@@ -2027,12 +2027,12 @@ jQuery ($) ->
 
         window.status = "Dragging a component."
 
-        $('#hover-panel').hide()
-
         activateMode {
             debugname: "Existing Component Dragging"
             cancelOnMouseUp: yes
             mousemove: (e) ->
+                $('#hover-panel').hide()
+
                 pt: { x: e.pageX, y: e.pageY }
                 if dragger is null
                     return if Math.abs(pt.x - startPt.x) <= 1 and Math.abs(pt.y - startPt.y) <= 1
