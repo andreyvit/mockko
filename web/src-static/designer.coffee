@@ -2026,7 +2026,9 @@ jQuery ($) ->
         dragger: null
 
         window.status = "Dragging a component."
-        
+
+        $('#hover-panel').hide()
+
         activateMode {
             debugname: "Existing Component Dragging"
             cancelOnMouseUp: yes
@@ -2043,9 +2045,11 @@ jQuery ($) ->
                 if dragger isnt null
                     if dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
                         componentsChanged()
+                        $('#hover-panel').show()
                     else
                         deleteComponent c
                 deactivateMode()
+
                 true
 
             cancel: ->
