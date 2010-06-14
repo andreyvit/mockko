@@ -2031,7 +2031,6 @@ jQuery ($) ->
             debugname: "Existing Component Dragging"
             cancelOnMouseUp: yes
             mousemove: (e) ->
-                $('#hover-panel').hide()
 
                 pt: { x: e.pageX, y: e.pageY }
                 if dragger is null
@@ -2039,6 +2038,7 @@ jQuery ($) ->
                     beginUndoTransaction "movement of ${friendlyComponentName c}"
                     dragger: startDragging c, { startPt: startPt }, computeMoveOptions(e)
                 dragger.moveTo pt, computeMoveOptions(e)
+                $('#hover-panel').hide()
                 true
 
             mouseup: (e) ->
