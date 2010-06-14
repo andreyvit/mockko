@@ -1232,8 +1232,7 @@ jQuery ($) ->
     
     hoveredComponent: null
     
-    # RESIZING_HANDLES = ['tl', 'tc', 'tr', 'cl', 'cr', 'bl', 'bc', 'br']
-    RESIZING_HANDLES = ['tc', 'tr', 'cl', 'cr', 'bl', 'bc', 'br']
+    RESIZING_HANDLES = ['tl', 'tc', 'tr', 'cl', 'cr', 'bl', 'bc', 'br']
 
     adjustHorizontalSizingMode: (comp, hmode) ->
         if comp.type.widthPolicy.userSize then hmode else 'c'
@@ -1251,16 +1250,21 @@ jQuery ($) ->
             h: $(hoveredComponent.node).outerHeight()
         }
         $('#hover-panel').css({ left: r.x, top: r.y })
-        [r.x, r.y]: [-3, -3]
-        xpos: { 'l': r.x, 'c': r.x + r.w/2, 'r': r.x + r.w }
-        ypos: { 't': r.y, 'c': r.y + r.h/2, 'b': r.y + r.h }
+        [r.x, r.y]: [-6, -6]
+        xpos: { 'l': r.x, 'c': r.x + r.w/2, 'r': r.x + r.w - 1 }
+        ypos: { 't': r.y, 'c': r.y + r.h/2, 'b': r.y + r.h - 1 }
+        xenable: { 'l': yes, 'c': (hoveredComponent.effsize.w >= 23), 'r': yes }
+        yenable: { 't': yes, 'c': (hoveredComponent.effsize.h >= 23), 'b': yes }
+        controlsOutside: hoveredComponent.effsize.w < 63 or hoveredComponent.effsize.h <= 25
         _($('#hover-panel .resizing-handle')).each (handle, index) ->
             [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]] 
             pos: { x: xpos[hmode], y: ypos[vmode] }
             [vmode, hmode]: [adjustVerticalSizingMode(hoveredComponent, vmode), adjustHorizontalSizingMode(hoveredComponent, hmode)]
             disabled: (vmode is 'c' and hmode is 'c')
-            $(handle).css({ left: pos.x, top: pos.y }).alterClass('disabled', disabled)
+            visible: xenable[RESIZING_HANDLES[index][1]] and yenable[RESIZING_HANDLES[index][0]] and (controlsOutside or index isnt 0)
+            $(handle).css({ left: pos.x, top: pos.y }).alterClass('disabled', disabled).alterClass('hidden', not visible)
         $('#hover-panel .duplicate-handle').alterClass('disabled', hoveredComponent.type.singleInstance)
+        $('#hover-panel').alterClass('controls-outside', controlsOutside)
     
     componentHovered: (c) ->
         return unless c.node?  # the component is being deleted right now

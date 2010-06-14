@@ -77,6 +77,12 @@
 .hover-panel {
     position: absolute;
     z-index: 9999;
+
+    .handle, .resizing-handle {
+        box-sizing: content-box;
+        -webkit-box-sizing: content-box;
+        -moz-box-sizing: content-box;
+    }
     
     .handle {
         position: absolute;
@@ -109,12 +115,12 @@
         left: -8px;
         top: -8px;
 
-        background: url(images/button-delete-normal.png);
+        background: url(images/button-delete-normal.png) no-repeat 0% 0%;
         :hover {
-            background: url(images/button-delete-over.png);
+            background-image: url(images/button-delete-over.png);
         }
         :active {
-            background: url(images/button-delete-down.png);
+            background-image: url(images/button-delete-down.png);
         }
 
         .tip {
@@ -127,13 +133,14 @@
     .duplicate-handle {
         left: 8px;
         top: -8px;
+        padding-right: 3px;
 
-        background: url(images/button-dup-normal.png);
+        background: url(images/button-dup-normal.png) no-repeat 0% 0%;
         :hover {
-            background: url(images/button-dup-over.png);
+            background-image: url(images/button-dup-over.png);
         }
         :active {
-            background: url(images/button-dup-down.png);
+            background-image: url(images/button-dup-down.png);
         }
 
         .tip {
@@ -164,18 +171,34 @@
         position: absolute;
         width: 7px;
         height: 7px;
-        background: url(images/resizing-handle.png) no-repeat 0px 0px;
+        background: url(images/resizing-handle.png) no-repeat 50% 50%;
+        padding: 3px;
         cursor: move;
     }
     .resizing-handle.disabled {
-        background: url(images/resizing-handle-disabled.png) no-repeat 0px 0px;
+        background: url(images/resizing-handle-disabled.png) no-repeat 50% 50%;
         cursor: default;
     }
+    .resizing-handle.hidden {
+        display: none;
+    }
     .resizing-ne { cursor: nwse-resize; }
-    .resizing-nw { curosr: nesw-resize; }
+    .resizing-nw { cursor: nesw-resize; }
     .resizing-e  { cursor: ew-resize; }
     .resizing-n  { cursor: ns-resize; }
-    
+
+}
+.hover-panel.controls-outside {
+    .delete-handle {
+        top: -20px;
+    }
+    .duplicate-handle {
+        top: -20px;
+    }
+    .delete-handle, .duplicate-handle {
+        padding-bottom: 2px;
+        height: 20px;
+    }
 }
 .hover-panel.leaf .move-handle {
     display: none;
