@@ -1,4 +1,3 @@
-
 jQuery ($) ->
 
     CONF_SNAPPING_DISTANCE = 5
@@ -15,7 +14,7 @@ jQuery ($) ->
 
     ##########################################################################################################
     ## constants
-    
+
     applicationList: null
     serverMode: null
     applicationId: null
@@ -25,21 +24,21 @@ jQuery ($) ->
     allowedArea: null
     componentBeingDoubleClickEdited: null
     allStacks: null
-    
+
     # our very own idea of infinity
     INF: 100000
 
     Types: MakeApp.componentTypes
 
     STOCK_DIR: 'static/stock/'
-    
+
     DEFAULT_TEXT_STYLES: {
         fontSize: 17
         textColor: '#fff'
         fontBold: no
         fontItalic: no
     }
-    
+
     DEFAULT_ROOT_COMPONENT: {
         type: "background"
         size: { w: 320, h: 480 }
@@ -55,11 +54,11 @@ jQuery ($) ->
 
             adjustUI: (userData) ->
                 $('.login-button').attr 'href', userData['login_url']
-                
+
             startDesigner: (userData) ->
                 createNewApplication()
                 $('#welcome-screen').show()
-                
+
             saveApplicationChanges: (app, appId, callback) ->
                 #
 
@@ -67,16 +66,16 @@ jQuery ($) ->
             loadCustomImages: (callback) ->
             deleteCustomImage: (imageId, callback) ->
         }
-        
+
         'authenticated': {
             supportsImageEffects: yes
 
             adjustUI: (userData) ->
                 $('.logout-button').attr 'href', userData['logout_url']
-                
+
             startDesigner: (userData) ->
                 switchToDashboard()
-                
+
             saveApplicationChanges: (app, appId, callback) ->
                 $.ajax {
                     url: '/apps/' + (if appId then "${appId}/" else "")
@@ -97,7 +96,7 @@ jQuery ($) ->
                         alert "Failed to save the application: ${status} - ${e}"
                         # TODO ERROR HANDLING!
                 }
-                
+
             loadApplications: (callback) ->
                 $.ajax {
                     url: '/apps/'
@@ -196,17 +195,17 @@ jQuery ($) ->
                         # TODO ERROR HANDLING!
                 }
         }
-        
+
         'local': {
             supportsImageEffects: no
 
             adjustUI: (userData) ->
                 #
-                
+
             startDesigner: (userData) ->
                 loadApplication internalizeApplication(JSON.parse(SAMPLE_APPS[0]['body'])), null
                 switchToDesign()
-                
+
             saveApplicationChanges: (app, appId, callback) ->
                 #
 
@@ -221,7 +220,7 @@ jQuery ($) ->
             deleteCustomImage: (imageId, callback) ->
         }
     }
-    
+
     BACKGROUND_STYLES: {}
     (->
         for bg in MakeApp.backgroundStyles
@@ -249,7 +248,7 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  DOM templates
-    
+
     domTemplates = {}
     $('.template').each ->
         domTemplates[this.id] = this
@@ -259,7 +258,7 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  utilities
-    
+
     aOrAn: (s) ->
         if s[0] in {'a': yes, 'e': yes, 'i': yes, 'o': yes, 'u': yes} then "an ${s}" else "a ${s}"
 
@@ -348,7 +347,7 @@ jQuery ($) ->
             name: image['name']
             id: image['id']
         }
-    
+
     externalizeComponent: (c) ->
         rc: {
             'type': c.type.name || c.type
@@ -379,7 +378,7 @@ jQuery ($) ->
         rc['state']: c.state if c.state?
         rc['image']: externalizeImage(c.image) if c.image?
         rc
-        
+
     internalizeComponent: (c, parent) ->
         rc: {
             type: Types[c['type']]
@@ -412,14 +411,14 @@ jQuery ($) ->
         rc.style: $.extend({}, (if rc.type.textStyleEditable then DEFAULT_TEXT_STYLES else {}), rc.type.style || {}, internalizeStyle(c['style'] || {}))
         rc.text: c['text'] || rc.type.defaultText if rc.type.supportsText
         rc
-        
+
     externalizeScreen: (screen) ->
         {
             'rootComponent': externalizeComponent(screen.rootComponent)
             'name': screen.name
             'html': screen.html || ''
         }
-        
+
     internalizeScreen: (screen) ->
         rootComponent: internalizeComponent(screen['rootComponent'] || DEFAULT_ROOT_COMPONENT, null)
         screen: {
@@ -430,13 +429,13 @@ jQuery ($) ->
         }
         traverse rootComponent, (c) -> assignNameIfStillUnnamed c, screen
         return screen
-    
+
     externalizeApplication: (app) ->
         {
             'name': app.name
             'screens': (externalizeScreen(s) for s in app.screens)
         }
-        
+
     internalizeApplication: (app) ->
         screens: (internalizeScreen(s) for s in app['screens'])
         _(screens).each (screen, index) ->
@@ -445,21 +444,21 @@ jQuery ($) ->
             name: app['name']
             screens: screens
         }
-    
+
 
     ##########################################################################################################
     ##  undo
-    
+
     undoStack: []
     lastChange: null
-    
+
     friendlyComponentName: (c) ->
         if c.type is Types.text
             "“${c.text}”"
         else
             label: (c.type.genericLabel || c.type.label).toLowerCase()
             if c.text then "the “${c.text}” ${label}" else aOrAn label
-    
+
     beginUndoTransaction: (changeName) ->
         if lastChange isnt null
             console.log "Make-App Internal Warning: implicitly closing an unclosed undo change: ${lastChange.name}"
@@ -469,9 +468,9 @@ jQuery ($) ->
         beginUndoTransaction changeName
         change()
         componentsChanged()
-        
+
     setCurrentChangeName: (changeName) -> lastChange.name: changeName
-        
+
     endUndoTransaction: ->
         return if lastChange is null
         snapshotForSimulation activeScreen
@@ -485,7 +484,7 @@ jQuery ($) ->
     undoStackChanged: ->
         msg: if undoStack.length == 0 then "Nothing to undo" else "Undo ${undoStack[undoStack.length-1].name}"
         $('#undo-hint span').html msg
-        
+
     undoLastChange: ->
         return if undoStack.length == 0
         screenIndex: _(application.screens).indexOf activeScreen
@@ -496,41 +495,41 @@ jQuery ($) ->
         saveApplicationChanges()
         if screenIndex >= 0 && screenIndex < application.screens.length
             switchToScreen application.screens[screenIndex]
-        
+
     createApplicationMemento: -> JSON.stringify(externalizeApplication(application))
-    
+
     revertToMemento: (memento) -> loadApplication internalizeApplication(JSON.parse(memento)), applicationId
-    
+
     $('#undo-button').click (e) ->
         e.preventDefault(); e.stopPropagation()
         undoLastChange()
-    
+
     undoStackChanged()
-    
+
     ##########################################################################################################
     ##  global events
-    
+
     componentsChanged: ->
         endUndoTransaction()
-        
+
         if $('#share-popover').is(':visible')
             updateSharePopover()
-            
+
         reassignZIndexes()
-        
+
         allStacks: discoverStacks()
-        
+
         updateInspector()
         updateScreenPreview(activeScreen)
-    
+
     ##########################################################################################################
     ##  geometry
 
     isRectInsideRect: (i, o) -> i.x >= o.x and i.x+i.w <= o.x+o.w and i.y >= o.y and i.y+i.h <= o.y+o.h
-    
+
     doesRectIntersectRect: (a, b) ->
         (b.x <= a.x+a.w) and (b.x+b.w >= a.x) and (b.y <= a.y+a.h) and (b.y+b.h >= a.y)
-        
+
     rectIntersection: (a, b) ->
         x: Math.max(a.x, b.x)
         y: Math.max(a.y, b.y)
@@ -539,14 +538,14 @@ jQuery ($) ->
         if x2 < x then t = x2; x2 = x; x = t
         if y2 < y then t = y2; y2 = y; y = t
         { x: x, y: y, w: x2-x, h: y2-y }
-        
+
     areaOfIntersection: (a, b) ->
         if doesRectIntersectRect(a, b)
             r: rectIntersection(a, b)
             r.w * r.h
         else
             0
-        
+
     proximityOfRectToRect: (a, b) ->
         if doesRectIntersectRect(a, b)
             r: rectIntersection(a, b)
@@ -607,15 +606,15 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  component management
-    
+
     assignNameIfStillUnnamed: (c, screen) -> c.id ||= "c${screen.nextId++}"
-    
+
     storeAndBindComponentNode: (c, cn) ->
         c.node = cn
         $(cn).dblclick ->
             return if componentBeingDoubleClickEdited is c
             handleComponentDoubleClick c; false
-    
+
     skipTraversingChildren: {}
     # traverse(comp-or-array-of-comps, [parent], func)
     traverse: (comp, parent, func) ->
@@ -631,7 +630,7 @@ jQuery ($) ->
                 for child in comp.children || []
                     traverse child, comp, func
         null
-        
+
     cloneTemplateComponent: (compTemplate) ->
         c: internalizeComponent compTemplate, null
         traverse c, (comp) -> comp.inDocument: no
@@ -642,7 +641,7 @@ jQuery ($) ->
 
         effect: computeDeletionEffect rootc
         stacking: handleStacking rootc, null, allStacks
-        
+
         liveMover: newLiveMover [rootc]
         liveMover.moveComponents stacking.moves.concat(effect.moves)
         liveMover.commit(animated && STACKED_COMP_TRANSITION_DURATION)
@@ -690,12 +689,12 @@ jQuery ($) ->
         traverse newComp, (c) -> updateEffectiveSize c
 
         componentsChanged()
-        
+
     # findParent: (c) -> c.parent
     #     # a parent is a covering component of minimal area
     #     r: rectOf c
     #     _(pc for pc in components when pc != c && isRectInsideRect(r, rectOf(pc))).min (pc) -> r: rectOf(pc); r.w*r.h
-        
+
     findBestTargetContainerForRect: (r, excluded) ->
         trav: (comp) ->
             return null if _.include excluded, comp
@@ -713,41 +712,41 @@ jQuery ($) ->
                         bestHere: { comp: comp, area: area }
             else
                 bestHere
-        
+
         trav(activeScreen.rootComponent)?.comp || activeScreen.rootComponent
 
     ##########################################################################################################
     ##  DOM rendering
-    
+
     createNodeForComponent: (c) ->
         ct: c.type
         movability: if ct.unmovable then "unmovable" else "movable"
         tagName: c.type.tagName || "div"
         $(ct.html || "<${tagName} />").addClass("component c-${c.type.name} c-${c.type.name}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c).addClass(movability)[0]
-        
+
     _renderComponentHierarchy: (c, storeFunc) ->
         n: storeFunc c, createNodeForComponent(c)
-        
+
         for child in c.children || []
             childNode: _renderComponentHierarchy(child, storeFunc)
             $(n).append(childNode)
-            
+
         return n
-            
+
     renderStaticComponentHierarchy: (c) ->
         _renderComponentHierarchy c, (ch, n) ->
             renderComponentVisualProperties ch, n
             renderComponentPosition ch, n if ch != c
             n
-        
+
     renderInteractiveComponentHeirarchy: (c) ->
         _renderComponentHierarchy c, (ch, n) ->
             storeAndBindComponentNode ch, n
             renderComponentProperties ch
             n
-    
+
     findComponentOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-comp')
-        
+
     renderComponentPosition: (c, cn) ->
         ct: c.type
         relpos: switch
@@ -761,17 +760,17 @@ jQuery ($) ->
                     'x': c.abspos.x - ((c.parent?.dragpos && false || c.parent?.abspos)?.x || 0)
                     'y': c.abspos.y - ((c.parent?.dragpos && false || c.parent?.abspos)?.y || 0)
                 }
-        
+
         $(cn || c.node).css({
             left:   "${relpos.x}px"
             top:    "${relpos.y}px"
         })
-    
+
     reassignZIndexes: ->
         traverse activeScreen.rootComponent, (comp) ->
             ordered: _(comp.children).sortBy (c) -> r: rectOf c; -r.w * r.h
             _.each ordered, (c, i) -> $(c.node).css('z-index', i)
-            
+
     textNodeOfComponent: (c, cn) ->
         cn ||= c.node
         return null unless c.type.supportsText
@@ -821,13 +820,13 @@ jQuery ($) ->
         css.color: style.textColor if style.textColor?
         css.fontWeight: (if style.fontBold then 'bold' else 'normal') if style.fontBold?
         css.fontStyle: (if style.fontItalic then 'italic' else 'normal') if style.fontItalic?
-        
+
         if style.textShadowStyleName?
             for k, v of MakeApp.textShadowStyles[style.textShadowStyleName].css
                 css[k] = v
-        
+
         $(textNodeOfComponent c, cn).css css
-        
+
         if style.background?
             if not BACKGROUND_STYLES[style.background]
                 console.log "!! Unknown backgrond style ${style.background} for ${c.type.name}"
@@ -857,23 +856,23 @@ jQuery ($) ->
             renderComponentSize c, cn
         else
             updateEffectiveSize c
-    
+
     renderComponentProperties: (c, cn) -> renderComponentPosition(c, cn); renderComponentVisualProperties(c, cn)
-    
+
     componentPositionChangedWhileDragging: (c) ->
         renderComponentPosition c
         renderComponentSize c
         if c is hoveredComponent
             updateHoverPanelPosition()
             updatePositionInspector()
-    
+
     componentPositionChangedPernamently: (c) ->
         renderComponentPosition c
         updateEffectiveSize c
         if c is hoveredComponent
             updateHoverPanelPosition()
             updatePositionInspector()
-            
+
     componentStyleChanged: (c) ->
         renderComponentStyle c
 
@@ -1012,15 +1011,15 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  sizing
-    
+
     recomputeEffectiveSizeInDimension: (userSize, policy, fullSize) ->
         userSize || policy.fixedSize?.portrait || policy.fixedSize || switch policy.autoSize
             when 'fill'    then fullSize
             when 'browser' then null
-        
+
     sizeToPx: (v) ->
         if v then "${v}px" else 'auto'
-        
+
     renderComponentSize: (c, cn) ->
         ct: c.type
         size: c.dragsize || c.size
@@ -1030,7 +1029,7 @@ jQuery ($) ->
         }
         $(cn || c.node).css({ width: sizeToPx(effsize.w), height: sizeToPx(effsize.h) })
         return effsize
-        
+
     updateEffectiveSize: (c) ->
         if c.dragsize
             renderComponentSize c
@@ -1043,29 +1042,29 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  stacking
-    
+
     TABLE_TYPES = setOf ['plain-row', 'plain-header', 'roundrect-row', 'roundrect-header']
-    
+
     isContainer: (c) -> c.type.container
-    
+
     areVerticallyAdjacent: (c1, c2) ->
         r1: rectOf c1
         r2: rectOf c2
         r1.y + r1.h == r2.y
-        
+
     midy: (r) -> r.y + r.h / 2
-    
+
     rectWith: (pos, size) -> { x: pos.x, y: pos.y, w: size.w, h: size.h }
-    
+
     discoverStacks: ->
         returning [], (stacks) ->
             traverse activeScreen.rootComponent, (c) ->
                 c.stack = null; c.previousStackSibling = null; c.nextStackSibling = null
-            
+
             traverse activeScreen.rootComponent, (c) ->
                 if isContainer c
                     discoverStacksInComponent c, stacks
-                    
+
             $('.component').removeClass('in-stack first-in-stack last-in-stack odd-in-stack even-in-stack first-in-group last-in-group odd-in-group even-in-group')
             for stack in stacks
                 prev: null
@@ -1080,12 +1079,12 @@ jQuery ($) ->
                         $(prev.node).addClass('last-in-group') if prev
                         indexInGroup: 1
                     prevGroupName: groupName
-                    
+
                     $(cur.node).addClass("in-stack ${if index % 2 is 0 then 'even' else 'odd'}-in-stack")
                     $(cur.node).addClass("${if indexInGroup % 2 is 0 then 'even' else 'odd'}-in-group")
                     index += 1
                     indexInGroup += 1
-                    
+
                     cur.stack = stack
                     if prev
                         prev.nextStackSibling = cur
@@ -1093,33 +1092,33 @@ jQuery ($) ->
                     prev = cur
                 $(prev.node).addClass('last-in-group') if prev
                 $(prev.node).addClass('last-in-stack') if prev
-                        
+
     discoverStacksInComponent: (container, stacks) ->
         peers: _(container.children).select (c) -> c.type.name in TABLE_TYPES
         peers: _(peers).sortBy (c) -> c.abspos.y
-        
+
         contentSoFar: []
         lastStackItem: null
         stackMinX: INF
         stackMaxX: -INF
-        
+
         canBeStacked: (c) ->
             minX: c.abspos.x
             maxX: c.abspos.x + c.effsize.w
             return no if maxX < stackMinX or minX > stackMaxX
             return no unless lastStackItem.abspos.y + lastStackItem.effsize.h == c.abspos.y
             yes
-        
+
         flush: ->
             rect: { x: stackMinX, w: stackMaxX - stackMinX, y: contentSoFar[0].abspos.y }
             rect.h = lastStackItem.abspos.y + lastStackItem.effsize.h - rect.y
             stacks.push { type: 'vertical', items: contentSoFar, rect: rect }
-            
+
             contentSoFar: []
             lastStackItem: null
             stackMinX: INF
             stackMaxX: -INF
-            
+
         for peer in peers
             flush() if lastStackItem isnt null and not canBeStacked(peer)
             contentSoFar.push peer
@@ -1127,7 +1126,7 @@ jQuery ($) ->
             stackMinX: Math.min(stackMinX, peer.abspos.x)
             stackMaxX: Math.max(stackMaxX, peer.abspos.x + peer.effsize.w)
         flush() if lastStackItem isnt null
-        
+
     # stackSlice(from, inclFrom?, [to, inclTo?])
     stackSlice: (from, inclFrom, to, inclTo) ->
         res: []
@@ -1141,13 +1140,13 @@ jQuery ($) ->
 
     findStackByProximity: (rect, stacks) ->
         _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20
-            
+
     handleStacking: (comp, rect, stacks, action) ->
         return { moves: [] } unless comp.type.name in TABLE_TYPES
-        
+
         sourceStack: if action == 'duplicate' then null else comp.stack
         targetStack: if rect? then findStackByProximity(rect, stacks) else null
-        
+
         handleVerticalStacking comp, rect, sourceStack, targetStack
 
     pickHorizontalPositionBetween: (rect, items) ->
@@ -1184,7 +1183,7 @@ jQuery ($) ->
             sourceStack: null
 
         return { moves: [] } unless sourceStack? or targetStack?
-        
+
         if sourceStack == targetStack
           target: _(targetStack.items).min (c) -> proximityOfRectToRect rectOf(c), rect
           if target is comp
@@ -1196,7 +1195,7 @@ jQuery ($) ->
               moves: [
                 { comps: stackSlice(comp, no, target, yes), offset: { x: 0, y: -comp.effsize.h } }
               ]
-            } 
+            }
           else
             # moving up
             return {
@@ -1204,7 +1203,7 @@ jQuery ($) ->
                 moves: [
                     { comps: stackSlice(target, yes, comp, no), offset: { x: 0, y: comp.effsize.h } }
                 ]
-            } 
+            }
         else
             res: { moves: [] }
             if targetStack?
@@ -1229,9 +1228,9 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  hover panel
-    
+
     hoveredComponent: null
-    
+
     RESIZING_HANDLES = ['tl', 'tc', 'tr', 'cl', 'cr', 'bl', 'bc', 'br']
 
     adjustHorizontalSizingMode: (comp, hmode) ->
@@ -1257,7 +1256,7 @@ jQuery ($) ->
         yenable: { 't': yes, 'c': (hoveredComponent.effsize.h >= 23), 'b': yes }
         controlsOutside: hoveredComponent.effsize.w < 63 or hoveredComponent.effsize.h <= 25
         _($('#hover-panel .resizing-handle')).each (handle, index) ->
-            [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]] 
+            [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]]
             pos: { x: xpos[hmode], y: ypos[vmode] }
             [vmode, hmode]: [adjustVerticalSizingMode(hoveredComponent, vmode), adjustHorizontalSizingMode(hoveredComponent, hmode)]
             disabled: (vmode is 'c' and hmode is 'c')
@@ -1265,14 +1264,14 @@ jQuery ($) ->
             $(handle).css({ left: pos.x, top: pos.y }).alterClass('disabled', disabled).alterClass('hidden', not visible)
         $('#hover-panel .duplicate-handle').alterClass('disabled', hoveredComponent.type.singleInstance)
         $('#hover-panel').alterClass('controls-outside', controlsOutside)
-    
+
     componentHovered: (c) ->
         return unless c.node?  # the component is being deleted right now
         return if hoveredComponent is c
         if c.type.unmovable
             componentUnhovered()
             return
-        
+
         ct: c.type
         if ct.container
             $('#hover-panel').addClass('container').removeClass('leaf')
@@ -1282,28 +1281,28 @@ jQuery ($) ->
         hoveredComponent = c
         updateHoverPanelPosition()
         updateInspector()
-        
+
     componentUnhovered: ->
         return if hoveredComponent is null
         hoveredComponent = null
         $('#hover-panel').hide()
         updateInspector()
-        
+
     $('#hover-panel').hide()
     $('#hover-panel .delete-handle').click ->
         if hoveredComponent isnt null
             $('#hover-panel').hide()
-            deleteComponent hoveredComponent 
+            deleteComponent hoveredComponent
             hoveredComponent = null
 
     $('#hover-panel .duplicate-handle').click ->
         if hoveredComponent isnt null
-            duplicateComponent hoveredComponent 
+            duplicateComponent hoveredComponent
 
     _($('.hover-panel .resizing-handle')).each (handle, index) ->
         $(handle).mousedown (e) ->
             return if hoveredComponent is null
-            [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]] 
+            [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]]
             [vmode, hmode]: [adjustVerticalSizingMode(hoveredComponent, vmode), adjustHorizontalSizingMode(hoveredComponent, hmode)]
             disabled: (vmode is 'c' and hmode is 'c')
             return if disabled
@@ -1312,28 +1311,28 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  selection
-    
+
     selectedComponent: null
-    
+
     selectComponent: (comp) ->
         return if comp is selectedComponent
         deselectComponent()
         selectedComponent: comp
         $(selectedComponent.node).addClass 'selected'
         updateInspector()
-        
+
     deselectComponent: ->
         return if selectedComponent is null
         $(selectedComponent.node).removeClass 'selected'
         selectedComponent: null
         updateInspector()
-        
+
     componentToActUpon: -> selectedComponent || hoveredComponent
-        
+
 
     ##########################################################################################################
     ##  double-click editing
-    
+
     handleComponentDoubleClick: (c) ->
         switch c.type.name
             when 'tab-bar-item'
@@ -1923,7 +1922,7 @@ jQuery ($) ->
     class TableRowLayout extends RegularLayout
 
         computeDropTarget: (target, comp, rect, moveOptions) ->
-            
+
 
     # either target or rect is specified
     computeLayout: (comp, target, rect) ->
@@ -1947,7 +1946,7 @@ jQuery ($) ->
     computeDropEffect: (comp, rect, moveOptions) ->
         if comp.type.name is 'image' and (target: findComponentByTypeIntersectingRect(Types['tab-bar-item'], rect, setOf [comp]))
             return { target, moves: [], isAnchored: yes, rect: centerSizeInRect(comp.effsize, rectOf target) }
-        
+
         if layout: computeLayout comp, null, rect
             if comp.type.singleInstance
                 for child in layout.target.children
@@ -2025,7 +2024,7 @@ jQuery ($) ->
 
     activateExistingComponentDragging: (c, startPt) ->
         dragger: null
-        
+
         window.status = "Dragging a component."
         
         activateMode {
@@ -2039,7 +2038,7 @@ jQuery ($) ->
                     dragger: startDragging c, { startPt: startPt }, computeMoveOptions(e)
                 dragger.moveTo pt, computeMoveOptions(e)
                 true
-                
+
             mouseup: (e) ->
                 if dragger isnt null
                     if dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
@@ -2057,22 +2056,22 @@ jQuery ($) ->
                 c.dragParent: null
                 componentPositionChangedWhileDragging c
         }
-        
+
     activateNewComponentDragging: (startPt, c, e) ->
         beginUndoTransaction "creation of ${friendlyComponentName c}"
         cn: renderInteractiveComponentHeirarchy c
-        
+
         dragger: startDragging c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }, computeMoveOptions(e)
-        
+
         window.status = "Dragging a new component."
-        
+
         activateMode {
             debugname: "New Component Dragging"
             cancelOnMouseUp: yes
             mousemove: (e) ->
                 dragger.moveTo { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
                 true
-                
+
             mouseup: (e) ->
                 ok: dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
                 if ok
@@ -2231,7 +2230,7 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  palette
-    
+
     paletteWanted: on
     customImagesPaletteCategory: { name: 'Custom Images (drop your image files here)', items: [] }
     customImagesPaletteGroup: null
@@ -2244,7 +2243,7 @@ jQuery ($) ->
                 e.preventDefault()
                 c: cloneTemplateComponent compTemplate
                 activateNewComponentDragging { x: e.pageX, y: e.pageY }, c, e
-            
+
     renderPaletteGroupContent: (ctg, group, func) ->
         $('<div />').addClass('header').html(ctg.name).appendTo(group)
         ctg.itemsNode: items: $('<div />').addClass('items').appendTo(group)
@@ -2261,7 +2260,7 @@ jQuery ($) ->
         group: $('<div />').addClass('group').appendTo($('#palette-container'))
         renderPaletteGroupContent ctg, group
         group
-    
+
     fillPalette: ->
         for grp in MakeApp.stockImageGroups
             items: for fileData in MakeApp.imageDirectories[grp.path]
@@ -2278,10 +2277,10 @@ jQuery ($) ->
                     }
                 }
             MakeApp.paletteDefinition.push { name: grp.label, items: items }
-        
+
         for ctg in MakeApp.paletteDefinition
             renderPaletteGroup ctg
-            
+
         customImagesPaletteGroup: renderPaletteGroup customImagesPaletteCategory
 
     constrainImageSize: (imageSize, maxSize) ->
@@ -2311,7 +2310,7 @@ jQuery ($) ->
     addCustomImagePlaceholder: ->
         $(customImagesPaletteCategory.itemsNode).append $("<div />", { className: 'customImagePlaceholder' })
         $('#palette').scrollToBottom()
-                    
+
     # updatePaletteVisibility: (reason) ->
     #     showing: $('.palette').is(':visible')
     #     desired: paletteWanted # && !mode.hidesPalette
@@ -2320,26 +2319,26 @@ jQuery ($) ->
     #     else if desired and not showing
     #         anim: if reason is 'mode' then 'fadein' else 'popin'
     #         $('.palette').showPopOverPointingTo $('#add-button'), anim
-            
+
     # resizePalette: ->
     #     maxPopOverSize: $(window).height() - 44 - 20
     #     $('.palette').css 'height', Math.min(maxPopOverSize, 600)
     #     if $('.palette').is(':visible')
     #         $('.palette').repositionPopOver $('#add-button')
-        
+
     initPalette: ->
         fillPalette()
         # resizePalette()
-        
-    
+
+
     ##########################################################################################################
     ##  Screen List
-    
+
     renderScreenComponents: (screen, node) ->
         cn: renderStaticComponentHierarchy screen.rootComponent
         renderComponentPosition screen.rootComponent, cn
         $(node).append(cn)
-    
+
     renderScreen: (screen) ->
         sn: screen.node: domTemplate 'app-screen-template'
         $(sn).setdata('makeapp.screen', screen)
@@ -2357,7 +2356,7 @@ jQuery ($) ->
         $(screen.node).find('.component').remove()
         renderScreenName screen
         renderScreenComponents screen, $('.content .rendered', screen.node)
-        
+
     bindScreen: (screen) ->
         $(screen.node).bindContextMenu '#screen-context-menu', screen
         $('.content', screen.node).click (e) ->
@@ -2366,7 +2365,7 @@ jQuery ($) ->
                     switchToScreen screen
                 false
         $('.caption', screen.node).click -> startRenamingScreen screen; false
-        
+
     updateScreenList: ->
         $('#screens-list > .app-screen').remove()
         _(application.screens).each (screen, index) ->
@@ -2447,7 +2446,7 @@ jQuery ($) ->
         endUndoTransaction()
         updateScreenList()
         switchToScreen screen
-            
+
     appendRenderedScreenFor: (screen, after) ->
         renderScreen screen
         if after
@@ -2455,10 +2454,10 @@ jQuery ($) ->
         else
             $('#screens-list').append(screen.node)
         bindScreen screen
-        
+
     updateScreenPreview: (screen) ->
         rerenderScreenContent screen
-            
+
     setActiveScreen: (screen) ->
         $('#screens-list > .app-screen').removeClass('active')
         $(screen.node).addClass('active')
@@ -2491,21 +2490,21 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  Active Screen / Application
-        
+
     switchToScreen: (screen) ->
         setActiveScreen screen
-        
+
         $('#design-area .component').remove()
-            
+
         activeScreen = screen
         activeScreen.nextId ||= 1
-        
+
         $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
         updateSizes: ->
             traverse activeScreen.rootComponent, (c) -> updateEffectiveSize c
         setTimeout updateSizes, 10
-        
-        
+
+
         devicePanel: $('#device-panel')[0]
         allowedArea: {
             x: 0
@@ -2513,12 +2512,12 @@ jQuery ($) ->
             w: 320
             h: 480
         }
-        
+
         componentsChanged()
         deselectComponent()
         componentUnhovered()
 
-    
+
     loadApplication: (app, appId) ->
         app.name = createNewApplicationName() unless app.name
         application = app
@@ -2526,7 +2525,7 @@ jQuery ($) ->
         renderApplicationName()
         updateScreenList()
         switchToScreen application.screens[0]
-        
+
     saveApplicationChanges: (callback) ->
         serverMode.saveApplicationChanges externalizeApplication(application), applicationId, (newId) ->
             applicationId: newId
@@ -2541,7 +2540,7 @@ jQuery ($) ->
                 runTransaction "application rename", ->
                     application.name: newText
         }
-        
+
     ##########################################################################################################
     ##  Share (stub implementation)
 
@@ -2555,11 +2554,11 @@ jQuery ($) ->
         else
             $('#share-popover').showPopOverPointingTo $('#run-button')
             updateSharePopover()
-    
+
     checkApplicationLoading: ->
         v: $('#share-popover textarea').val()
         s: JSON.stringify(externalizeApplication(application))
-        
+
         good: yes
         if v != s && v != ''
             try
@@ -2569,13 +2568,13 @@ jQuery ($) ->
             loadApplication internalizeApplication(app), applicationId if app
         $('#share-popover textarea').css('background-color', if good then 'white' else '#ffeeee')
         undefined
-    
+
     for event in ['change', 'blur', 'keydown', 'keyup', 'keypress', 'focus', 'mouseover', 'mouseout', 'paste', 'input']
         $('#share-popover textarea').bind event, checkApplicationLoading
 
     ##########################################################################################################
     ## inspector
-    
+
     $('.tab').click ->
         $('.tab').removeClass 'active'
         $(this).addClass 'active'
@@ -2586,7 +2585,7 @@ jQuery ($) ->
 
     fillInspector: ->
         fillBackgroundsInspector()
-    
+
     updateInspector: ->
         updateBackgroundsInspector()
         updatePositionInspector()
@@ -2604,7 +2603,7 @@ jQuery ($) ->
             node: domTemplate('background-swatch-template')
             $(node).attr({'id': "bg-${bg.name}", 'title': bg.label}).addClass("bg-${bg.name}").appendTo($pal)
             bindBackground node, bg
-     
+
     updateBackgroundsInspector: ->
         enabled: no
         $('#insp-backgrounds-pane li').removeClass 'active'
@@ -2614,7 +2613,7 @@ jQuery ($) ->
                 if active: c.style.background || ''
                     $("#bg-${active}").addClass 'active'
         $('#insp-backgrounds-pane li').alterClass 'disabled', !enabled
-        
+
     updatePositionInspector: ->
         if c: componentToActUpon()
             abspos: c.dragpos || c.abspos
@@ -2704,7 +2703,7 @@ jQuery ($) ->
     initColorPicker: ->
 
         $('#text-color-input').livechange -> commitTextColor(false); true
-        
+
         commit: (color, context) ->
             return if ignorePickerUpdates
             $('#text-color-input').val color.val('hex')
@@ -2813,7 +2812,7 @@ jQuery ($) ->
                     componentStyleChanged c
                     componentsChanged()
         }
-        
+
     bindStyleChangeButton $('#make-size-smaller'), (c, style) ->
         if tn: textNodeOfComponent c
             currentSize: c.style.fontSize || parseInt getComputedStyle(tn, null).fontSize
@@ -2836,7 +2835,7 @@ jQuery ($) ->
             currentState: if c.style.fontItalic? then c.style.fontItalic else getComputedStyle(tn, null).fontStyle is 'italic'
             style.fontItalic: not currentState
             if style.fontItalic then "making comp italic" else "making comp non-italic"
-            
+
     updateShadowStyle: (shadowStyleName, c, style) ->
         style.textShadowStyleName: shadowStyleName
         "changing text shadow of comp to ${MakeApp.textShadowStyles[shadowStyleName].label}"
@@ -2844,19 +2843,19 @@ jQuery ($) ->
     bindStyleChangeButton $('#shadow-none'), (c, style) -> updateShadowStyle 'none', c, style
     bindStyleChangeButton $('#shadow-dark-above'), (c, style) -> updateShadowStyle 'dark-above', c, style
     bindStyleChangeButton $('#shadow-light-below'), (c, style) -> updateShadowStyle 'light-below', c, style
-            
+
     fillInspector()
     updateInspector()
 
 
     ##########################################################################################################
     ##  Image Upload
-    
+
     uploadImageFile: (file) ->
         console.log "Uploading ${file.fileName} of size ${file.fileSize}"
         serverMode.uploadImageFile file.fileName, file, ->
             updateCustomImages()
-    
+
     updateCustomImages: ->
         serverMode.loadCustomImages (images) ->
             customImages: ({
@@ -2866,7 +2865,7 @@ jQuery ($) ->
                 fileName: img['fileName']
             } for img in images)
             updateCustomImagesPalette()
-    
+
     $('body').each ->
         this.ondragenter: (e) ->
             console.log "dragenter"
@@ -2952,7 +2951,7 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  Simulation (Run)
-    
+
     snapshotForSimulation: (screen) ->
         if not screen.rootComponent.node?
             throw "This hack only works for the current screen"
@@ -3033,7 +3032,7 @@ jQuery ($) ->
                 newComp.parent: targetCont
                 targetCont.children.push newComp
                 $(targetCont.node).append renderInteractiveComponentHeirarchy newComp
-                
+
                 effect: computeDuplicationEffect newComp
                 if effect is null
                     alert "Cannot paste the components because they do not fit into the designer"
@@ -3064,7 +3063,7 @@ jQuery ($) ->
 
 
     ##########################################################################################################
-    
+
     initComponentTypes: ->
         for typeName, ct of Types
             ct.name: typeName
@@ -3074,7 +3073,7 @@ jQuery ($) ->
             if not ct.textStyleEditable?
                 ct.textStyleEditable: ct.defaultText?
             ct.supportsText: ct.defaultText?
-    
+
     createNewApplicationName: ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
             'Amazing', 'Awesome', 'Fantastic', 'Beautiful', 'Unbelievable', 'Remarkable']
@@ -3085,11 +3084,11 @@ jQuery ($) ->
             "Yet Another App"
         else
             names[Math.floor(Math.random() * names.length)]
-        
+
     createNewApplication: ->
         loadApplication internalizeApplication(MakeApp.appTemplates.basic), null
         switchToDesign()
-        
+
     bindApplication: (app, an) ->
         app.node: an
         $(an).bindContextMenu '#application-context-menu', app
@@ -3133,7 +3132,7 @@ jQuery ($) ->
                 renderApplication appData, '#apps-list-container'
             updateApplicationListWidth()
             callback(applicationList) if callback
-    
+
     switchToDesign: ->
         $(".screen").hide()
         $('#design-screen').show()
@@ -3146,15 +3145,15 @@ jQuery ($) ->
         $('#dashboard-screen').show()
         console.log "switchToDashboard"
         refreshApplicationList()
-    
+
     $('#new-app-button').click (e) ->
         e.preventDefault(); e.stopPropagation()
         createNewApplication()
-        
+
     $('#dashboard-button').click (e) ->
         e.preventDefault(); e.stopPropagation()
         switchToDashboard()
-    
+
     loadDesigner: (userData) ->
         console.log userData
         $("body").removeClass("anonymous-user authenticated-user").addClass("${userData['status']}-user")
@@ -3163,11 +3162,11 @@ jQuery ($) ->
         serverMode.adjustUI userData
         serverMode.startDesigner userData
         console.log "done"
-        
+
     $('#welcome-continue-link').click ->
         $('#welcome-screen').fadeOut()
         false
-        
+
     adjustDeviceImagePosition: ->
         deviceOffset: $('#device-panel').offset()
         contentOffset: $('#design-area').offset()
@@ -3175,7 +3174,7 @@ jQuery ($) ->
         paneSize: { w: $('#design-pane').outerWidth(), h: $('#design-pane').outerHeight() }
         contentSize: { w: $('#design-area').outerWidth(), h: $('#design-area').outerHeight() }
         deviceInsets: { x: contentOffset.left - deviceOffset.left, y: contentOffset.top - deviceOffset.top }
-        
+
         devicePos: {
             x: (paneSize.w - deviceSize.w) / 2
         }
@@ -3184,7 +3183,7 @@ jQuery ($) ->
             devicePos.y: contentY - deviceInsets.y
         else
             devicePos.y: (paneSize.h - deviceSize.h) / 2
-        
+
         $('#device-panel').css({ left: devicePos.x, top: devicePos.y })
 
     unless $.browser.webkit
@@ -3192,11 +3191,11 @@ jQuery ($) ->
         $('#welcome-screen .unsupported').show()
         $('#welcome-screen').show()
         return
-        
+
     $(window).resize ->
         # resizePalette()
         adjustDeviceImagePosition()
-    
+
     if window.location.href.match /^file:/
         serverMode: SERVER_MODES['local']
     else
