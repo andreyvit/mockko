@@ -204,8 +204,8 @@ jQuery ($) ->
                 #
                 
             startDesigner: (userData) ->
-                # createNewApplication()
-                switchToDashboard()
+                loadApplication internalizeApplication(JSON.parse(SAMPLE_APPS[0]['body'])), null
+                switchToDesign()
                 
             saveApplicationChanges: (app, appId, callback) ->
                 #
