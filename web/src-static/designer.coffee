@@ -1933,7 +1933,7 @@ jQuery ($) ->
                 null
         else if (target and target.type.name is 'toolbar') or (rect and (target: findComponentByTypeIntersectingRect(Types['toolbar'], rect, setOf [comp])))
             new ToolbarContentLayout(target)
-        else if rect and (target: findBestTargetContainerForRect rect, [comp])
+        else if target or (rect and (target: findBestTargetContainerForRect rect, [comp]))
             new RegularLayout(target)
         else
             null
@@ -1959,7 +1959,7 @@ jQuery ($) ->
         if layout: computeLayout(oldComp, oldComp.parent)
             layout.computeDuplicationEffect oldComp, newComp
         else
-            { moves: [] }
+            null
 
     computeDeletionEffect: (comp) ->
         return { moves: [] } unless comp.parent
