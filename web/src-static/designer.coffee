@@ -2543,18 +2543,17 @@ jQuery ($) ->
         }
         
     ##########################################################################################################
+    ##  Share (stub implementation)
 
     updateSharePopover: ->
         s: JSON.stringify(externalizeApplication(application))
         $('#share-popover textarea').val(s)
-        
-    $('#share-button').click (e) ->
-        e.preventDefault(); e.stopPropagation()
 
+    toggleSharePopover: ->
         if $('#share-popover').is(':visible')
             $('#share-popover').hidePopOver()
         else
-            $('#share-popover').showPopOverPointingTo $('#share-button')
+            $('#share-popover').showPopOverPointingTo $('#run-button')
             updateSharePopover()
     
     checkApplicationLoading: ->
@@ -2968,6 +2967,9 @@ jQuery ($) ->
 
     $('#run-button').click (e) ->
         e.preventDefault(); e.stopPropagation()
+        if e.shiftKey
+            toggleSharePopover()
+            return
         if applicationId?
             runCurrentApplication()
         else
