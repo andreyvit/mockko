@@ -1,2 +1,3 @@
 #!/bin/sh
 kill $(cat watch.pids)
+rm -f watch.pids
