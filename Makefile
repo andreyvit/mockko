@@ -54,18 +54,11 @@ clean:
 
 # Continuously compile
 
-watch: watch-$(shell uname -s)
-
-watch-Linux:
+watch:
 	@while true; do \
-		f=$$(find . -regex '.*\.\(coffee\|haml\|less\)'); \
-		echo "Watching "$$(echo $$f | wc -w)" files..."; \
-		inotifywait -qq -t 30 -r $$f; \
+		scripts/watchfiles '**/*.coffee' '**/*.haml' '**/*.less'; \
 		${MAKE}; \
 	done
-
-watch-Darwin:
-	@echo "Not implemented yet"; false
 
 # Optimization (and obfuscation)
 

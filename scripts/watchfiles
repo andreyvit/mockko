@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+require 'fssm'
+
+def rebuild_site(relative)
+  Process.exit
+end
+
+begin
+  FSSM.monitor(nil, ARGV) do
+    update {|base, relative| rebuild_site(relative)}
+    delete {|base, relative| rebuild_site(relative)}
+    create {|base, relative| rebuild_site(relative)}
+  end
+rescue FSSM::CallbackError => e
+  Process.exit
+end
