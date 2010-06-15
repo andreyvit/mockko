@@ -30,7 +30,8 @@ help:
 	@echo "  make all      -- process HAML, CoffeeScript and Less"
 	@echo "  make watch    -- watch and re-process changed files"
 	@echo "  make optimize -- prepare optimized and obfuscated version"
-	@echo "  make run      -- run application using dev. appserver"
+	@echo "  make run      -- run application using dev. appserver (non-optimized, /dev only)"
+	@echo "  make run-opt  -- run application using dev. appserver (optimized)"
 	@echo "  make deploy   -- upload application to GAE"
 	@echo "  make clean    -- clean all generated files"
 
@@ -154,8 +155,11 @@ ${OPT_DIR}/designer.combined.js: ${JS_SRC}
 
 # Run
 
-run: optimize
-	dev_appserver.py $DEVAPPSERVER_ARGS web
+run:
+	dev_appserver.py ${DEVAPPSERVER_ARGS} web
+
+run-opt: optimize
+	dev_appserver.py ${DEVAPPSERVER_ARGS} web
 
 # Deployment
 
