@@ -6,6 +6,8 @@ ifeq ($(shell uname -s),Darwin)
   COFFEE_ARGS=--growl
 endif
 
+DEVAPPSERVER_ARGS=--show_mail_body
+
 CLOSURE=java -jar scripts/closure-compiler/compiler.jar
 YUI=java -jar scripts/yuicompressor-2.4.2.jar
 PREMIN=ruby scripts/preminifier/premin.rb
@@ -153,7 +155,7 @@ ${OPT_DIR}/designer.combined.js: ${JS_SRC}
 # Run
 
 run: optimize
-	dev_appserver.py web
+	dev_appserver.py $DEVAPPSERVER_ARGS web
 
 # Deployment
 
