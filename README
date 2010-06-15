@@ -1,11 +1,19 @@
 == Prerequisites ==
 
-* HAML
- ruby rubygems libssm-ruby
-* CoffeeScript (trunk)
- coffeescript, nodejs (>= 0.1.98)
-* LessCSS
- less
+* GNU make
+* ruby-haml
+* ruby-less
+* coffeescript [trunk]
+* nodejs [< 0.1.97]
+* GAE Python SDK (for 'make run' and 'make deploy')
+* ruby-fssm (for 'make watch')
+* JRE (for 'make optimize')
+* openssl(1) (for 'make optimize')
+* Perl (for 'make optimize')
+
+== Build ==
+
+Run 'make help' for help.
 
 == Bugtracker ==
 
