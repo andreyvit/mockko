@@ -27,6 +27,7 @@ help:
 	@echo "  make all      -- process HAML, CoffeeScript and Less"
 	@echo "  make watch    -- watch and re-process changed files"
 	@echo "  make optimize -- prepare optimized and obfuscated version"
+	@echo "  make run      -- run application using dev. appserver"
 	@echo "  make deploy   -- upload application to GAE"
 	@echo "  make clean    -- clean all generated files"
 
@@ -154,6 +155,11 @@ ${OPT_DIR}/designer.combined.js: ${JS_SRC}
 .INTERMEDIATE: \
 	${OPT_DIR}/designer.combined.js \
 	${OPT_DIR}/designer.closure.js
+
+# Run
+
+run: optimize
+	dev_appserver.py web
 
 # Deployment
 
