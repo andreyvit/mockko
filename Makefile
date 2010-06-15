@@ -1,4 +1,5 @@
 .PHONY: all clean optimize deploy watch
+.DEFAULT_GOAL := all
 
 # Per-system configuration
 ifeq ($(shell uname -s),Darwin)
