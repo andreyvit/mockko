@@ -4,6 +4,9 @@ runtime: python
 api_version: 1
 
 handlers:
+
+# Boring stuff
+
 - url: /favicon.ico
   static_files: static/favicon.ico
   upload: static/favicon.ico
@@ -11,16 +14,17 @@ handlers:
 - url: /robots.txt
   static_files: static/robots.txt
   upload: static/robots.txt
+
+# Production
   
+- url: /
+  static_files: minified/designer.min.html
+  upload: minified/designer.min.html
+
 - url: /static/designer\.min\.[a-f0-9]{40}\.js
   static_files: minified/designer.min.js
   upload: minified/designer.min.js
   expiration: "3650d"
-  
-- url: /static/designer((?:-.*)?)\.js
-  static_files: static/designer\1.js
-  upload: static/designer(-.*)?\.js
-  login: admin
   
 - url: /static/theme/theme\.min\.[a-f0-9]{40}\.css
   static_files: minified/theme.min.css
@@ -31,28 +35,6 @@ handlers:
   static_files: minified/iphone.min.css
   upload: minified/iphone.min.css
   expiration: "3650d"
-
-- url: /static/theme/theme(-.*).css
-  static_files: static/theme/theme\1.css
-  upload: static/theme/theme-.*.css
-  login: admin
-  
-- url: /static/iphone/iphone.css
-  static_files: static/iphone/iphone.css
-  upload: static/iphone/iphone.css
-  # login: admin
-  
-- url: /dev
-  static_files: designer.html
-  upload: designer.html
-  login: admin
-
-- url: /
-  static_files: minified/designer.min.html
-  upload: minified/designer.min.html
-
-- url: /static/lib
-  static_dir: static/lib
 
 - url: /static/iphone/images\.[a-f0-9]{40}/(.*)
   static_files: static/iphone/images/\1
@@ -69,9 +51,40 @@ handlers:
   upload: static/stock/.*
   expiration: "3650d"
 
+# "Run app" support. This is only needed to be public until #3920145 is fixed
+# ("Run app" should use the same css as designer)
+
+- url: /static/iphone/iphone.css
+  static_files: static/iphone/iphone.css
+  upload: static/iphone/iphone.css
+  # login: admin
 - url: /static/iphone/images
   static_dir: static/iphone/images
   # login: admin
+- url: /static/lib
+  static_dir: static/lib
+
+## Development
+
+- url: /dev
+  static_files: designer.html
+  upload: designer.html
+  login: admin
+
+- url: /static/designer((?:-.*)?)\.js
+  static_files: static/designer\1.js
+  upload: static/designer(-.*)?\.js
+  login: admin
+
+- url: /static/jpicker.js
+  static_files: static/jpicker.js
+  upload: static/jpicker.js
+  login: admin
+
+- url: /static/theme/theme(-.*).css
+  static_files: static/theme/theme\1.css
+  upload: static/theme/theme-.*.css
+  login: admin
 
 - url: /static/theme/images
   static_dir: static/theme/images
@@ -80,6 +93,8 @@ handlers:
 - url: /static/stock
   static_dir: static/stock
   login: admin
+
+# Other boring stuff
 
 - url: /remote_api
   script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
@@ -91,6 +106,9 @@ handlers:
 
 - url: /admin/stats.*
   script: $PYTHON_LIB/google/appengine/ext/appstats/ui.py
+  # login: admin <- handled by appstats itself
+
+# Catch-all
 
 - url: /.*
   script: main.py
@@ -99,3 +117,17 @@ admin_console:
   pages:
   - name: App Stats
     url: /admin/stats
+
+skip_files:
+- ^(.*/)?app\.yaml
+- ^(.*/)?app\.yml
+- ^(.*/)?index\.yaml
+- ^(.*/)?index\.yml
+- ^(.*/)?#.*#
+- ^(.*/)?.*~
+- ^(.*/)?.*\.py[co]
+- ^(.*/)?.*/RCS/.*
+- ^(.*/)?\..*
+- ^(.*/)?.*\.coffee
+- ^(.*/)?.*\.less
+- ^(.*/)?.*\.haml

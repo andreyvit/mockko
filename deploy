@@ -1,9 +1,0 @@
-#! /bin/bash
-dobuild=true
-while test -n "$1"; do
-  case $1 in
-    -B | --nobuild)  dobuild=false; shift;;
-  esac
-done
-$dobuild && ./build
-cat ~/.andreyvit_passwd | appcfg.py -e andreyvit@gmail.com --passin update web
