@@ -2363,7 +2363,7 @@ jQuery ($) ->
                 if not dispatchToMode ModeMethods.screenclick, screen
                     switchToScreen screen
                 false
-        $('.caption', screen.node).click -> startRenamingScreen screen; false
+        $('.caption', screen.node).click -> startRenamingScreen screen
 
     updateScreenList: ->
         $('#screens-list > .app-screen').remove()
@@ -2405,7 +2405,19 @@ jQuery ($) ->
         endUndoTransaction()
 
     startRenamingScreen: (screen) ->
+        return if activeMode()?.screenBeingRenamed is screen
         $('.caption', screen.node).startInPlaceEditing {
+            before: ->
+                activateMode {
+                    isInsideTextField: yes
+                    debugname: "Screen Name Editing"
+                    mousedown: -> false
+                    mousemove: -> false
+                    mouseup: -> false
+                    screenBeingRenamed: screen
+                }
+            after:  ->
+                deactivateMode()
             accept: (newText) ->
                 runTransaction "screen rename", ->
                     oldText: screen.name
@@ -2415,6 +2427,7 @@ jQuery ($) ->
                     updateActionsDueToScreenRenames renames
                     renderScreenName screen
         }
+        return false
 
     deleteScreen: (screen) ->
         pos: application.screens.indexOf(screen)
@@ -2534,11 +2547,24 @@ jQuery ($) ->
         $('#app-name-content').html(application.name)
 
     $('#app-name-content').click ->
+        return if activeMode()?.isAppRenamingMode
         $('#app-name-content').startInPlaceEditing {
+            before: ->
+                activateMode {
+                    isInsideTextField: yes
+                    debugname: "App Name Editing"
+                    mousedown: -> false
+                    mousemove: -> false
+                    mouseup: -> false
+                    isAppRenamingMode: yes
+                }
+            after:  ->
+                deactivateMode()
             accept: (newText) ->
                 runTransaction "application rename", ->
                     application.name: newText
         }
+        false
 
     ##########################################################################################################
     ##  Share (stub implementation)
@@ -2981,7 +3007,19 @@ jQuery ($) ->
     ##  Dashboard: Application List
 
     startDashboardApplicationNameEditing: (app) ->
+        return if activeMode()?.appBeingRenamed is app
         $('.caption', app.node).startInPlaceEditing {
+            before: ->
+                activateMode {
+                    isInsideTextField: yes
+                    debugname: "App Name Editing (Dashboard)"
+                    mousedown: -> false
+                    mousemove: -> false
+                    mouseup: -> false
+                    appBeingRenamed: app
+                }
+            after:  ->
+                deactivateMode()
             accept: (newText) ->
                 app.content.name: newText
                 console.log app.content
