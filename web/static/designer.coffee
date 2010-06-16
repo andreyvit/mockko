@@ -48,6 +48,33 @@ jQuery ($) ->
 
     SAMPLE_APPS: ( { 'body': body, 'sample': yes } for body in MakeApp.sampleApplications )
 
+
+    ##########################################################################################################
+    ##  Server Communication
+
+    handleHttpError: (failedActivity, status, e) ->
+        if status and status isnt 'error'
+            alert "${failedActivity} because there was an error communicating with the server: ${status} Please try again in a few minutes."
+        else
+            alert "${failedActivity} because there was an error communicating with the server. Please try again in a few minutes."
+
+    handleServerError: (failedActivity, err) ->
+        switch err
+            when 'signed-out'
+                alert "${failedActivity} because you were logged out. Please sign in again."
+            else
+                alert "${failedActivity} because server reported an error: ${err}"
+
+    processPossibleErrorResponse: (failedActivity, response) ->
+        if not response?
+            alert "${failedActivity} because the server is not responding. Please try again in a few minutes."
+            true
+        else if response['error']
+            handleServerError failedActivity, response['error']
+            true
+        else
+            false
+
     SERVER_MODES = {
         'anonymous': {
             supportsImageEffects: yes
@@ -77,6 +104,7 @@ jQuery ($) ->
                 switchToDashboard()
 
             saveApplicationChanges: (app, appId, callback) ->
+                failedActivity: "Failed to save application changes"
                 $.ajax {
                     url: '/apps/' + (if appId then "${appId}/" else "")
                     type: 'POST'
@@ -84,38 +112,26 @@ jQuery ($) ->
                     contentType: 'application/json'
                     dataType: 'json'
                     success: (r) ->
-                        if r.error
-                            switch r.error
-                                when 'signed-out'
-                                    alert "Cannot save your changes because you were logged out. Please sign in again."
-                                else
-                                    alert "Other error: ${r.error}"
-                        else
-                            callback(r['id'])
+                        return if processPossibleErrorResponse(failedActivity, r)
+                        callback(r['id'])
                     error: (xhr, status, e) ->
-                        alert "Failed to save the application: ${status} - ${e}"
-                        # TODO ERROR HANDLING!
+                        handleHttpError failedActivity, status, e
                 }
 
             loadApplications: (callback) ->
+                failedActivity: "Failed to get a list of applications"
                 $.ajax {
                     url: '/apps/'
                     dataType: 'json'
                     success: (r) ->
-                        if r.error
-                            switch r.error
-                                when 'signed-out'
-                                    alert "Cannot load your applications because you were logged out. Please sign in again."
-                                else
-                                    alert "Other error: ${r.error}"
-                        else
-                            callback(r['apps'])
+                        return if processPossibleErrorResponse(failedActivity, r)
+                        callback(r['apps'])
                     error: (xhr, status, e) ->
-                        alert "Failed to save the application: ${status} - ${e}"
-                        # TODO ERROR HANDLING!
+                        handleHttpError failedActivity, status, e
                 }
 
             uploadImageFile: (fileName, file, callback) ->
+                failedActivity: "Could not upload your image"
                 $.ajax {
                     type: 'POST'
                     url: '/images/'
@@ -125,74 +141,49 @@ jQuery ($) ->
                     contentType: 'application/octet-stream'
                     dataType: 'json'
                     success: (r) ->
-                        if r.error
-                            switch r.error
-                                when 'signed-out'
-                                    alert "Cannot upload the image because you were logged out. Please sign in again."
-                                else
-                                    alert "Other error: ${r.error}"
-                        else
-                            callback()
+                        return if processPossibleErrorResponse(failedActivity, r)
+                        callback()
                     error: (xhr, status, e) ->
-                        alert "Failed to save the image: ${status} - ${e}"
-                        # TODO ERROR HANDLING!
+                        handleHttpError failedActivity, status, e
                 }
 
             loadCustomImages: (callback) ->
+                failedActivity: "Could not load the list of your images"
                 $.ajax {
                     type: 'GET'
                     url: '/images/'
                     dataType: 'json'
                     success: (r) ->
-                        if r.error
-                            switch r.error
-                                when 'signed-out'
-                                    alert "Cannot save your changes because you were logged out. Please sign in again."
-                                else
-                                    alert "Other error: ${r.error}"
-                        else
-                            callback(r['images'])
+                        return if processPossibleErrorResponse(failedActivity, r)
+                        callback(r['images'])
                     error: (xhr, status, e) ->
-                        alert "Failed to retrieve a list of images: ${status} - ${e}"
-                        # TODO ERROR HANDLING!
+                        handleHttpError failedActivity, status, e
                 }
 
             deleteCustomImage: (imageId, callback) ->
+                failedActivity: "Could not delete the image"
                 $.ajax {
                     type: 'DELETE'
                     url: "/images/${encodeURIComponent imageId}"
                     dataType: 'json'
                     success: (r) ->
-                        if r.error
-                            switch r.error
-                                when 'signed-out'
-                                    alert "Cannot save your changes because you were logged out. Please sign in again."
-                                else
-                                    alert "Other error: ${r.error}"
-                        else
-                            callback()
+                        return if processPossibleErrorResponse(failedActivity, r)
+                        callback()
                     error: (xhr, status, e) ->
-                        alert "Failed to delete an image: ${status} - ${e}"
-                        # TODO ERROR HANDLING!
+                        handleHttpError failedActivity, status, e
                 }
 
             deleteApplication: (appId, callback) ->
+                failedActivity: "Could not delete the application"
                 $.ajax {
                     type: 'DELETE'
                     url: "/apps/${encodeURIComponent appId}/"
                     dataType: 'json'
                     success: (r) ->
-                        if r.error
-                            switch r.error
-                                when 'signed-out'
-                                    alert "Cannot save your changes because you were logged out. Please sign in again."
-                                else
-                                    alert "Other error: ${r.error}"
-                        else
-                            callback()
+                        return if processPossibleErrorResponse(failedActivity, r)
+                        callback()
                     error: (xhr, status, e) ->
-                        alert "Failed to delete an application: ${status} - ${e}"
-                        # TODO ERROR HANDLING!
+                        handleHttpError failedActivity, status, e
                 }
         }
 
@@ -220,6 +211,10 @@ jQuery ($) ->
             deleteCustomImage: (imageId, callback) ->
         }
     }
+
+
+    ##########################################################################################################
+    ##  various stuff
 
     BACKGROUND_STYLES: {}
     (->
