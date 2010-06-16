@@ -127,7 +127,7 @@ JS_LIBS = $(addprefix web/static/lib/, \
 ${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.closure.js .stock-images.sum
 	@echo "  YUI designer.js"
 	(for i in $(filter %.js,$^); do ${YUI} $$i; done) | \
-		perl -pe "s,images/,images."$$(cat .stock-images.sum)"/,g" > $@
+		perl -pe "s,static/stock/,static/stock."$$(cat .stock-images.sum)"/,g" > $@
 
 %.closure.js: %.premin.js
 	@echo "  CLOSURE" $^
