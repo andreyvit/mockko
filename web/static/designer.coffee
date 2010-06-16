@@ -2720,7 +2720,7 @@ jQuery ($) ->
                     c.style.textColor: '#' + color
                 renderComponentStyle c
 
-            if color and color isnt originalColor
+            if fromPicker and color and color isnt originalColor
                 $('#text-color-input').val(color)
 
             setColorToPicker(color) unless fromPicker
@@ -2745,13 +2745,17 @@ jQuery ($) ->
         activateMode {
             isTextColorEditingMode: yes
             isInsideTextField: yes
-            after:  ->
-                $('#color-picker').hide(200)
+            deactivated:  ->
+                # $('#color-picker').hide(200)
+                commitTextColor(true)
                 updateTextInspector()
             cancel: -> $('#text-color-input').blur()
             mousemove: -> false
             mouseup: -> false
         }
+    $('#text-color-input').blur ->
+        if activeMode()?.isTextColorEditingMode
+            deactivateMode()
 
     updateActionInspector: ->
         enabled: no
