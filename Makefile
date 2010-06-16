@@ -82,7 +82,7 @@ optimize: ${OPTIMIZED}
 	@echo "  SUM" $@
 	@cat $^ | openssl sha1 > $@
 
-find_images = $(shell find $(1) -regex '.*\.\(png\|jpg\|gif\)')
+find_images = $(shell find $(1) -name '*.png' -o -name '*.gif' -o -name '*.jpg')
 
 THEME_IMAGES = $(call find_images, web/static/theme/images)
 IPHONE_IMAGES = $(call find_images, web/static/iphone/images)
