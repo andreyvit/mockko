@@ -60,7 +60,8 @@ clean:
 watch:
 	@while true; do \
 		scripts/watchfiles '**/*.coffee' '**/*.haml' '**/*.less'; \
-		${MAKE}; \
+		${MAKE} && ( which growlnotify >/dev/null && growlnotify -n Mockko -p 0 -t "OK" -m "Mockko built." || true ) \
+		    || ( which growlnotify >/dev/null && growlnotify -n Mockko -p 2 -t "Build FAILED" -m "Failed. Dunno which file and line, sorry." || true ); \
 	done
 
 # Optimization (and obfuscation)
