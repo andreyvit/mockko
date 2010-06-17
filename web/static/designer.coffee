@@ -125,7 +125,7 @@ jQuery ($) ->
                     dataType: 'json'
                     success: (r) ->
                         return if processPossibleErrorResponse(failedActivity, r)
-                        callback(r['apps'])
+                        callback(r)
                     error: (xhr, status, e) ->
                         handleHttpError failedActivity, status, e
                 }
@@ -3150,13 +3150,13 @@ jQuery ($) ->
         # 250 is the width of #sample-apps-separator
         $('#apps-list-container').css 'width', (160+60) * $('#apps-list-container .app').length + 250
 
-    renderApplication: (appData, destination) ->
+    renderApplication: (appData, destination, show_name) ->
         appId: appData['id']
         app: JSON.parse(appData['body'])
         console.log app
         app: internalizeApplication(app)
         an: domTemplate('app-template')
-        $('.caption', $(an)).html(app.name)
+        $('.caption', $(an)).html(if show_name then app.name + ' (' + appData['nickname'] + ')' else app.name)
         renderScreenComponents(app.screens[0], $('.content .rendered', an))
         $(an).appendTo(destination)
         app: { id: appId, content: app }
@@ -3166,11 +3166,12 @@ jQuery ($) ->
     refreshApplicationList: (callback) ->
         serverMode.loadApplications (apps) ->
             $('#apps-list .app').remove()
-            applicationList: for appData in apps when not appData['sample']
-                renderApplication appData, '#apps-list-container'
+            applicationList: for appData in apps['apps'] when not appData['sample']
+                renderApplication appData, '#apps-list-container',
+                    apps['current_user'] != appData['created_by']
             $('#sample-apps-separator').detach().appendTo('#apps-list-container')
-            for appData in apps.concat(SAMPLE_APPS) when appData['sample']
-                renderApplication appData, '#apps-list-container'
+            for appData in apps['apps'].concat(SAMPLE_APPS) when appData['sample']
+                renderApplication appData, '#apps-list-container', false
             updateApplicationListWidth()
             callback(applicationList) if callback
 

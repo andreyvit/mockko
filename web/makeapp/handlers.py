@@ -63,10 +63,16 @@ class GetAppListHandler(RequestHandler):
             if account is None:
                 apps = []
             else:
-                apps = App.all().filter('editors', account.key()).order('-updated_at').fetch(100)
+                apps = App.all()
+                if not users.is_current_user_admin():
+                    apps = apps.filter('editors', account.key())
+                apps = apps.order('-updated_at').fetch(100)
 
-            apps_json = [ { 'id': app.key().id(), 'body': app.body } for app in apps]
-            return render_json_response({ 'apps': apps_json })
+            apps_json = [ { 'id': app.key().id(),
+                            'created_by': app.created_by.user.user_id(),
+                            'nickname': app.created_by.user.nickname(),
+                            'body': app.body } for app in apps]
+            return render_json_response({ 'apps': apps_json, 'current_user': account.user.user_id() if account else None })
 
 class SaveAppHandler(RequestHandler):
 
