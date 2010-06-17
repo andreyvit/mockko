@@ -2032,8 +2032,8 @@ jQuery ($) ->
                     return if Math.abs(pt.x - startPt.x) <= 1 and Math.abs(pt.y - startPt.y) <= 1
                     beginUndoTransaction "movement of ${friendlyComponentName c}"
                     dragger: startDragging c, { startPt: startPt }, computeMoveOptions(e)
+                    $('#hover-panel').hide()
                 dragger.moveTo pt, computeMoveOptions(e)
-                $('#hover-panel').hide()
                 true
 
             mouseup: (e) ->
