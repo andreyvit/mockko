@@ -30,15 +30,15 @@ Say hello to %s!
 
 -- Your Mockko.
     """ % user.email())
-    
+
 
 class HomeHandler(RequestHandler):
-  
+
     def get(self, **kwargs):
         return redirect_to('designer')
-        
+
 class GetUserDataHandler(RequestHandler):
-    
+
     def get(self, **kwargs):
         user = users.get_current_user()
         if user is None:
@@ -69,15 +69,15 @@ class GetAppListHandler(RequestHandler):
             return render_json_response({ 'apps': apps_json })
 
 class SaveAppHandler(RequestHandler):
-    
+
     def post(self, **kwargs):
         app_id = (kwargs['app_id'] if 'app_id' in kwargs else 'new')
         body_json = request.data
         body = json.loads(body_json)
-        
+
         if 'name' not in body:
             return BadRequest("Invalid JSON data")
-        
+
         user = users.get_current_user()
         if user is None:
             return render_json_response({ 'error': 'signed-out' })
@@ -101,10 +101,10 @@ class SaveAppHandler(RequestHandler):
             return render_json_response({ 'id': app.key().id()    })
 
 class DeleteAppHandler(RequestHandler):
-    
+
     def delete(self, **kwargs):
         app_id = kwargs['app_id']
-        
+
         user = users.get_current_user()
         if user is None:
             return render_json_response({ 'error': 'signed-out' })
@@ -133,7 +133,7 @@ class GetImageListHandler(RequestHandler):
                 images = []
             else:
                 images = account.image_set.order('updated_at').fetch(1000)
-                
+
             return render_json_response({
                 'images': [ { 'id': img.key().id_or_name(), 'fileName': img.file_name, 'width': img.width, 'height': img.height } for img in images ]
             })
@@ -148,15 +148,15 @@ class ServeImageHandler(RequestHandler):
             account = Account.all().filter('user', user).get()
             if account is None:
                 raise NotFound()
-                
+
             img = Image.get_by_key_name(image_name)
             if img is None or img.account.key() != account.key():
                 raise NotFound()
-                
+
             img_data = ImageData.get_by_key_name(image_name)
             if img_data is None:
                 raise NotFound()
-            
+
             return Response(response=img_data.data, mimetype='image/png')
 
 class ServeProcessedImageHandler(RequestHandler):
@@ -177,27 +177,27 @@ class ServeProcessedImageHandler(RequestHandler):
                 img = Image.get_by_key_name(image_name)
                 if img is None or img.account.key() != account.key():
                     raise NotFound()
-    
+
                 img_data = ImageData.get_by_key_name(image_name)
                 if img_data is None:
                     raise NotFound()
-        
+
                 kw = dict(byte=img_data.data)
 
             square_file = os.path.join(os.path.dirname(__file__), '..', 'server-images', effect + '.png')
             sw, sh, spix, smeta = png.Reader(file=open(square_file, 'rb')).asRGBA8()
             uw, uh, upix, umeta = png.Reader(**kw).asRGBA8()
-    
+
             spix = list(spix)
             upix = list(upix)
-    
+
             # raise StandardError, repr(spix)
-    
+
             wins = (sw-uw) / 2
             hins = (sh-uh) / 2
-    
+
             res = []
-    
+
             sy = 0
             upix = iter(upix)
             for srow in iter(spix):
@@ -209,21 +209,21 @@ class ServeProcessedImageHandler(RequestHandler):
                 sx = 0
                 while sx < sw:
                     s_r, s_g, s_b, s_a = srow.next(), srow.next(), srow.next(), srow.next()
-            
+
                     ux = sx - wins
                     if urow is not None and ux >= 0 and ux < uw:
                         u_r, u_g, u_b, u_a = urow.next(), urow.next(), urow.next(), urow.next()
                     else:
                         u_a = 0
-            
+
                     resrow.append(s_r)
                     resrow.append(s_g)
                     resrow.append(s_b)
                     resrow.append(u_a)
                     sx += 1
-    
+
                 sy += 1
-    
+
             f = StringIO()
             png.Writer(sw, sh, bitdepth=8, alpha=True, planes=4).write(f, res)
             return Response(response=f.getvalue(), mimetype='image/png')
@@ -238,22 +238,22 @@ class DeleteImageHandler(RequestHandler):
             account = Account.all().filter('user', user).get()
             if account is None:
                 raise NotFound()
-                
+
             img = Image.get_by_key_name(image_name)
             if img is None or img.account.key() != account.key():
                 raise NotFound()
-                
+
             img_data = ImageData.get_by_key_name(image_name)
             if img_data is None:
                 raise NotFound()
-                
+
             img.delete()
             img_data.delete()
-            
+
             return render_json_response({ 'status': 'ok' })
 
 class SaveImageHandler(RequestHandler):
-    
+
     def post(self, **kwargs):
         user = users.get_current_user()
         if user is None:
@@ -272,16 +272,16 @@ class SaveImageHandler(RequestHandler):
             image_key = "img-%s-%s" % (account.key().id_or_name(), file_name)
             image = Image(key_name=image_key, account=account, file_name=file_name, width=img.width, height=img.height)
             image.put()
-            
+
             image_data = ImageData(key_name=image_key, data=data)
             image_data.put()
-            
+
             return render_json_response({ 'id': image.key().id()    })
 
 class RunAppHandler(RequestHandler):
-    
+
     def get(self, app_id):
-        
+
         # user = users.get_current_user()
         # if user is None:
         #     return render_json_response({ 'error': 'signed-out' })
@@ -295,10 +295,10 @@ class RunAppHandler(RequestHandler):
             return render_json_response({ 'error': 'app-not-found' })
         # if account.key() not in app.editors:
         #     return render_json_response({ 'error': 'access-denied' })
-            
+
         body_json = app.body
         content = json.loads(body_json)
-        
+
         body = "\n".join([s['html'] for s in content['screens']])
         body = body.replace('"static', '"/static')
         body = body.replace('"images', '"/images')
@@ -337,5 +337,5 @@ class RunAppHandler(RequestHandler):
           </body>
         </html>
 """ % dict(title=content['name'], content=body)
-        
+
         return Response(html, mimetype="text/html")
