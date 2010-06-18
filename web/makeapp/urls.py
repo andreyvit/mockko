@@ -1,5 +1,4 @@
 from tipfy import Rule
-from werkzeug.routing import Subdomain, Submount
 
 def get_rules():
     return [
