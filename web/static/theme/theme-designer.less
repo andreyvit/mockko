@@ -354,6 +354,18 @@
     }
 }
 
+/* Gross hack -- move to .silver-bar-button */
+#undo-button.disabled {
+    cursor: default;
+    color: #bbbbbb;
+    :hover #undo-hint {
+        visibility: hidden;
+    }
+    :active {
+        -webkit-border-image: url(images/UINavigationBarSilverButton.png) 0 5 0 5 stretch stretch;
+    }
+}
+
 #screens-list {
     position: absolute;
     width: 105px;

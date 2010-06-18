@@ -477,8 +477,9 @@ jQuery ($) ->
         lastChange = null
 
     undoStackChanged: ->
-        msg: if undoStack.length == 0 then "Nothing to undo" else "Undo ${undoStack[undoStack.length-1].name}"
-        $('#undo-hint span').html msg
+        if undoStack.length != 0
+            $('#undo-hint span').html "Undo ${undoStack[undoStack.length-1].name}"
+        $('#undo-button').alterClass('disabled', undoStack.length == 0)
 
     undoLastChange: ->
         return if undoStack.length == 0
