@@ -164,7 +164,10 @@ run-opt: optimize
 
 # Deployment
 
-deploy: deploy-$(shell id -un)
+deploy: optimize deploy-$(shell id -un)
 
-deploy-andreyvit: optimize
+deploy-andreyvit:
 	appcfg.py -e andreyvit@gmail.com --passin update web < ~/.andreyvit_passwd
+
+deploy-dottedmag:
+	appcfg.py -e dottedmag@dottedmag.net update web
