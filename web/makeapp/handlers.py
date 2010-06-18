@@ -240,7 +240,7 @@ class ServeProcessedImageHandler(RequestHandler):
 
             square_file = os.path.join(os.path.dirname(__file__), '..', 'server-images', effect + '.png')
 
-            f = overlay_png(png.Reader(file=open(square_file, 'rb')), png.Reader(*kw))
+            f = overlay_png(png.Reader(file=open(square_file, 'rb')), png.Reader(**kw))
 
             return Response(response=f.getvalue(), mimetype='image/png')
 
