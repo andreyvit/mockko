@@ -165,6 +165,54 @@ class ServeImageHandler(RequestHandler):
 
             return Response(response=img_data.data, mimetype='image/png')
 
+
+def overlay_png(underlay, overlay):
+    '''
+    Arguments: underlay and overlay png.Reader objects
+
+    Return value: StringIO with processed image
+    '''
+    sw, sh, spix, smeta = underlay.asRGBA8()
+    uw, uh, upix, umeta = overlay.asRGBA8()
+
+    spix = list(spix)
+    upix = list(upix)
+
+    wins = (sw-uw) / 2
+    hins = (sh-uh) / 2
+
+    res = []
+
+    sy = 0
+    upix = iter(upix)
+    for srow in iter(spix):
+        srow = iter(srow)
+        uy = sy - hins
+        urow = (iter(upix.next()) if uy >= 0 and uy < uh else None)
+        resrow = []
+        res.append(resrow)
+        sx = 0
+        while sx < sw:
+            s_r, s_g, s_b, s_a = srow.next(), srow.next(), srow.next(), srow.next()
+
+            ux = sx - wins
+            if urow is not None and ux >= 0 and ux < uw:
+                u_r, u_g, u_b, u_a = urow.next(), urow.next(), urow.next(), urow.next()
+            else:
+                u_a = 0
+
+            resrow.append(s_r)
+            resrow.append(s_g)
+            resrow.append(s_b)
+            resrow.append(u_a)
+            sx += 1
+
+        sy += 1
+
+    f = StringIO()
+    png.Writer(sw, sh, bitdepth=8, alpha=True, planes=4).write(f, res)
+    return f
+
 class ServeProcessedImageHandler(RequestHandler):
 
     def get(self, image_name, effect):
@@ -191,47 +239,9 @@ class ServeProcessedImageHandler(RequestHandler):
                 kw = dict(byte=img_data.data)
 
             square_file = os.path.join(os.path.dirname(__file__), '..', 'server-images', effect + '.png')
-            sw, sh, spix, smeta = png.Reader(file=open(square_file, 'rb')).asRGBA8()
-            uw, uh, upix, umeta = png.Reader(**kw).asRGBA8()
 
-            spix = list(spix)
-            upix = list(upix)
+            f = overlay_png(png.Reader(file=open(square_file, 'rb')), png.Reader(*kw))
 
-            # raise StandardError, repr(spix)
-
-            wins = (sw-uw) / 2
-            hins = (sh-uh) / 2
-
-            res = []
-
-            sy = 0
-            upix = iter(upix)
-            for srow in iter(spix):
-                srow = iter(srow)
-                uy = sy - hins
-                urow = (iter(upix.next()) if uy >= 0 and uy < uh else None)
-                resrow = []
-                res.append(resrow)
-                sx = 0
-                while sx < sw:
-                    s_r, s_g, s_b, s_a = srow.next(), srow.next(), srow.next(), srow.next()
-
-                    ux = sx - wins
-                    if urow is not None and ux >= 0 and ux < uw:
-                        u_r, u_g, u_b, u_a = urow.next(), urow.next(), urow.next(), urow.next()
-                    else:
-                        u_a = 0
-
-                    resrow.append(s_r)
-                    resrow.append(s_g)
-                    resrow.append(s_b)
-                    resrow.append(u_a)
-                    sx += 1
-
-                sy += 1
-
-            f = StringIO()
-            png.Writer(sw, sh, bitdepth=8, alpha=True, planes=4).write(f, res)
             return Response(response=f.getvalue(), mimetype='image/png')
 
 class DeleteImageHandler(RequestHandler):
