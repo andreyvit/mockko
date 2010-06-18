@@ -1,9 +1,4 @@
-
-from random import choice
-
 from google.appengine.ext import db
-# from tipfy.ext.user.model import User as TipfyUser
-
 
 class Account(db.Model):
     user = db.UserProperty()
