@@ -6,5 +6,4 @@
 /web/designer.html
 /web/minified
 /web/src-static/*.js
-watch.pids
 .*.sum
