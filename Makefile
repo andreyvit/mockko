@@ -18,7 +18,7 @@ LESS = $(wildcard web/static/*/*.less)
 HAML = $(wildcard web/*.haml)
 
 # Compiled code
-JS = $(patsubst %.coffee,%.js,${COFFEE})
+JS = $(patsubst %.coffee,%.js,${COFFEE}) web/static/designer-image-directories.js
 CSS = $(patsubst %.less,%.css,${LESS})
 HTML = $(patsubst %.haml,%.html,${HAML})
 
@@ -50,6 +50,12 @@ all: ${HTML} ${JS} ${CSS}
 %.html: %.haml
 	@echo "  HAML" $^
 	@haml $^ $@
+
+STOCK_DIRS = glyphish/icons glyphish/mini-icons iphone-accessories
+
+web/static/designer-image-directories.js: ${STOCK_IMAGES}
+	@echo "  GEN_IMGDATA"
+	@(cd web/static/stock; ../../../scripts/gen-imgdata ${STOCK_DIRS}) > $@
 
 clean:
 	@echo "  CLEAN"
