@@ -1250,7 +1250,7 @@ jQuery ($) ->
         ypos: { 't': r.y, 'c': r.y + r.h/2, 'b': r.y + r.h - 1 }
         xenable: { 'l': yes, 'c': (hoveredComponent.effsize.w >= 23), 'r': yes }
         yenable: { 't': yes, 'c': (hoveredComponent.effsize.h >= 23), 'b': yes }
-        controlsOutside: hoveredComponent.effsize.w < 63 or hoveredComponent.effsize.h <= 25
+        controlsOutside: yes  # hoveredComponent.effsize.w < 63 or hoveredComponent.effsize.h <= 25
         _($('#hover-panel .resizing-handle')).each (handle, index) ->
             [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]]
             pos: { x: xpos[hmode], y: ypos[vmode] }
