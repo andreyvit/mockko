@@ -1808,6 +1808,9 @@ jQuery ($) ->
             { isAnchored: yes, rect, moves }
 
         computeDuplicationEffect: (oldComp, newComp) ->
+            if oldComp is newComp
+                # this is a paste op
+                return { rect: rectOf(newComp), moves: [] }
             null
 
         computeDeletionEffect: (comp) ->
