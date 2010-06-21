@@ -18,3 +18,5 @@ Run 'make help' for help.
 == Bugtracker ==
 
 https://www.pivotaltracker.com/projects/74356
+
+(Use the [12345] in commit message to close bug 12345)
