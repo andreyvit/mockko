@@ -63,7 +63,7 @@ clean:
 
 # Continuously compile
 
-watch:
+watch: all
 	@while true; do \
 		scripts/watchfiles '**/*.coffee' '**/*.haml' '**/*.less'; \
 		${MAKE} && ( which growlnotify >/dev/null && growlnotify -n Mockko -p 0 -t "OK" -m "Mockko built." || true ) \
