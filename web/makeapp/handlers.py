@@ -31,6 +31,37 @@ Say hello to %s!
 -- Your Mockko.
     """ % user.email())
 
+def simple_decorator(decorator):
+    """This decorator can be used to turn simple functions
+    into well-behaved decorators, so long as the decorators
+    are fairly simple. If a decorator expects a function and
+    returns a function (no descriptors), and if it doesn't
+    modify function attributes or docstring, then it is
+    eligible to use this. Simply apply @simple_decorator to
+    your decorator and it will automatically preserve the
+    docstring and function attributes of functions to which
+    it is applied."""
+    def new_decorator(f):
+        g = decorator(f)
+        g.__name__ = f.__name__
+        g.__doc__ = f.__doc__
+        g.__dict__.update(f.__dict__)
+        return g
+    # Now a few lines needed to make simple_decorator itself
+    # be a well-behaved decorator.
+    new_decorator.__name__ = decorator.__name__
+    new_decorator.__doc__ = decorator.__doc__
+    new_decorator.__dict__.update(decorator.__dict__)
+    return new_decorator
+
+@simple_decorator
+def auth(func):
+    def _auth(self, *args, **kwargs):
+        user = users.get_current_user()
+        if user is None:
+            return render_json_response({'error': 'signed-out'})
+        return func(self, user, *args, **kwargs)
+    return _auth
 
 class HomeHandler(RequestHandler):
 
@@ -54,29 +85,27 @@ class GetUserDataHandler(RequestHandler):
 
 class GetAppListHandler(RequestHandler):
 
-    def get(self, **kwargs):
-        user = users.get_current_user()
-        if user is None:
-            return render_json_response({ 'error': 'signed-out' })
+    @auth
+    def get(self, user, **kwargs):
+        account = Account.all().filter('user', user).get()
+        if account is None:
+            apps = []
         else:
-            account = Account.all().filter('user', user).get()
-            if account is None:
-                apps = []
-            else:
-                apps = App.all()
-                if not users.is_current_user_admin():
-                    apps = apps.filter('editors', account.key())
-                apps = apps.order('-updated_at').fetch(100)
+            apps = App.all()
+            if not users.is_current_user_admin():
+                apps = apps.filter('editors', account.key())
+            apps = apps.order('-updated_at').fetch(100)
 
-            apps_json = [ { 'id': app.key().id(),
-                            'created_by': app.created_by.user.user_id(),
-                            'nickname': app.created_by.user.nickname(),
-                            'body': app.body } for app in apps]
-            return render_json_response({ 'apps': apps_json, 'current_user': account.user.user_id() if account else None })
+        apps_json = [ { 'id': app.key().id(),
+                        'created_by': app.created_by.user.user_id(),
+                        'nickname': app.created_by.user.nickname(),
+                        'body': app.body } for app in apps]
+        return render_json_response({ 'apps': apps_json, 'current_user': account.user.user_id() if account else None })
 
 class SaveAppHandler(RequestHandler):
 
-    def post(self, **kwargs):
+    @auth
+    def post(self, user, **kwargs):
         app_id = (kwargs['app_id'] if 'app_id' in kwargs else 'new')
         body_json = request.data
         body = json.loads(body_json)
@@ -84,86 +113,73 @@ class SaveAppHandler(RequestHandler):
         if 'name' not in body:
             return BadRequest("Invalid JSON data")
 
-        user = users.get_current_user()
-        if user is None:
-            return render_json_response({ 'error': 'signed-out' })
+        account = Account.all().filter('user', user).get()
+        if account is None:
+            account = Account(user=user)
+            account.put()
+            notify_admins_about_new_user_signup(user)
+        if app_id == 'new':
+            app = App(name=body['name'], created_by=account.key(), editors=[account.key()])
         else:
-            account = Account.all().filter('user', user).get()
-            if account is None:
-                account = Account(user=user)
-                account.put()
-                notify_admins_about_new_user_signup(user)
-            if app_id == 'new':
-                app = App(name=body['name'], created_by=account.key(), editors=[account.key()])
-            else:
-                app = App.get_by_id(int(app_id))
-                if app is None:
-                    return render_json_response({ 'error': 'app-not-found' })
-                if account.key() not in app.editors:
-                    return render_json_response({ 'error': 'access-denied' })
-            app.name = body['name']
-            app.body = db.Text(body_json)
-            app.put()
-            return render_json_response({ 'id': app.key().id()    })
-
-class DeleteAppHandler(RequestHandler):
-
-    def delete(self, **kwargs):
-        app_id = kwargs['app_id']
-
-        user = users.get_current_user()
-        if user is None:
-            return render_json_response({ 'error': 'signed-out' })
-        else:
-            account = Account.all().filter('user', user).get()
-            if account is None:
-                account = Account(user=user)
-                account.put()
             app = App.get_by_id(int(app_id))
             if app is None:
                 return render_json_response({ 'error': 'app-not-found' })
             if account.key() not in app.editors:
                 return render_json_response({ 'error': 'access-denied' })
-            app.delete()
-            return render_json_response({ 'status': 'ok' })
+        app.name = body['name']
+        app.body = db.Text(body_json)
+        app.put()
+        return render_json_response({ 'id': app.key().id()    })
+
+class DeleteAppHandler(RequestHandler):
+
+    @auth
+    def delete(self, user, **kwargs):
+        app_id = kwargs['app_id']
+
+        account = Account.all().filter('user', user).get()
+        if account is None:
+            account = Account(user=user)
+            account.put()
+        app = App.get_by_id(int(app_id))
+        if app is None:
+            return render_json_response({ 'error': 'app-not-found' })
+        if account.key() not in app.editors:
+            return render_json_response({ 'error': 'access-denied' })
+        app.delete()
+        return render_json_response({ 'status': 'ok' })
 
 class GetImageListHandler(RequestHandler):
 
-    def get(self, **kwargs):
-        user = users.get_current_user()
-        if user is None:
-            return render_json_response({ 'error': 'signed-out' })
+    @auth
+    def get(self, user, **kwargs):
+        account = Account.all().filter('user', user).get()
+        if account is None:
+            images = []
         else:
-            account = Account.all().filter('user', user).get()
-            if account is None:
-                images = []
-            else:
-                images = account.image_set.order('updated_at').fetch(1000)
+            images = account.image_set.order('updated_at').fetch(1000)
 
-            return render_json_response({
-                'images': [ { 'id': img.key().id_or_name(), 'fileName': img.file_name, 'width': img.width, 'height': img.height } for img in images ]
-            })
+        return render_json_response({
+            'images': [ { 'id': img.key().id_or_name(), 'fileName': img.file_name, 'width': img.width, 'height': img.height } for img in images ]
+        })
 
 class ServeImageHandler(RequestHandler):
 
-    def get(self, image_name):
-        user = users.get_current_user()
-        if user is None:
-            return render_json_response({ 'error': 'signed-out' })
-        else:
-            account = Account.all().filter('user', user).get()
-            if account is None:
-                raise NotFound()
+    @auth
+    def get(self, user, image_name):
+        account = Account.all().filter('user', user).get()
+        if account is None:
+            raise NotFound()
 
-            img = Image.get_by_key_name(image_name)
-            if img is None or img.account.key() != account.key():
-                raise NotFound()
+        img = Image.get_by_key_name(image_name)
+        if img is None or img.account.key() != account.key():
+            raise NotFound()
 
-            img_data = ImageData.get_by_key_name(image_name)
-            if img_data is None:
-                raise NotFound()
+        img_data = ImageData.get_by_key_name(image_name)
+        if img_data is None:
+            raise NotFound()
 
-            return Response(response=img_data.data, mimetype='image/png')
+        return Response(response=img_data.data, mimetype='image/png')
 
 
 def overlay_png(underlay, overlay):
@@ -246,53 +262,47 @@ class ServeProcessedImageHandler(RequestHandler):
 
 class DeleteImageHandler(RequestHandler):
 
-    def delete(self, image_name):
-        user = users.get_current_user()
-        if user is None:
-            return render_json_response({ 'error': 'signed-out' })
-        else:
-            account = Account.all().filter('user', user).get()
-            if account is None:
-                raise NotFound()
+    @auth
+    def delete(self, user, image_name):
+        account = Account.all().filter('user', user).get()
+        if account is None:
+            raise NotFound()
 
-            img = Image.get_by_key_name(image_name)
-            if img is None or img.account.key() != account.key():
-                raise NotFound()
+        img = Image.get_by_key_name(image_name)
+        if img is None or img.account.key() != account.key():
+            raise NotFound()
 
-            img_data = ImageData.get_by_key_name(image_name)
-            if img_data is None:
-                raise NotFound()
+        img_data = ImageData.get_by_key_name(image_name)
+        if img_data is None:
+            raise NotFound()
 
-            img.delete()
-            img_data.delete()
+        img.delete()
+        img_data.delete()
 
-            return render_json_response({ 'status': 'ok' })
+        return render_json_response({ 'status': 'ok' })
 
 class SaveImageHandler(RequestHandler):
 
-    def post(self, **kwargs):
-        user = users.get_current_user()
-        if user is None:
-            return render_json_response({ 'error': 'signed-out' })
-        else:
-            account = Account.all().filter('user', user).get()
-            if account is None:
-                account = Account(user=user)
-                account.put()
+    @auth
+    def post(self, user, **kwargs):
+        account = Account.all().filter('user', user).get()
+        if account is None:
+            account = Account(user=user)
+            account.put()
 
-            file_name = request.headers['X-File-Name']
-            data = request.data
+        file_name = request.headers['X-File-Name']
+        data = request.data
 
-            img = images.Image(data)
+        img = images.Image(data)
 
-            image_key = "img-%s-%s" % (account.key().id_or_name(), file_name)
-            image = Image(key_name=image_key, account=account, file_name=file_name, width=img.width, height=img.height)
-            image.put()
+        image_key = "img-%s-%s" % (account.key().id_or_name(), file_name)
+        image = Image(key_name=image_key, account=account, file_name=file_name, width=img.width, height=img.height)
+        image.put()
 
-            image_data = ImageData(key_name=image_key, data=data)
-            image_data.put()
+        image_data = ImageData(key_name=image_key, data=data)
+        image_data.put()
 
-            return render_json_response({ 'id': image.key().id()    })
+        return render_json_response({ 'id': image.key().id()    })
 
 class RunAppHandler(RequestHandler):
 
