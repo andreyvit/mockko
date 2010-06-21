@@ -102,6 +102,8 @@
                 .tip delete
               .handle.duplicate-handle
                 .tip duplicate
+              .handle.link-handle
+                .tip drag&nbsp;to&nbsp;set&nbsp;linked&nbsp;screen
               .resizing-handle.resizing-ne.resizing-tl
               .resizing-handle.resizing-n.resizing-tc
               .resizing-handle.resizing-nw.resizing-tr
@@ -126,7 +128,7 @@
           #insp-backgrounds-tab.tab Backgrounds
           #insp-text-tab.tab Text
           #insp-position-tab.tab Position
-          #insp-action-tab.tab Action
+          / #insp-action-tab.tab Action
         #insp-backgrounds-pane.pane
           %ul#backgrounds-palette
             %li#background-swatch-template.template
@@ -160,12 +162,13 @@
             %li#insp-size-li
               Size:
               %span#insp-size 150x30
-        #insp-action-pane.pane
-          %ul#action-group
-            .descr When this object is tapped:
-            %li#no-action-button Do Nothing
-            %li#set-action-button Switch To Screen
-            #chosen-action-label (no action set)
+        /
+          #insp-action-pane.pane
+            %ul#action-group
+              .descr When this object is tapped:
+              %li#no-action-button Do Nothing
+              %li#set-action-button Switch To Screen
+              #chosen-action-label (no action set)
     #color-picker
 
     #welcome-screen.screen
@@ -219,3 +222,5 @@
       %li#rename-application-menu-item Rename
       %li#duplicate-application-menu-item Duplicate
       %li#delete-application-menu-item Delete
+
+%canvas#link-overlay.overlay

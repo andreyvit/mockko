@@ -567,6 +567,10 @@ jQuery ($) ->
     subPtPt:       (a, b) -> { x: a.x - b.x, y: a.y - b.y }
     mulPtSize:     (p, s) -> { x: p.x * s.w, y: p.y * s.h }
     ptFromLT:      (lt) -> { x: lt.left, y: lt.top }
+    unitVecOfPtPt: (a, b) ->
+        len: distancePtPt2(a, b)
+        if len is 0 then ZeroPt else { x: (b.x-a.x)/len, y: (b.y-a.y)/len }
+    mulVecLen:     (v, len) -> { x: v.x * len, y: v.y * len }
 
     ZeroSize:     { w: 0, h: 0 }
     sizeToString: (size) -> "${size.w}x${size.h}"
@@ -580,6 +584,12 @@ jQuery ($) ->
     subRectPt:         (r, p) -> { x:r.x-p.x, y:r.y-p.y, w:r.w, h:r.h }
     topLeftOf:         (r) -> { x: r.x, y: r.y }
     bottomRightOf:     (r) -> { x: r.x+r.w, y: r.y+r.h }
+    rectOfNode:        (node) -> rectFromPtAndSize ptFromLT($(node).offset()), { w: $(node).width(), h: $(node).height() }
+    canonRect:         (r) -> {
+        x: r.x, y: r.y,
+        w: (if r.w? then r.w else r.x2-r.x+1),
+        h: (if r.h? then r.h else r.y2-r.y+1)
+    }
 
     centerOfRect: (r) -> { x: r.x + r.w / 2, y: r.y + r.h / 2 }
     centerSizeInRect:  (s, r) -> rectFromPtAndSize { x: r.x + (r.w-s.w) / 2, y: r.y + (r.h-s.h)/2 }, s
@@ -874,7 +884,8 @@ jQuery ($) ->
 
     componentActionChanged: (c) ->
         renderComponentStyle c
-
+        if c is componentToActUpon()
+            updateActionInspector()
 
     ##########################################################################################################
     ##  Alignment Detection
@@ -1304,6 +1315,95 @@ jQuery ($) ->
             return if disabled
             activateResizingMode hoveredComponent, { x: e.pageX, y: e.pageY }, { vmode: vmode, hmode: hmode }
             false
+
+    renderLinkOverlay: (sourceComp, destR) ->
+        compR:  rectOfNode sourceComp.node
+        compPt: centerOfRect compR
+        destPt: centerOfRect destR
+        clipR:  canonRect { x: destR.x+destR.w, y: Math.min(compR.y, destR.y), x2: compR.x+compR.w-1, y2: Math.max(compR.y, destR.y) }
+
+        canvas: $('#link-overlay').attr({ 'width': clipR.w, 'height': clipR.h }).css({ 'left': clipR.x, 'top': clipR.y, 'width': clipR.w, 'height': clipR.h }).show()[0]
+
+        startPt: subPtPt compPt, clipR
+        endPt:   subPtPt destPt, clipR
+        clipX: 2
+        if endPt.x < clipX
+            endPt.y: startPt.y + (endPt.y-startPt.y) * ((clipX-startPt.x) / (endPt.x-startPt.x))
+            endPt.x: clipX
+
+        ctx: canvas.getContext '2d'
+        ctx.beginPath()
+        ctx.moveTo(startPt.x, startPt.y)
+        ctx.lineTo(endPt.x, endPt.y)
+        arrowPt: mulVecLen(unitVecOfPtPt(endPt, startPt), 10)
+        ctx.save()
+        ctx.translate(endPt.x, endPt.y)
+        ctx.save()
+        ctx.rotate(Math.PI/180*20)
+        ctx.moveTo(0, 0)
+        ctx.lineTo(arrowPt.x, arrowPt.y)
+        ctx.restore()
+        ctx.rotate(-Math.PI/180*20)
+        ctx.moveTo(0, 0)
+        ctx.lineTo(arrowPt.x, arrowPt.y)
+        ctx.restore()
+        ctx.strokeStyle: "rgba(0, 0, 127, 0.8)"
+        ctx.lineWidth: 2
+        ctx.stroke()
+
+    $('.link-handle').bind {
+        'mousedown': (e) ->
+            if hoveredComponent isnt null
+                startLinkDragging hoveredComponent, e
+        'mouseover': (e) ->
+            if (comp: hoveredComponent) isnt null
+                if comp.action && comp.action.action is ACTIONS.switchScreen
+                    screenName: comp.action.screenName
+                    screen: _(application.screens).detect (s) -> s.name is screenName
+                    if screen
+                        renderLinkOverlay comp, rectOfNode(screen.node)
+        'mouseout': (e) ->
+            unless activeMode()?.isScreenLinkingMode
+                $('#link-overlay').hide()
+    }
+
+    startLinkDragging: (sourceComp, initialE) ->
+        lastCandidate: null
+
+        onmousemove: (e) ->
+            r: { x: e.pageX, y: e.pageY, w: 0, h: 0 }
+            lastCandidate: _({ screen, dist: distancePtPt2(r, centerOfRect(rectOfNode(screen.node))) } for screen in application.screens).min (o) -> o.dist
+            if lastCandidate.dist > 100
+                lastCandidate: null
+            if lastCandidate
+                renderLinkOverlay sourceComp, rectOfNode(lastCandidate.screen.node)
+            else
+                renderLinkOverlay sourceComp, r
+            e.preventDefault()
+            e.stopPropagation()
+
+        onmouseup: (e) ->
+            onmousemove(e)
+            if lastCandidate
+                sourceComp.action: ACTIONS.switchScreen.create(lastCandidate.screen)
+                componentActionChanged sourceComp
+                activateInspector 'action'
+            else
+                sourceComp.action: null
+                componentActionChanged sourceComp
+            $('#link-overlay').fadeOut(500)
+            deactivateMode()
+
+        activateMode {
+            isScreenLinkingMode: yes
+            activated: ->
+                document.addEventListener 'mousemove', onmousemove, true
+                document.addEventListener 'mouseup',   onmouseup,   true
+            deactivated: ->
+                document.removeEventListener 'mousemove', onmousemove, true
+                document.removeEventListener 'mouseup',   onmouseup,   true
+        }
+        onmousemove(initialE)
 
     ##########################################################################################################
     ##  selection
@@ -2610,7 +2710,11 @@ jQuery ($) ->
         $('.pane').removeClass 'active'
         $('#' + this.id.replace('-tab', '-pane')).addClass 'active'
         false
-    $('#insp-backgrounds-tab').trigger 'click'
+
+    activateInspector: (name) ->
+        $("#insp-${name}-tab").trigger 'click'
+
+    activateInspector 'backgrounds'
 
     fillInspector: ->
         fillBackgroundsInspector()
@@ -2766,26 +2870,26 @@ jQuery ($) ->
             deactivateMode()
 
     updateActionInspector: ->
-        enabled: no
-        current: ""
-        actionSet: no
-        actionCleared: no
-        if activeMode()?.isActionPickingMode
-            enabled: yes
-            current: "&larr; click on a screen in the left pane (ESC to cancel)"
-            actionSet: yes
-        else if c: componentToActUpon()
-            if enabled: not c.type.forbidsAction
-                if act: c.action
-                    current: act.action.describe(act, application)
-                    actionSet: yes
-                else
-                    current: ""
-                    actionCleared: yes
-        $('#chosen-action-label').html(current)
-        $('#set-action-button, #no-action-button')[if enabled then 'removeClass' else 'addClass']('disabled')
-        $('#set-action-button')[if actionSet then 'addClass' else 'removeClass']('active')
-        $('#no-action-button')[if actionCleared then 'addClass' else 'removeClass']('active')
+        # enabled: no
+        # current: ""
+        # actionSet: no
+        # actionCleared: no
+        # if activeMode()?.isActionPickingMode
+        #     enabled: yes
+        #     current: "&larr; click on a screen in the left pane (ESC to cancel)"
+        #     actionSet: yes
+        # else if c: componentToActUpon()
+        #     if enabled: not c.type.forbidsAction
+        #         if act: c.action
+        #             current: act.action.describe(act, application)
+        #             actionSet: yes
+        #         else
+        #             current: ""
+        #             actionCleared: yes
+        # $('#chosen-action-label').html(current)
+        # $('#set-action-button, #no-action-button')[if enabled then 'removeClass' else 'addClass']('disabled')
+        # $('#set-action-button')[if actionSet then 'addClass' else 'removeClass']('active')
+        # $('#no-action-button')[if actionCleared then 'addClass' else 'removeClass']('active')
 
     activateActionPickingMode: (c) ->
         activateMode {

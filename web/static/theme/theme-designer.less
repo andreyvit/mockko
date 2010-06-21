@@ -153,6 +153,29 @@
         display: none;
     }
     
+    .link-handle {
+        left: 24px;
+        top: -8px;
+        padding-right: 3px;
+
+        background: url(images/button-link-normal.png) no-repeat 0% 0%;
+        :hover {
+            background-image: url(images/button-link-over.png);
+        }
+        :active {
+            background-image: url(images/button-link-down.png);
+        }
+
+        .tip {
+            top: -18px;
+            left: -60px;
+            color: #6cc341;
+        }
+    }
+    .link-handle.disabled {
+        display: none;
+    }
+
     .move-handle {
         left: -8px;
         top: 8px;
@@ -195,7 +218,10 @@
     .duplicate-handle {
         top: -20px;
     }
-    .delete-handle, .duplicate-handle {
+    .link-handle {
+        top: -20px;
+    }
+    .delete-handle, .duplicate-handle, .link-handle {
         padding-bottom: 2px;
         height: 20px;
     }
@@ -1173,3 +1199,12 @@ table.jPicker {
 }
 
 .jPicker .Ok, .jPicker .Cancel { display: none; }
+
+
+.overlay {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+}
