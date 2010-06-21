@@ -63,11 +63,6 @@ def auth(func):
         return func(self, user, *args, **kwargs)
     return _auth
 
-class HomeHandler(RequestHandler):
-
-    def get(self, **kwargs):
-        return redirect_to('designer')
-
 class GetUserDataHandler(RequestHandler):
 
     def get(self, **kwargs):
