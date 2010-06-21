@@ -2681,6 +2681,10 @@ jQuery ($) ->
         $('#insp-text-pane li')[if textStyleEditable then 'removeClass' else 'addClass']('disabled')
         $('#text-bold')[if bold then 'addClass' else 'removeClass']('active')
         $('#text-italic')[if italic then 'addClass' else 'removeClass']('active')
+        if textColor is null
+            $('#text-color-input').attr('disabled', 'disabled')
+        else
+            $('#text-color-input').removeAttr('disabled')
         $('#text-color-input').val(textColor || '') unless activeMode()?.isTextColorEditingMode
         $('#pick-color-button').alterClass('disabled', textColor is null or !textStyleEditable)
         $('#pick-color-swatch').css 'background-color', (if textColor then '#'+textColor else 'transparent')
