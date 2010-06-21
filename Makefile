@@ -55,7 +55,7 @@ STOCK_DIRS = glyphish/icons glyphish/mini-icons iphone-accessories
 
 web/static/designer-image-directories.js: ${STOCK_IMAGES}
 	@echo "  GEN_IMGDATA"
-	@(cd web/static/stock; ../../../scripts/gen-imgdata ${STOCK_DIRS}) > $@
+	@(cd web/static/stock; ../../../scripts/gen-imgdata ${STOCK_DIRS}) > $@ || (rm -f $@; false)
 
 clean:
 	@echo "  CLEAN"
@@ -86,7 +86,7 @@ optimize: ${OPTIMIZED}
 
 %.sum:
 	@echo "  SUM" $@
-	@cat $^ | openssl sha1 > $@
+	@cat $^ | openssl sha1 > $@ || (rm -f $@; false)
 
 find_images = $(shell find $(1) -name '*.png' -o -name '*.gif' -o -name '*.jpg')
 
@@ -108,11 +108,11 @@ SUM_FILES = .designerjs.sum .themecss.sum .iphonecss.sum \
 
 ${OPT_DIR}/designer.min.html: web/designer.html .designerjs.sum .themecss.sum .iphonecss.sum
 	@echo "  HTML SED" $@
-	grep -v 'designer-.*\.js\|jpicker\.js\|lib/.*\.js\|animations.css\|theme-designer.css\|theme-dashboard.css' < $< | perl -pe "s/designer\.js/designer.min."$$(cat .designerjs.sum)".js/g; s/iphone.css/iphone.min."$$(cat .iphonecss.sum)".css/g; s/theme-common.css/theme.min."$$(cat .themecss.sum)".css/g" > $@
+	grep -v 'designer-.*\.js\|jpicker\.js\|lib/.*\.js\|animations.css\|theme-designer.css\|theme-dashboard.css' < $< | perl -pe "s/designer\.js/designer.min."$$(cat .designerjs.sum)".js/g; s/iphone.css/iphone.min."$$(cat .iphonecss.sum)".css/g; s/theme-common.css/theme.min."$$(cat .themecss.sum)".css/g" > $@ || (rm -f $@; false)
 
 ${OPT_DIR}/iphone.min.css: web/static/iphone/iphone.css .iphone-images.sum
 	@echo "  YUI " $<
-	${YUI} $< | perl -pe "s,images/,images."$$(cat .iphone-images.sum)"/,g" > $@
+	${YUI} $< | perl -pe "s,images/,images."$$(cat .iphone-images.sum)"/,g" > $@ || (rm -f $@; false)
 
 THEME_CSS = web/static/lib/animations.css \
 	web/static/theme/theme-common.css \
@@ -122,7 +122,7 @@ THEME_CSS = web/static/lib/animations.css \
 ${OPT_DIR}/theme.min.css: ${THEME_CSS} .theme-images.sum
 	@echo "  YUI theme.css"
 	(for i in $(filter %.css,$^); do ${YUI} $$i; done) | \
-		perl -pe "s,images/,images."$$(cat .theme-images.sum)"/,g" > $@
+		perl -pe "s,images/,images."$$(cat .theme-images.sum)"/,g" > $@ || (rm -f $@; false)
 
 JS_LIBS = $(addprefix web/static/lib/, \
 	jquery-1.4.2.min.js \
@@ -133,7 +133,7 @@ JS_LIBS = $(addprefix web/static/lib/, \
 ${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.closure.js .stock-images.sum
 	@echo "  YUI designer.js"
 	(for i in $(filter %.js,$^); do ${YUI} $$i; done) | \
-		perl -pe "s,static/stock/,static/stock."$$(cat .stock-images.sum)"/,g" > $@
+		perl -pe "s,static/stock/,static/stock."$$(cat .stock-images.sum)"/,g" > $@ || (rm -f $@; false)
 
 %.closure.js: %.premin.js
 	@echo "  CLOSURE" $^
@@ -141,7 +141,7 @@ ${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.closure.js .stock-ima
 
 %.premin.js: %.combined.js
 	@echo "  PREMIN" $^
-	${PREMIN} < $^ > $@ 2>/dev/null
+	${PREMIN} < $^ > $@ 2>/dev/null || (rm -f $@; false)
 
 JS_SRC = $(addprefix web/static/, \
 	designer-jqueryaddons.js \
@@ -154,7 +154,7 @@ JS_SRC = $(addprefix web/static/, \
 ${OPT_DIR}/designer.combined.js: ${JS_SRC}
 	@echo "  CAT >" $@
 	@mkdir -p $(dir $@)
-	cat $^ > $@
+	cat $^ > $@ || (rm -f $@; false)
 
 .INTERMEDIATE: \
 	${OPT_DIR}/designer.combined.js \
