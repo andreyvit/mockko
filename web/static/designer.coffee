@@ -886,6 +886,8 @@ jQuery ($) ->
         renderComponentStyle c
         if c is componentToActUpon()
             updateActionInspector()
+        if c is hoveredComponent
+            updateHoverPanelPosition()
 
     ##########################################################################################################
     ##  Alignment Detection
@@ -1271,6 +1273,7 @@ jQuery ($) ->
             $(handle).css({ left: pos.x, top: pos.y }).alterClass('disabled', disabled).alterClass('hidden', not visible)
         $('#hover-panel .duplicate-handle').alterClass('disabled', hoveredComponent.type.singleInstance)
         $('#hover-panel').alterClass('controls-outside', controlsOutside)
+        $('.unlink-handle').alterClass('disabled', not hoveredComponent.action?)
 
     componentHovered: (c) ->
         return unless c.node?  # the component is being deleted right now
@@ -1366,6 +1369,11 @@ jQuery ($) ->
             unless activeMode()?.isScreenLinkingMode
                 $('#link-overlay').hide()
     }
+    $('.unlink-handle').click (e) ->
+        if hoveredComponent isnt null
+            runTransaction "remove link", ->
+                hoveredComponent.action: null
+                componentActionChanged hoveredComponent
 
     startLinkDragging: (sourceComp, initialE) ->
         lastCandidate: null
@@ -1389,8 +1397,7 @@ jQuery ($) ->
                 componentActionChanged sourceComp
                 activateInspector 'action'
             else
-                sourceComp.action: null
-                componentActionChanged sourceComp
+                # TODO: render old link if any
             $('#link-overlay').fadeOut(500)
             deactivateMode()
 

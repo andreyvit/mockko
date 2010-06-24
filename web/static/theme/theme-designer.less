@@ -169,10 +169,33 @@
         .tip {
             top: -18px;
             left: -60px;
-            color: #6cc341;
+            color: #4c9ccc + #141414;
         }
     }
     .link-handle.disabled {
+        display: none;
+    }
+
+    .unlink-handle {
+        left: 40px;
+        top: -8px;
+        padding-right: 3px;
+
+        background: url(images/button-unlink-normal.png) no-repeat 0% 0%;
+        :hover {
+            background-image: url(images/button-unlink-over.png);
+        }
+        :active {
+            background-image: url(images/button-unlink-down.png);
+        }
+
+        .tip {
+            top: -18px;
+            left: -45px;
+            color: #4c9ccc + #141414;
+        }
+    }
+    .unlink-handle.disabled {
         display: none;
     }
 
@@ -212,18 +235,10 @@
 
 }
 .hover-panel.controls-outside {
-    .delete-handle {
-        top: -20px;
-    }
-    .duplicate-handle {
-        top: -20px;
-    }
-    .link-handle {
-        top: -20px;
-    }
-    .delete-handle, .duplicate-handle, .link-handle {
+    .delete-handle, .duplicate-handle, .link-handle, .unlink-handle {
         padding-bottom: 2px;
         height: 20px;
+        top: -20px;
     }
 }
 .hover-panel.leaf .move-handle {
