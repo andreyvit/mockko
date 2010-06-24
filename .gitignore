@@ -3,7 +3,9 @@
 /web/static/theme/theme*.css
 /web/static/iphone/iphone.css
 /web/static/designer*.js
-/web/designer.html
+/web/static/*.css
+/web/static/*.js
+/web/*.html
 /web/minified
 /web/src-static/*.js
 .*.sum
