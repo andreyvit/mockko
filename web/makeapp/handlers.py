@@ -160,14 +160,9 @@ class GetImageListHandler(RequestHandler):
 
 class ServeImageHandler(RequestHandler):
 
-    @auth
-    def get(self, user, image_name):
-        account = Account.all().filter('user', user).get()
-        if account is None:
-            raise NotFound()
-
+    def get(self, image_name):
         img = Image.get_by_key_name(image_name)
-        if img is None or img.account.key() != account.key():
+        if img is None:
             raise NotFound()
 
         img_data = ImageData.get_by_key_name(image_name)
@@ -232,15 +227,8 @@ class ServeProcessedImageHandler(RequestHandler):
                 path = os.path.join(os.path.dirname(__file__), '..', 'server-images', image_name.replace('--', '/'))
                 kw = dict(file=open(path, 'rb'))
             else:
-                user = users.get_current_user()
-                if user is None:
-                    return render_json_response({ 'error': 'signed-out' })
-                account = Account.all().filter('user', user).get()
-                if account is None:
-                    raise NotFound()
-
                 img = Image.get_by_key_name(image_name)
-                if img is None or img.account.key() != account.key():
+                if img is None:
                     raise NotFound()
 
                 img_data = ImageData.get_by_key_name(image_name)
