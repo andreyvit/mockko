@@ -16,7 +16,7 @@ from google.appengine.ext import db
 from google.appengine.ext.deferred import defer
 from google.appengine.ext.webapp.util import login_required
 
-from makeapp.models import Account, App, Image, ImageData
+from makeapp.models import Account, App, ImageGroup, Image, ImageData
 
 def notify_admins_about_new_user_signup(user):
     mail.send_mail_to_admins(sender="Mockko <andreyvit@gmail.com>",
@@ -148,11 +148,12 @@ class GetImageListHandler(RequestHandler):
 
     @auth
     def get(self, user, **kwargs):
+        images = []
         account = Account.all().filter('user', user).get()
-        if account is None:
-            images = []
-        else:
-            images = account.image_set.order('updated_at').fetch(1000)
+        # FIXME: output list of images split by group
+        if account:
+            for group in account.imagegroup_set.order('priority'):
+                images += group.image_set.order('updated_at').fetch(1000)
 
         return render_json_response({
             'images': [ { 'id': img.key().id_or_name(), 'fileName': img.file_name, 'width': img.width, 'height': img.height } for img in images ]
@@ -252,8 +253,15 @@ class DeleteImageHandler(RequestHandler):
             raise NotFound()
 
         img = Image.get_by_key_name(image_name)
-        if img is None or img.account.key() != account.key():
+        if img is None:
             raise NotFound()
+
+        group = ImageGroup.get(img.group.key())
+        if group is None:
+            raise NotFound()
+
+        if group.owner.key() != account.key():
+            return render_json_response({ 'error': 'access-denied' })
 
         img_data = ImageData.get_by_key_name(image_name)
         if img_data is None:
@@ -265,6 +273,16 @@ class DeleteImageHandler(RequestHandler):
         return render_json_response({ 'status': 'ok' })
 
 class SaveImageHandler(RequestHandler):
+
+    # FIXME: use actual drop position to figure out Group
+    def set_group(self, account, image):
+        groups = db.GqlQuery("SELECT * FROM ImageGroup WHERE owner = :1", account)
+        if groups.count() == 0:
+            group = ImageGroup(name='Custom Images', owner=account, priority=1)
+            group.put()
+        else:
+            group = groups[0]
+        image.group = group
 
     @auth
     def post(self, user, **kwargs):
@@ -280,6 +298,7 @@ class SaveImageHandler(RequestHandler):
 
         image_key = "img-%s-%s" % (account.key().id_or_name(), file_name)
         image = Image(key_name=image_key, account=account, file_name=file_name, width=img.width, height=img.height)
+        self.set_group(account, image)
         image.put()
 
         image_data = ImageData(key_name=image_key, data=data)

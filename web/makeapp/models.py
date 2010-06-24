@@ -18,6 +18,11 @@ class App(db.Model):
     created_at = db.DateTimeProperty(auto_now_add=True)
     updated_at = db.DateTimeProperty(auto_now=True)
 
+class ImageGroup(db.Model):
+    name = db.StringProperty()
+    owner = db.ReferenceProperty(Account)
+    priority = db.IntegerProperty()
+
 class Image(db.Model):
     account   = db.ReferenceProperty(Account)
     file_name = db.StringProperty()
@@ -26,6 +31,8 @@ class Image(db.Model):
 
     created_at = db.DateTimeProperty(auto_now_add=True)
     updated_at = db.DateTimeProperty(auto_now=True)
+
+    group = db.ReferenceProperty(ImageGroup)
 
 class ImageData(db.Model):
     data = db.BlobProperty()

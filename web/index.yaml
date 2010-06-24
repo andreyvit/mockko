@@ -20,3 +20,13 @@ indexes:
   properties:
   - name: account
   - name: updated_at
+
+- kind: Image
+  properties:
+  - name: group
+  - name: updated_at
+
+- kind: ImageGroup
+  properties:
+  - name: owner
+  - name: priority
