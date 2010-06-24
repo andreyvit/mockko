@@ -1,0 +1,122 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    overflow: hidden;
+    -webkit-text-size-adjust: none;
+    font-family: Helvetica;
+    -webkit-touch-callout: none;
+    line-height: 1.5;
+    padding: 10px;
+}
+
+a {
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+@width: 900px;
+/*@screenshot_width:  472px;
+@screenshot_height: 312px;*/
+@screenshot_width:  590px;
+@screenshot_height: 390px;
+@screenshot_to_features_gap: 10px;
+@features_font_size: 12px;
+
+.container {
+    width: @width;
+/*    background: silver;*/
+    margin: 0px auto;
+    position: relative;
+}
+
+h1 {
+    font-size: 30px;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 20px;
+}
+
+h2 {
+    font-size: 20px;
+    text-align: center;
+}
+
+
+#screenshots-and-features {
+    height: @screenshot_height;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.screenshots img {
+    position: absolute;
+    /*left: @width / 2;
+        margin-left: -1 * @screenshot_width / 2;*/
+    right: (@width - @screenshot_width) / 10 * 1;
+    width: @screenshot_width;
+    height: @screenshot_height;
+}
+
+.features {
+    position: absolute;
+    /*width: (@width - @screenshot_width) / 2 - @screenshot_to_features_gap;*/
+    width: (@width - @screenshot_width) / 10 * 9;
+    margin-top: 20px - @features_font_size / 2;
+    line-height: 1.5;
+    
+    li {
+        list-style: none;
+        height: @features_font_size * 1.5 * 2;
+        margin-bottom: 30px;
+    }
+}
+
+#left-features {
+    left: 0px;
+}
+
+#right-features {
+    right: 0px;
+}
+
+
+#button-bar {
+    margin: 20px 0px 0px 0px;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    height: 60px;
+
+    a {
+        display: block;
+        float: left;
+        width: 300px;
+        height: 60px;
+        text-align: center;
+        margin-top: 20px;
+        
+        .label {
+            font-size: 16px;
+            line-height: 20px;
+        }
+        .sublabel {
+            font-size: 10px;
+            line-height: 12px;
+        }
+    }
+    a, a:link, a:visited {
+        color: black;
+        text-decoration: none;
+    }
+    a:hover {
+        color: blue;
+    }
+    a:active {
+        color: red;
+    }
+}
