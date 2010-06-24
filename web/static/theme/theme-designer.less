@@ -76,7 +76,7 @@
 
 .hover-panel {
     position: absolute;
-    z-index: 9999;
+    z-index: 8000;
 
     .handle, .resizing-handle {
         box-sizing: content-box;
@@ -153,6 +153,52 @@
         display: none;
     }
     
+    .link-handle {
+        left: 24px;
+        top: -8px;
+        padding-right: 3px;
+
+        background: url(images/button-link-normal.png) no-repeat 0% 0%;
+        :hover {
+            background-image: url(images/button-link-over.png);
+        }
+        :active {
+            background-image: url(images/button-link-down.png);
+        }
+
+        .tip {
+            top: -18px;
+            left: -60px;
+            color: #4c9ccc + #141414;
+        }
+    }
+    .link-handle.disabled {
+        display: none;
+    }
+
+    .unlink-handle {
+        left: 40px;
+        top: -8px;
+        padding-right: 3px;
+
+        background: url(images/button-unlink-normal.png) no-repeat 0% 0%;
+        :hover {
+            background-image: url(images/button-unlink-over.png);
+        }
+        :active {
+            background-image: url(images/button-unlink-down.png);
+        }
+
+        .tip {
+            top: -18px;
+            left: -45px;
+            color: #4c9ccc + #141414;
+        }
+    }
+    .unlink-handle.disabled {
+        display: none;
+    }
+
     .move-handle {
         left: -8px;
         top: 8px;
@@ -189,15 +235,10 @@
 
 }
 .hover-panel.controls-outside {
-    .delete-handle {
-        top: -20px;
-    }
-    .duplicate-handle {
-        top: -20px;
-    }
-    .delete-handle, .duplicate-handle {
+    .delete-handle, .duplicate-handle, .link-handle, .unlink-handle {
         padding-bottom: 2px;
         height: 20px;
+        top: -20px;
     }
 }
 .hover-panel.leaf .move-handle {
@@ -749,6 +790,9 @@
     #text-color-input {
         width: 50px;
     }
+    #text-color-input:disabled {
+        opacity: 0.7;
+    }
     
     #shadow-none {
         text-shadow: none;
@@ -1170,3 +1214,13 @@ table.jPicker {
 }
 
 .jPicker .Ok, .jPicker .Cancel { display: none; }
+
+
+.overlay {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    z-index: 7000;
+}

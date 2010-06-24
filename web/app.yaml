@@ -16,8 +16,8 @@ handlers:
   upload: static/robots.txt
 
 # Production
-  
-- url: /
+
+- url: /designer
   static_files: minified/designer.min.html
   upload: minified/designer.min.html
 
@@ -66,10 +66,21 @@ handlers:
 
 ## Development
 
+- url: /
+  static_files: home.html
+  upload: home.html
+
 - url: /dev/?
   static_files: designer.html
   upload: designer.html
   login: admin
+
+- url: /static/home\.(js|css)
+  static_files: static/home.\1
+  upload: static/home\.(js|css)
+
+- url: /static/home/
+  static_dir: static/home/
 
 - url: /static/designer((?:-.*)?)\.js
   static_files: static/designer\1.js

@@ -20,3 +20,15 @@ Run 'make help' for help.
 https://www.pivotaltracker.com/projects/74356
 
 (Use the [12345] in commit message to close bug 12345)
+
+== Component JSON Formats ==
+
+A component is represented as a JavaScript/JSON object in one of three possible formats:
+
+1. External format. Uses well-known field names like 'type', 'size', 'action' etc. All coordinates are relative to the parent. Most fields may be omitted.
+
+2. Internal format. Uses post-minification field names like 'qQ' and 'Qq'. All coordinates are absolute (i.e. relative to the top-left corner of the mocked up screen). Most fields are expected to be present, especially things like style (to make comp.style.foo references safe).
+
+3. External palette format. Is similar to the external format, but uses post-minification names.
+
+

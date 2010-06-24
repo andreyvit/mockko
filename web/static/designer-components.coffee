@@ -191,7 +191,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         label: 'Header'
         defaultText: "B"
         widthPolicy: { autoSize: 'fill' }
-        heightPolicy: { fixedSize: 20 }
+        heightPolicy: { fixedSize: 23 }
         style: {
             textColor: '#fff'
             fontSize: 16
