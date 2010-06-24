@@ -571,6 +571,7 @@ jQuery ($) ->
         len: distancePtPt2(a, b)
         if len is 0 then ZeroPt else { x: (b.x-a.x)/len, y: (b.y-a.y)/len }
     mulVecLen:     (v, len) -> { x: v.x * len, y: v.y * len }
+    ptInRect:      (pt, r) -> (r.x <= pt.x < r.x+r.w and r.y <= pt.y <= r.y+r.h)
 
     ZeroSize:     { w: 0, h: 0 }
     sizeToString: (size) -> "${size.w}x${size.h}"
@@ -590,6 +591,7 @@ jQuery ($) ->
         w: (if r.w? then r.w else r.x2-r.x+1),
         h: (if r.h? then r.h else r.y2-r.y+1)
     }
+    insetRect: (r, i) -> { x: r.x+i.l, y: r.y+i.t, w: r.w-i.l-i.r, h: r.h-i.t-i.b }
 
     centerOfRect: (r) -> { x: r.x + r.w / 2, y: r.y + r.h / 2 }
     centerSizeInRect:  (s, r) -> rectFromPtAndSize { x: r.x + (r.w-s.w) / 2, y: r.y + (r.h-s.h)/2 }, s
@@ -751,7 +753,29 @@ jQuery ($) ->
             renderComponentProperties ch
             n
 
-    findComponentOfNode: (n) -> if ($cn: $(n).closest('.component')).size() then $cn.getdata('moa-comp')
+    findComponentAt: (pt) ->
+        if hoveredComponent
+            rect: insetRect rectOf(hoveredComponent), { l: -7, r: -7, t: -20, b: -7 }
+            if ptInRect(pt, rect)
+                result: hoveredComponent
+                traverse hoveredComponent, (child) ->
+                    rect: rectOf(child)
+                    unless ptInRect(pt, rect)
+                        return skipTraversingChildren
+                    result: child
+                return result
+
+        result: null
+        traverse activeScreen.rootComponent, (child) ->
+            rect: rectOf(child)
+            unless ptInRect(pt, rect)
+                return skipTraversingChildren
+            result: child
+        result
+
+    findComponentByEvent: (e) ->
+        origin: ptFromLT $('#design-area').offset()
+        findComponentAt subPtPt({ x: e.pageX, y: e.pageY }, origin)
 
     renderComponentPosition: (c, cn) ->
         ct: c.type
@@ -1274,6 +1298,10 @@ jQuery ($) ->
         $('#hover-panel .duplicate-handle').alterClass('disabled', hoveredComponent.type.singleInstance)
         $('#hover-panel').alterClass('controls-outside', controlsOutside)
         $('.unlink-handle').alterClass('disabled', not hoveredComponent.action?)
+        if hoveredComponent.action?
+            renderActionOverlay(hoveredComponent)
+        else
+            hideLinkOverlay()
 
     componentHovered: (c) ->
         return unless c.node?  # the component is being deleted right now
@@ -1296,6 +1324,7 @@ jQuery ($) ->
         return if hoveredComponent is null
         hoveredComponent = null
         $('#hover-panel').hide()
+        hideLinkOverlay()
         updateInspector()
 
     $('#hover-panel').hide()
@@ -1323,7 +1352,7 @@ jQuery ($) ->
         compR:  rectOfNode sourceComp.node
         compPt: centerOfRect compR
         destPt: centerOfRect destR
-        clipR:  canonRect { x: destR.x+destR.w, y: Math.min(compR.y, destR.y), x2: compR.x+compR.w-1, y2: Math.max(compR.y, destR.y) }
+        clipR:  canonRect { x: destR.x+destR.w, y: Math.min(compR.y, destR.y), x2: compR.x+compR.w-1, y2: Math.max(compR.y+compR.h, destR.y+destR.h) }
 
         canvas: $('#link-overlay').attr({ 'width': clipR.w, 'height': clipR.h }).css({ 'left': clipR.x, 'top': clipR.y, 'width': clipR.w, 'height': clipR.h }).show()[0]
 
@@ -1354,20 +1383,32 @@ jQuery ($) ->
         ctx.lineWidth: 2
         ctx.stroke()
 
+    hideLinkOverlay: ->
+        $('#link-overlay').hide()
+
+    renderActionOverlay: (comp) ->
+        if comp.action && comp.action.action is ACTIONS.switchScreen
+            screenName: comp.action.screenName
+            screen: _(application.screens).detect (s) -> s.name is screenName
+            if screen
+                renderLinkOverlay comp, rectOfNode(screen.node)
+                return
+        hideLinkOverlay()
+
     $('.link-handle').bind {
         'mousedown': (e) ->
             if hoveredComponent isnt null
                 startLinkDragging hoveredComponent, e
-        'mouseover': (e) ->
-            if (comp: hoveredComponent) isnt null
-                if comp.action && comp.action.action is ACTIONS.switchScreen
-                    screenName: comp.action.screenName
-                    screen: _(application.screens).detect (s) -> s.name is screenName
-                    if screen
-                        renderLinkOverlay comp, rectOfNode(screen.node)
-        'mouseout': (e) ->
-            unless activeMode()?.isScreenLinkingMode
-                $('#link-overlay').hide()
+        # 'mouseover': (e) ->
+        #     if (comp: hoveredComponent) isnt null
+        #         if comp.action && comp.action.action is ACTIONS.switchScreen
+        #             screenName: comp.action.screenName
+        #             screen: _(application.screens).detect (s) -> s.name is screenName
+        #             if screen
+        #                 renderLinkOverlay comp, rectOfNode(screen.node)
+        # 'mouseout': (e) ->
+        #     unless activeMode()?.isScreenLinkingMode
+        #         hideLinkOverlay()
     }
     $('.unlink-handle').click (e) ->
         if hoveredComponent isnt null
@@ -2297,22 +2338,22 @@ jQuery ($) ->
 
     defaultMouseUp: (e, comp) -> false
 
-    $('#design-pane').bind {
+    $('#design-pane, #link-overlay').bind {
         mousedown: (e) ->
             if e.button is 0
-                comp: findComponentOfNode(e.target)
+                comp: findComponentByEvent(e)
                 e.preventDefault(); e.stopPropagation()
                 dispatchToMode(ModeMethods.mousedown, e, comp) || defaultMouseDown(e, comp)
             undefined
 
         mousemove: (e) ->
-            comp: findComponentOfNode(e.target)
+            comp: findComponentByEvent(e)
             e.preventDefault(); e.stopPropagation()
             dispatchToMode(ModeMethods.mousemove, e, comp) || defaultMouseMove(e, comp)
             undefined
 
         mouseup: (e) ->
-            comp: findComponentOfNode(e.target)
+            comp: findComponentByEvent(e)
             if e.which is 3
                 return if e.shiftKey
                 e.stopPropagation()
@@ -2323,7 +2364,7 @@ jQuery ($) ->
 
         'contextmenu': (e) ->
             return if e.shiftKey
-            comp: findComponentOfNode(e.target)
+            comp: findComponentByEvent(e)
             console.log ["contextmenu", e]
             setTimeout (-> dispatchToMode(ModeMethods.contextmenu, e, comp) || defaultContextMenu(e, comp)), 1
             false
