@@ -155,7 +155,7 @@ jQuery ($) ->
                     dataType: 'json'
                     success: (r) ->
                         return if processPossibleErrorResponse(failedActivity, r)
-                        callback(r['images'])
+                        callback(r)
                     error: (xhr, status, e) ->
                         handleHttpError failedActivity, status, e
                 }
@@ -2383,10 +2383,8 @@ jQuery ($) ->
     ##  palette
 
     paletteWanted: on
-    customImagesPaletteCategory: { name: 'Custom Images (drop your image files here)', items: [] }
-    customImagesPaletteGroup: null
-    customImages: []
-    # { id, width, height, fileName }
+
+    customImages: {}
 
     bindPaletteItem: (item, compTemplate) ->
         $(item).mousedown (e) ->
@@ -2407,9 +2405,11 @@ jQuery ($) ->
             bindPaletteItem n, externalizePaletteComponent(compTemplate)
             func compTemplate, n
 
-    renderPaletteGroup: (ctg) ->
+    renderPaletteGroup: (ctg, permanent) ->
         group: $('<div />').addClass('group').appendTo($('#palette-container'))
         renderPaletteGroupContent ctg, group
+        if not permanent
+            group.addClass('transient-group')
         group
 
     fillPalette: ->
@@ -2430,9 +2430,7 @@ jQuery ($) ->
             MakeApp.paletteDefinition.push { name: grp.label, items: items }
 
         for ctg in MakeApp.paletteDefinition
-            renderPaletteGroup ctg
-
-        customImagesPaletteGroup: renderPaletteGroup customImagesPaletteCategory
+            renderPaletteGroup ctg, true
 
     constrainImageSize: (imageSize, maxSize) ->
       if imageSize.w <= maxSize.w and imageSize.h <= maxSize.h
@@ -2445,21 +2443,24 @@ jQuery ($) ->
           { w: maxSize.w; h: imageSize.h * ratio.x }
 
     updateCustomImagesPalette: ->
-        $(customImagesPaletteGroup).find("*").remove()
-        customImagesPaletteCategory.items: for image in customImages
-            {
+        $('.transient-group').remove()
+        for group_id, group of customImages
+            group.items: ({
                 type: 'image'
                 label: "${image.fileName} ${image.width}x${image.height}"
                 image: { kind: 'custom', id: image.id }
                 size: constrainImageSize { w: image.width, h: image.height }, { w: 320, h: 480 }  # TODO landscape
                 imageEl: image
-            }
-        renderPaletteGroupContent customImagesPaletteCategory, customImagesPaletteGroup, (item, node) ->
-            item.imageEl.node: node
-            $(node).bindContextMenu '#custom-image-context-menu', item.imageEl
+            } for image in group.images)
+            # I HAVE NO IDEA WHY THIS COMMENT IS NEEDED, BUT IT'S A SYNTAX ERROR WITHOUT IT
+            renderPaletteGroup group, false
+            renderPaletteGroupContent group, group.element, (item, node) ->
+                item.imageEl.node: node
+                $(node).bindContextMenu '#custom-image-context-menu', item.imageEl
 
     addCustomImagePlaceholder: ->
-        $(customImagesPaletteCategory.itemsNode).append $("<div />", { className: 'customImagePlaceholder' })
+        # FIXME: draw this placeholder in proper place
+        #$(customImagesPaletteCategory.itemsNode).append $("<div />", { className: 'customImagePlaceholder' })
         $('#palette').scrollToBottom()
 
     # updatePaletteVisibility: (reason) ->
@@ -2479,6 +2480,7 @@ jQuery ($) ->
 
     initPalette: ->
         fillPalette()
+        updateCustomImagesPalette()
         # resizePalette()
 
 
@@ -3046,13 +3048,19 @@ jQuery ($) ->
             updateCustomImages()
 
     updateCustomImages: ->
-        serverMode.loadCustomImages (images) ->
-            customImages: ({
-                id: img['id']
-                width: img['width']
-                height: img['height']
-                fileName: img['fileName']
-            } for img in images)
+        serverMode.loadCustomImages (groups) ->
+            for group in groups
+                gg: {
+                    name: group['name'] + (if group['writeable'] then ' (drop your image files here)' else '')
+                    writeable: group['writeable']
+                }
+                gg.images: ({
+                    id: img['id']
+                    width: img['width']
+                    height: img['height']
+                    fileName: img['fileName']
+                } for img in group['images'])
+                customImages[group['id']]: gg
             updateCustomImagesPalette()
 
     $('body').each ->
