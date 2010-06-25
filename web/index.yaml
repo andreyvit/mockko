@@ -29,17 +29,6 @@ indexes:
 - kind: Image
   properties:
   - name: group
-  - name: created_by
-
-- kind: Image
-  properties:
-  - name: group
-  - name: created_by
-    direction: desc
-
-- kind: Image
-  properties:
-  - name: group
   - name: updated_at
 
 - kind: ImageGroup
