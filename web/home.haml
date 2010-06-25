@@ -2,6 +2,7 @@
 %html
   %head
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=1024" />
     %link(rel="stylesheet" href="./static/home.css" type="text/css" media="screen" title="no title" charset="utf-8")
     %script(src="./static/lib/jquery-1.4.2.js" type="text/javascript" charset="utf-8")
     %script(src="./static/lib/underscore.js" type="text/javascript" charset="utf-8")
@@ -10,29 +11,55 @@
     %title
       Mockko: iPhone Mockups | iPad Mockups | Android Mockups
   %body
-    .container
-      %h1 Mockko: iPhone UI Design Is Now Addictive.
-      %h2 Quickly create gorgeous prototypes and share them with your customers or developers.
-      #button-bar
-        %a#download-button(href="#download")
+    #header-pane.pane
+      #header-container.container
+        %h1 Mockko: iPhone UI Design Is Now Addictive.
+        %h2 Quickly create gorgeous prototypes and share them with your customers or developers.
+        #title-overlay
+      #button-container.container
+        .sep-left
+        #download.button(href="#download")
           .label Download
-          .sublabel coming soon
-        %a#run-in-browser(href="designer")
+          .sublabel Win/OS X coming soon
+        %a#run-in-browser.button(href="designer")
           .label Run in Browser
-          .sublabel Safari or Chrome only
-        %a#buy-button(href="buy")
-          .label Buy Now
-          .sublabel $79/y or $9/mo
-      #screenshots-and-features
-        %ul#left-features.features
-          %li Bars, Buttons, Maps and Panels included
-          %li MagicSnap for instant layouts
-          %li Run designs on iPhone or in browser
-          %li Includes Glyphish icons
-          %li iPad mockups coming soon
-        %ul#right-features.features
+          .sublabel Safari/Chrome only, iPad soon
+        #buy.button(href="buy")
+          .label Prepare to Buy
+          .sublabel We're getting beta and beta
+        .sep-right
+    #screenshots-and-features-pane.pane
+      .container
+        .features
+          %ul
+            %li#feat-palette
+              .sep
+              Bars, Buttons, Maps and Panels included
+            %li#feat-magicsnap
+              .sep
+              MagicSnap for instant layouts
+            %li#feat-run
+              .sep
+              Run designs on iPhone or in browser
+            %li#feat-glyphish
+              .sep
+              Includes Glyphish icons
+            %li#feat-ipad
+              .sep
+              iPad mockups coming soon
+          .sep
         .screenshots
           %img(src="./static/home/screenshots/mockko.png" alt="")
+    #footer-pane
+      .container
+        %a#twitter(href="http://twitter.com/mockko/") twitter.com/mockko
+        %a#email(href="mailto:info@mockko.com") info@mockko.com
+        #icons-by
+          icons by
+          %a(href="http://glyphish.com/") glyphish
+          and
+          %a(href="http://eddit.com/shop/iphone_ui_icon_set/") eddit
+  /
     %script
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-17047204-1']);
