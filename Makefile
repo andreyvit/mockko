@@ -18,7 +18,7 @@ LESS = $(wildcard web/static/*.less) $(wildcard web/static/*/*.less)
 HAML = $(wildcard web/*.haml)
 
 # Compiled code
-JS = $(patsubst %.coffee,%.js,${COFFEE}) web/static/designer-image-directories.js
+JS = $(patsubst %.coffee,%.js,${COFFEE})
 CSS = $(patsubst %.less,%.css,${LESS})
 HTML = $(patsubst %.haml,%.html,${HAML})
 
@@ -50,12 +50,6 @@ all: ${HTML} ${JS} ${CSS}
 %.html: %.haml
 	@echo "  HAML" $^
 	@haml $^ $@
-
-STOCK_DIRS = glyphish/icons glyphish/mini-icons iphone-accessories
-
-web/static/designer-image-directories.js: ${STOCK_IMAGES}
-	@echo "  GEN_IMGDATA"
-	@(cd web/static/stock; ../../../scripts/gen-imgdata ${STOCK_DIRS}) > $@ || (rm -f $@; false)
 
 clean:
 	@echo "  CLEAN"
@@ -92,17 +86,15 @@ find_images = $(shell find $(1) -name '*.png' -o -name '*.gif' -o -name '*.jpg')
 
 THEME_IMAGES = $(call find_images, web/static/theme/images)
 IPHONE_IMAGES = $(call find_images, web/static/iphone/images)
-STOCK_IMAGES = $(call find_images, web/static/stock)
 
 .theme-images.sum: ${THEME_IMAGES}
-.stock-images.sum: ${STOCK_IMAGES}
 .iphone-images.sum: ${IPHONE_IMAGES}
 .designerjs.sum: web/minified/designer.min.js
 .themecss.sum: web/minified/theme.min.css
 .iphonecss.sum: web/minified/iphone.min.css
 
 SUM_FILES = .designerjs.sum .themecss.sum .iphonecss.sum \
-	.theme-images.sum .stock-images.sum .iphone-images.sum
+	.theme-images.sum .iphone-images.sum
 
 # --> Optimization
 
@@ -130,10 +122,9 @@ JS_LIBS = $(addprefix web/static/lib/, \
 	underscore.min.js \
 	jquery.cookie.js)
 
-${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.closure.js .stock-images.sum
+${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.closure.js
 	@echo "  YUI designer.js"
-	(for i in $(filter %.js,$^); do ${YUI} $$i; done) | \
-		perl -pe "s,static/stock/,static/stock."$$(cat .stock-images.sum)"/,g" > $@ || (rm -f $@; false)
+	(for i in $(filter %.js,$^); do ${YUI} $$i; done) > $@ || (rm -f $@; false)
 
 %.closure.js: %.premin.js
 	@echo "  CLOSURE" $^
@@ -148,7 +139,6 @@ JS_SRC = $(addprefix web/static/, \
 	designer-components.js \
 	designer-templates.js \
 	jpicker.js \
-	designer-image-directories.js \
 	designer.js)
 
 ${OPT_DIR}/designer.combined.js: ${JS_SRC}

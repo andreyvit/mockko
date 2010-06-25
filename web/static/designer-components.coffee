@@ -867,24 +867,3 @@ MakeApp.backgroundStyles: [
         label: "Dark"
     }
 ]
-
-MakeApp.stockImageGroups: [
-    {
-        name: "glyphish-icons"
-        label: "Glyphish Tav Bar Icons"
-        path: 'glyphish/icons'
-        imageEffect: 'iphone-tabbar-active'
-    }
-    {
-        name: "glyphish-mini-icons"
-        label: "Glyphish Toolbar & Navbar Icons"
-        path: 'glyphish/mini-icons'
-        imageEffect: 'iphone-tabbar-inactive'
-    }
-    {
-        name: "iphone-accessories"
-        label: "iPhone Accessory Icons"
-        path: 'iphone-accessories'
-        imageEffect: null
-    }
-]

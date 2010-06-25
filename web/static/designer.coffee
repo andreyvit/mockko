@@ -30,8 +30,6 @@ jQuery ($) ->
 
     Types: MakeApp.componentTypes
 
-    STOCK_DIR: 'static/stock/'
-
     DEFAULT_TEXT_STYLES: {
         fontSize: 17
         textColor: '#fff'
@@ -392,13 +390,7 @@ jQuery ($) ->
         rc.state: c['state']
         rc.image: internalizeImage(c['image']) if c['image']?
         if rc.image?.constructor is String
-            if rc.image.substr(0, STOCK_DIR.length) == STOCK_DIR
-                path: rc.image.substr(STOCK_DIR.length)
-                pos: path.lastIndexOf('/')
-                name: path.substr(pos + 1)
-                group: path.substr(0, pos)
-                rc.image: { kind: 'stock', group: group, name: name }
-            else if rc.image.substr(0, 'images/'.length) == 'images/'
+            if rc.image.substr(0, 'images/'.length) == 'images/'
                 encodedId: rc.image.substr('images/'.length)
                 rc.image: { kind: 'custom', id: decodeURIComponent encodedId }
             else
@@ -825,11 +817,6 @@ jQuery ($) ->
                     "images/${encodeURIComponent image.id}/${effect}"
                 else
                     "images/${encodeURIComponent image.id}"
-            when 'stock'
-                if effect and serverMode.supportsImageEffects
-                    "images/stock--" + image.group.replace(/\//g, '--') + "--${image.name}/${effect}"
-                else
-                    "${STOCK_DIR}${image.group}/${image.name}"
 
     renderImageDefault: (comp, node, imageUrl) ->
         $(imageNodeOfComponent comp, node).css { backgroundImage: "url(${imageUrl})"}
@@ -2413,22 +2400,6 @@ jQuery ($) ->
         group
 
     fillPalette: ->
-        for grp in MakeApp.stockImageGroups
-            items: for fileData in MakeApp.imageDirectories[grp.path]
-                [w, h]: _(fileData.s.split("x")).map (s) -> parseInt(s)
-                size: { w: w, h: h }
-                image: { kind: 'stock', group: grp.path, name: fileData.f, size }
-                {
-                    type: 'image'
-                    label: fileData.f.replace(/\.png$/, '')
-                    image
-                    size: imageSizeForImage image, grp.imageEffect
-                    style: {
-                        imageEffect: grp.imageEffect
-                    }
-                }
-            MakeApp.paletteDefinition.push { name: grp.label, items: items }
-
         for ctg in MakeApp.paletteDefinition
             renderPaletteGroup ctg, true
 
