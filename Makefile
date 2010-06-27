@@ -167,7 +167,7 @@ deploy: VER_ARG=$(if $(APP_VERSION),-V $(APP_VERSION))
 deploy: optimize deploy-$(shell id -un)
 
 deploy-andreyvit:
-	appcfg.py $(VER_ARG) -e andreyvit@gmail.com --passin update web < ~/.andryvit_passwd
+	appcfg.py $(VER_ARG) -e andreyvit@gmail.com --passin update web < ~/.andreyvit_passwd
 
 deploy-dottedmag:
 	appcfg.py $(VER_ARG) -e dottedmag@dottedmag.net update web
