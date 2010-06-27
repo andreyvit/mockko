@@ -2428,15 +2428,19 @@ jQuery ($) ->
     updateCustomImagesPalette: ->
         $('.transient-group').remove()
         for group_id, group of customImages
-            group.items: ({
-                type: 'image'
-                label: "${image.fileName} ${image.width}x${image.height}"
-                image: { kind: 'custom', id: image.id }
-                # TODO landscape
-                size: constrainImageSize { w: image.width, h: image.height }, { w: 320, h: 480 }
-                imageEl: image
-            } for image in group.images)
-            # I HAVE NO IDEA WHY THIS COMMENT IS NEEDED, BUT IT'S A SYNTAX ERROR WITHOUT IT
+            group.items: []
+            for image in group.images
+                i: {
+                    type: 'image'
+                    label: "${image.fileName} ${image.width}x${image.height}"
+                    image: { kind: 'custom', id: image.id }
+                    # TODO landscape
+                    size: constrainImageSize { w: image.width, h: image.height }, { w: 320, h: 480 }
+                    imageEl: image
+                }
+                if group.effect
+                    i.style = { imageEffect: group.effect }
+                group.items.push(i)
             renderPaletteGroup group, false
             renderPaletteGroupContent group, group.element, (item, node) ->
                 item.imageEl.node: node
@@ -3037,6 +3041,7 @@ jQuery ($) ->
             for group in groups
                 gg: {
                     name: group['name'] + (if group['writeable'] then ' (drop your image files here)' else '')
+                    effect: group['effect']
                     writeable: group['writeable']
                 }
                 gg.images: ({

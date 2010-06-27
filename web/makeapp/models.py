@@ -23,6 +23,8 @@ class ImageGroup(db.Model):
     owner = db.ReferenceProperty(Account)
     priority = db.IntegerProperty()
 
+    effect = db.StringProperty()
+
 class Image(db.Model):
     account   = db.ReferenceProperty(Account)
     file_name = db.StringProperty()

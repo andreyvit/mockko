@@ -163,6 +163,7 @@ def format_group(group, read_write):
     return [{'id': group.key().id_or_name(),
              'name': group.name,
              'writeable': read_write,
+             'effect': group.effect,
              'images': list(format_images(group)) }]
 
 class GetImageGroupHandler(RequestHandler):
