@@ -33,6 +33,7 @@ help:
 	@echo "  make run      -- run application using dev. appserver (non-optimized, /dev only)"
 	@echo "  make run-opt  -- run application using dev. appserver (optimized)"
 	@echo "  make deploy   -- upload application to GAE"
+	@echo "  make deploy-playground -- upload 'playground' version to GAE"
 	@echo "  make clean    -- clean all generated files"
 
 # Rule[sz]
@@ -160,10 +161,14 @@ run-opt: optimize
 
 # Deployment
 
+deploy: VER_ARG=$(if $(APP_VERSION),-V $(APP_VERSION))
 deploy: optimize deploy-$(shell id -un)
 
 deploy-andreyvit:
-	appcfg.py -e andreyvit@gmail.com --passin update web < ~/.andreyvit_passwd
+	appcfg.py $(VER_ARG) -e andreyvit@gmail.com --passin update web < ~/.andryvit_passwd
 
 deploy-dottedmag:
-	appcfg.py -e dottedmag@dottedmag.net update web
+	appcfg.py $(VER_ARG) -e dottedmag@dottedmag.net update web
+
+deploy-playground: APP_VERSION=$(shell id -un)-playground
+deploy-playground: deploy
