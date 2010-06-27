@@ -1338,9 +1338,11 @@ jQuery ($) ->
     renderLinkOverlay: (sourceComp, destR) ->
         compR:  rectOfNode sourceComp.node
         compPt: centerOfRect compR
-        destPt: centerOfRect destR
-        clipR:  canonRect { x: destR.x+destR.w, y: Math.min(compR.y, destR.y), x2: compR.x+compR.w-1, y2: Math.max(compR.y+compR.h, destR.y+destR.h) }
+        destPt: { x: destR.x+destR.w, y: destR.y+destR.h/2 }
+        designAreaR: rectOfNode $('#design-pane')
+        clipR:  canonRect { x: Math.min(designAreaR.x, destR.x+destR.w), y: designAreaR.y, x2: designAreaR.x+designAreaR.w-1, y2: designAreaR.y+designAreaR.h-1 }
 
+        $('#link-overlay').css({ 'opacity': 0.2 })
         canvas: $('#link-overlay').attr({ 'width': clipR.w, 'height': clipR.h }).css({ 'left': clipR.x, 'top': clipR.y, 'width': clipR.w, 'height': clipR.h }).show()[0]
 
         startPt: subPtPt compPt, clipR
@@ -1351,6 +1353,7 @@ jQuery ($) ->
             endPt.x: clipX
 
         ctx: canvas.getContext '2d'
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
         ctx.beginPath()
         ctx.moveTo(startPt.x, startPt.y)
         ctx.lineTo(endPt.x, endPt.y)
@@ -1371,7 +1374,14 @@ jQuery ($) ->
         ctx.stroke()
 
     hideLinkOverlay: ->
-        $('#link-overlay').hide()
+        $('#link-overlay').fadeOut(100)
+
+    animateLinkOverlaySet: ->
+        # TODO: cancel this animation if hovering another comp
+        $('#link-overlay').animate({ 'opacity': 1 }, 500)
+
+    animateLinkRemoved: (callback) ->
+        $('#link-overlay').fadeOut(500, callback)
 
     renderActionOverlay: (comp) ->
         if comp.action && comp.action.action is ACTIONS.switchScreen
@@ -1401,7 +1411,8 @@ jQuery ($) ->
         if hoveredComponent isnt null
             runTransaction "remove link", ->
                 hoveredComponent.action: null
-                componentActionChanged hoveredComponent
+                animateLinkRemoved ->
+                    componentActionChanged hoveredComponent
 
     startLinkDragging: (sourceComp, initialE) ->
         lastCandidate: null
@@ -1423,10 +1434,11 @@ jQuery ($) ->
             if lastCandidate
                 sourceComp.action: ACTIONS.switchScreen.create(lastCandidate.screen)
                 componentActionChanged sourceComp
+                animateLinkOverlaySet()
                 activateInspector 'action'
             else
                 # TODO: render old link if any
-            $('#link-overlay').fadeOut(500)
+                renderActionOverlay sourceComp
             deactivateMode()
 
         activateMode {
