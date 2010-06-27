@@ -273,7 +273,7 @@ class ServeProcessedImageHandler(RequestHandler):
                 if img_data is None:
                     raise NotFound()
 
-                kw = dict(byte=img_data.data)
+                kw = dict(bytes=img_data.data)
 
             square_file = os.path.join(os.path.dirname(__file__), '..', 'server-images', effect + '.png')
 
