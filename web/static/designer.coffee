@@ -1446,9 +1446,11 @@ jQuery ($) ->
             activated: ->
                 document.addEventListener 'mousemove', onmousemove, true
                 document.addEventListener 'mouseup',   onmouseup,   true
+                $('#screens-list').addClass('prominent')
             deactivated: ->
                 document.removeEventListener 'mousemove', onmousemove, true
                 document.removeEventListener 'mouseup',   onmouseup,   true
+                $('#screens-list').removeClass('prominent')
         }
         onmousemove(initialE)
 
