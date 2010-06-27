@@ -9,3 +9,4 @@
 /web/minified
 /web/src-static/*.js
 .*.sum
+.dev_appserver.datastore
