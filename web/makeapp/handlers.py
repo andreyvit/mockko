@@ -144,31 +144,44 @@ class DeleteAppHandler(RequestHandler):
         app.delete()
         return render_json_response({ 'status': 'ok' })
 
+IMAGES_QUERY = \
+    "SELECT * FROM Image WHERE group = :1 ORDER BY created_at"
+
+def format_image(image):
+    return {
+        'id': image.key().id_or_name(),
+        'fileName': image.file_name,
+        'width': image.width,
+        'height': image.height
+    }
+
+def format_images(group):
+    for image in db.GqlQuery(IMAGES_QUERY, group):
+        yield format_image(image)
+
+def format_group(group, read_write):
+    return [{'id': group.key().id_or_name(),
+             'name': group.name,
+             'writeable': read_write,
+             'images': list(format_images(group)) }]
+
+class GetImageGroupHandler(RequestHandler):
+    @auth
+    def get(self, user, group_id):
+        account = Account.all().filter('user', user).get()
+        if account is None:
+            raise NotFound()
+
+        group = ImageGroup.get_by_id(int(group_id))
+        if not group:
+            raise NotFound()
+
+        return render_json_response(format_group(group, group.owner == account))
+
 class GetImageListHandler(RequestHandler):
 
     COMMON_GROUPS_QUERY = \
         "SELECT * FROM ImageGroup WHERE owner = NULL ORDER BY priority"
-
-    IMAGES_QUERY = \
-        "SELECT * FROM Image WHERE group = :1 ORDER BY created_at"
-
-    def format_image(self, image):
-        return {
-            'id': image.key().id_or_name(),
-            'fileName': image.file_name,
-            'width': image.width,
-            'height': image.height
-        }
-
-    def format_images(self, group):
-        for image in db.GqlQuery(self.IMAGES_QUERY, group):
-            yield self.format_image(image)
-
-    def format_group(self, group, read_write):
-        return [{'id': group.key().id_or_name(),
-                 'name': group.name,
-                 'writeable': read_write,
-                 'images': list(self.format_images(group)) }]
 
     @auth
     def get(self, user, **kwargs):
@@ -177,9 +190,9 @@ class GetImageListHandler(RequestHandler):
         # FIXME: output list of images split by group
         if account:
             for group in db.GqlQuery(self.COMMON_GROUPS_QUERY):
-                images += self.format_group(group, False)
+                images += format_group(group, False)
             for group in account.imagegroup_set.order('priority'):
-                images += self.format_group(group, True)
+                images += format_group(group, True)
 
         return render_json_response(images)
 
