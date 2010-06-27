@@ -670,7 +670,8 @@ jQuery ($) ->
         beginUndoTransaction "duplicate ${friendlyComponentName comp}"
 
         newComp: internalizeComponent(externalizeComponent(comp), comp.parent)
-        traverse newComp, (c) -> c.id: null  # make sure all ids are reassigned
+        # make sure all ids are reassigned
+        traverse newComp, (c) -> c.id: null
 
         effect: computeDuplicationEffect newComp, comp
         if effect is null
@@ -956,7 +957,8 @@ jQuery ($) ->
         traverse activeScreen.rootComponent, (comp) ->
             unless inSet comp, exclusionSet
                 if doesRectIntersectRect r, rectOf comp
-                    match: r  # don't return yet to find the innermost match
+                    # don't return yet to find the innermost match
+                    match: r
         match
 
     findComponentByTypeIntersectingRect: (type, rect, exclusionSet) ->
@@ -1019,7 +1021,8 @@ jQuery ($) ->
                         candidate: yes
                 if candidate
                     if doesRectIntersectRect r, rectOf comp
-                        match: comp  # don't return yet to find the innermost match
+                        # don't return yet to find the innermost match
+                        match: comp
         match
 
     isComponentOrDescendant: (candidate, possibleAncestor) ->
@@ -1274,7 +1277,8 @@ jQuery ($) ->
         ypos: { 't': r.y, 'c': r.y + r.h/2, 'b': r.y + r.h - 1 }
         xenable: { 'l': yes, 'c': (hoveredComponent.effsize.w >= 23), 'r': yes }
         yenable: { 't': yes, 'c': (hoveredComponent.effsize.h >= 23), 'b': yes }
-        controlsOutside: yes  # hoveredComponent.effsize.w < 63 or hoveredComponent.effsize.h <= 25
+        # hoveredComponent.effsize.w < 63 or hoveredComponent.effsize.h <= 25
+        controlsOutside: yes
         _($('#hover-panel .resizing-handle')).each (handle, index) ->
             [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]]
             pos: { x: xpos[hmode], y: ypos[vmode] }
@@ -1291,7 +1295,8 @@ jQuery ($) ->
             hideLinkOverlay()
 
     componentHovered: (c) ->
-        return unless c.node?  # the component is being deleted right now
+        # the component is being deleted right now
+        return unless c.node?
         return if hoveredComponent is c
         if c.type.unmovable
             componentUnhovered()
@@ -1396,16 +1401,6 @@ jQuery ($) ->
         'mousedown': (e) ->
             if hoveredComponent isnt null
                 startLinkDragging hoveredComponent, e
-        # 'mouseover': (e) ->
-        #     if (comp: hoveredComponent) isnt null
-        #         if comp.action && comp.action.action is ACTIONS.switchScreen
-        #             screenName: comp.action.screenName
-        #             screen: _(application.screens).detect (s) -> s.name is screenName
-        #             if screen
-        #                 renderLinkOverlay comp, rectOfNode(screen.node)
-        # 'mouseout': (e) ->
-        #     unless activeMode()?.isScreenLinkingMode
-        #         hideLinkOverlay()
     }
     $('.unlink-handle').click (e) ->
         if hoveredComponent isnt null
@@ -1918,7 +1913,8 @@ jQuery ($) ->
         if comp.node.parentNode
             comp.node.parentNode.removeChild(comp.node)
         activeScreen.rootComponent.node.appendChild(comp.node)
-        traverse comp, (child) -> updateEffectiveSize child  # we might have just added a new component
+        # we might have just added a new component
+        traverse comp, (child) -> updateEffectiveSize child
         originalSize: comp.size
         originalEffSize: comp.effsize
 
@@ -2059,7 +2055,8 @@ jQuery ($) ->
                 while rect.y+rect.h <= usableBounds.y+usableBounds.h
                     found: no
                     traverse activeScreen.rootComponent, (c) -> found: c if c.abspos.x == rect.x && c.abspos.y == rect.y
-                    found: null if found is activeScreen.rootComponent  # handle (0,0) case
+                    # handle (0,0) case
+                    found: null if found is activeScreen.rootComponent
                     return { rect, moves: [] } unless found
                     rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
                 return null
@@ -2421,7 +2418,8 @@ jQuery ($) ->
       if imageSize.w <= maxSize.w and imageSize.h <= maxSize.h
         imageSize
       else
-        ratio: { x: maxSize.w / imageSize.w ; y: maxSize.h / imageSize.h }  # need to scale up this number of times
+        # need to scale up this number of times
+        ratio: { x: maxSize.w / imageSize.w ; y: maxSize.h / imageSize.h }
         if ratio.x > ratio.y
           { h: maxSize.h; w: imageSize.w * ratio.y }
         else
@@ -2434,7 +2432,8 @@ jQuery ($) ->
                 type: 'image'
                 label: "${image.fileName} ${image.width}x${image.height}"
                 image: { kind: 'custom', id: image.id }
-                size: constrainImageSize { w: image.width, h: image.height }, { w: 320, h: 480 }  # TODO landscape
+                # TODO landscape
+                size: constrainImageSize { w: image.width, h: image.height }, { w: 320, h: 480 }
                 imageEl: image
             } for image in group.images)
             # I HAVE NO IDEA WHY THIS COMMENT IS NEEDED, BUT IT'S A SYNTAX ERROR WITHOUT IT
@@ -2520,7 +2519,8 @@ jQuery ($) ->
     keepingScreenNamesNormalized: (func) ->
         _(application.screens).each (screen, index) -> screen.originalName: screen.name; screen.nameIsBasedOnIndex: (screen.name is "Screen ${index+1}")
         func()
-        renames: {}  # important to execute all renames at once to handle numbered screens ("Screen 1") being swapped
+        # important to execute all renames at once to handle numbered screens ("Screen 1") being swapped
+        renames: {}
         _(application.screens).each (screen, index) ->
             screen.name: "Screen ${index+1}" if screen.nameIsBasedOnIndex or not screen.name?
             if screen.name isnt screen.originalName
@@ -3219,7 +3219,8 @@ jQuery ($) ->
     pasteComponents: (targetCont, newComps) ->
         return if newComps.length is 0
         for newComp in newComps
-            traverse newComp, (child) -> child.id: null  # make sure all ids are reassigned
+            # make sure all ids are reassigned
+            traverse newComp, (child) -> child.id: null
         friendlyName: if newComps.length > 1 then "${newComps.length} objects" else friendlyComponentName(newComps[0])
         runTransaction "pasting ${friendlyName}", ->
             for newComp in newComps
@@ -3331,7 +3332,8 @@ jQuery ($) ->
     switchToDesign: ->
         $(".screen").hide()
         $('#design-screen').show()
-        deactivateMode()  # if any
+        # if any
+        deactivateMode()
         adjustDeviceImagePosition()
         updateCustomImages()
 
