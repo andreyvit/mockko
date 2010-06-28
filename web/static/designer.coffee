@@ -2583,16 +2583,9 @@ jQuery ($) ->
     #         anim: if reason is 'mode' then 'fadein' else 'popin'
     #         $('.palette').showPopOverPointingTo $('#add-button'), anim
 
-    # resizePalette: ->
-    #     maxPopOverSize: $(window).height() - 44 - 20
-    #     $('.palette').css 'height', Math.min(maxPopOverSize, 600)
-    #     if $('.palette').is(':visible')
-    #         $('.palette').repositionPopOver $('#add-button')
-
     initPalette: ->
         fillPalette()
         updateCustomImagesPalette()
-        # resizePalette()
 
 
     ##########################################################################################################
@@ -3514,7 +3507,6 @@ jQuery ($) ->
         return
 
     $(window).resize ->
-        # resizePalette()
         adjustDeviceImagePosition()
 
     if window.location.href.match /^file:/
