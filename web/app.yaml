@@ -21,35 +21,37 @@ handlers:
   static_files: minified/designer.min.html
   upload: minified/designer.min.html
 
-- url: /static/designer\.min\.[a-f0-9]{40}\.js
+- url: /static/designer\.min\.js
   static_files: minified/designer.min.js
   upload: minified/designer.min.js
   expiration: "3650d"
   
-- url: /static/theme/theme\.min\.[a-f0-9]{40}\.css
+- url: /static/theme/theme\.min\.css
   static_files: minified/theme.min.css
   upload: minified/theme.min.css
   expiration: "3650d"
   
-- url: /static/iphone/iphone\.min\.[a-f0-9]{40}\.css
+- url: /static/iphone/iphone\.min\.css
   static_files: minified/iphone.min.css
   upload: minified/iphone.min.css
   expiration: "3650d"
 
-- url: /static/iphone/images\.[a-f0-9]{40}/(.*)
+- url: /static/iphone/images/(.*)
   static_files: static/iphone/images/\1
   upload: static/iphone/images/.*
   expiration: "3650d"
 
-- url: /static/theme/images\.[a-f0-9]{40}/(.*)
+- url: /static/theme/images/(.*)
   static_files: static/theme/images/\1
   upload: static/theme/images/.*
   expiration: "3650d"
 
-- url: /static/stock\.[a-f0-9]{40}/(.*)
-  static_files: static/stock/\1
-  upload: static/stock/.*
-  expiration: "3650d"
+- url: /static/home/
+  static_dir: static/home/
+
+- url: /static/home\.(js|css)
+  static_files: static/home.\1
+  upload: static/home\.(js|css)
 
 # "Run app" support. This is only needed to be public until #3920145 is fixed
 # ("Run app" should use the same css as designer)
@@ -70,17 +72,10 @@ handlers:
   static_files: home.html
   upload: home.html
 
-- url: /dev/?
+- url: /dev
   static_files: designer.html
   upload: designer.html
   login: admin
-
-- url: /static/home\.(js|css)
-  static_files: static/home.\1
-  upload: static/home\.(js|css)
-
-- url: /static/home/
-  static_dir: static/home/
 
 - url: /static/designer((?:-.*)?)\.js
   static_files: static/designer\1.js
@@ -99,10 +94,6 @@ handlers:
 
 - url: /static/theme/images
   static_dir: static/theme/images
-  login: admin
-
-- url: /static/stock
-  static_dir: static/stock
   login: admin
 
 # Other boring stuff
