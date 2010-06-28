@@ -2574,15 +2574,6 @@ jQuery ($) ->
         #$(customImagesPaletteCategory.itemsNode).append $("<div />", { className: 'customImagePlaceholder' })
         $('#palette').scrollToBottom()
 
-    # updatePaletteVisibility: (reason) ->
-    #     showing: $('.palette').is(':visible')
-    #     desired: paletteWanted # && !mode.hidesPalette
-    #     if showing and not desired
-    #         $('.palette').hidePopOver()
-    #     else if desired and not showing
-    #         anim: if reason is 'mode' then 'fadein' else 'popin'
-    #         $('.palette').showPopOverPointingTo $('#add-button'), anim
-
     initPalette: ->
         fillPalette()
         updateCustomImagesPalette()
