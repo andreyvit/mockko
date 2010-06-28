@@ -12,6 +12,9 @@ jQuery ($) ->
     DUPLICATE_COMPONENT_MIN_EDGE_INSET_X: 5
     DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y: 5
 
+    LINK_ARROW_MOUSEMOVE_SAFE_DISTANCE: 20
+    LINK_ARROW_INITIAL_MOUSEMOVE_MIN_SAFE_DISTANCE: 15
+
     ##########################################################################################################
     ## constants
 
@@ -586,6 +589,7 @@ jQuery ($) ->
     subPtPt:       (a, b) -> { x: a.x - b.x, y: a.y - b.y }
     mulPtSize:     (p, s) -> { x: p.x * s.w, y: p.y * s.h }
     ptFromLT:      (lt) -> { x: lt.left, y: lt.top }
+    ptFromNode:    (node) -> ptFromLT $(node).offset()
     unitVecOfPtPt: (a, b) ->
         len: distancePtPt2(a, b)
         if len is 0 then ZeroPt else { x: (b.x-a.x)/len, y: (b.y-a.y)/len }
@@ -599,6 +603,7 @@ jQuery ($) ->
 
     rectToString:      (r) -> "(${r.x},${r.y} ${r.w}x${r.h})"
     rectFromPtAndSize: (p, s) -> { x:p.x, y:p.y, w:s.w, h:s.h }
+    rectFromPtPt:      (a, b) -> canonRect { x: Math.min(a.x, b.x), x2: Math.max(a.x, b.x), y: Math.min(a.y, b.y), y2: Math.max(a.y, b.y) }
     dupRect:           (r)    -> { x:r.x, y:r.y, w:r.w, h:r.h }
     addRectPt:         (r, p) -> { x:r.x+p.x, y:r.y+p.y, w:r.w, h:r.h }
     subRectPt:         (r, p) -> { x:r.x-p.x, y:r.y-p.y, w:r.w, h:r.h }
@@ -615,6 +620,35 @@ jQuery ($) ->
     centerOfRect: (r) -> { x: r.x + r.w / 2, y: r.y + r.h / 2 }
     centerSizeInRect:  (s, r) -> rectFromPtAndSize { x: r.x + (r.w-s.w) / 2, y: r.y + (r.h-s.h)/2 }, s
 
+    # note: this is both for a line and a segment, but the returned p1, p2 only make sense for a segment
+    lineFromPtPt: (p1, p2) ->
+        A: p2.y - p1.y
+        B: p1.x - p2.x
+        C: -(A * p1.x + B * p1.y)
+        { A, B, C, p1, p2 }
+
+    lineFromABPt: (A, B, pt) ->
+        C: -(A * pt.x + B * pt.y)
+        { A, B, C }
+
+    signum: (v) -> (v > 0) - (v < 0)
+
+    # -1, 0, 1 depending on whether the point is below, on or above the line
+    classifyPtLine: (pt, line) -> signum(line.A * pt.x + line.B * pt.y + line.C)
+
+    perpendicularLineThroughPoint: (line, pt) -> lineFromABPt line.B, -line.A, pt
+
+    distancePtLine: (pt, line) ->
+        Math.abs(line.A * pt.x + line.B * pt.y + line.C) / Math.sqrt(line.A*line.A + line.B*line.B)
+
+    distancePtSegment: (pt, segm) ->
+        # is outside the segment?
+        if classifyPtLine(pt, perpendicularLineThroughPoint(segm, segm.p1)) == classifyPtLine(pt, perpendicularLineThroughPoint(segm, segm.p2))
+            console.log "outside"
+            Math.min(distancePtPt2(pt, segm.p1), distancePtPt2(pt, segm.p2))
+        else
+            console.log "inside"
+            distancePtLine pt, segm
 
     ##########################################################################################################
     ##  Component Utilities
@@ -774,6 +808,10 @@ jQuery ($) ->
             n
 
     findComponentAt: (pt) ->
+        if activeLinkOverlay && activeLinkOverlay.justAdded
+            pagePt: addPtPt(pt, ptFromNode('#design-area'))
+            if (d: distanceToLinkOverlay(pagePt)) < activeLinkOverlay.safeDistance
+                return activeLinkOverlay.comp
         if hoveredComponent
             rect: insetRect rectOf(hoveredComponent), { l: -7, r: -7, t: -20, b: -7 }
             if ptInRect(pt, rect)
@@ -1406,6 +1444,8 @@ jQuery ($) ->
             activateResizingMode hoveredComponent, { x: e.pageX, y: e.pageY }, { vmode: vmode, hmode: hmode }
             false
 
+    activeLinkOverlay: null
+
     renderLinkOverlay: (sourceComp, destR) ->
         compR:  rectOfNode sourceComp.node
         compPt: centerOfRect compR
@@ -1415,6 +1455,13 @@ jQuery ($) ->
 
         $('#link-overlay').css({ 'opacity': 0.2 })
         canvas: $('#link-overlay').attr({ 'width': clipR.w, 'height': clipR.h }).css({ 'left': clipR.x, 'top': clipR.y, 'width': clipR.w, 'height': clipR.h }).show()[0]
+
+        activeLinkOverlay: {
+            start: compPt
+            end:   destPt
+            comp:  sourceComp
+            justAdded: no
+        }
 
         startPt: subPtPt compPt, clipR
         endPt:   subPtPt destPt, clipR
@@ -1446,13 +1493,20 @@ jQuery ($) ->
 
     hideLinkOverlay: ->
         $('#link-overlay').fadeOut(100)
+        activeLinkOverlay: null
 
     animateLinkOverlaySet: ->
+        return unless activeLinkOverlay
         # TODO: cancel this animation if hovering another comp
         $('#link-overlay').animate({ 'opacity': 1 }, 500)
+        activeLinkOverlay.justAdded: yes
 
     animateLinkRemoved: (callback) ->
         $('#link-overlay').fadeOut(500, callback)
+        activeLinkOverlay: null
+
+    distanceToLinkOverlay: (pt) ->
+        distancePtSegment pt, lineFromPtPt(activeLinkOverlay.start, activeLinkOverlay.end)
 
     renderActionOverlay: (comp) ->
         if comp.action && comp.action.action is ACTIONS.switchScreen
@@ -1491,11 +1545,13 @@ jQuery ($) ->
             e.stopPropagation()
 
         onmouseup: (e) ->
+            pt: { x: e.pageX, y: e.pageY }
             onmousemove(e)
             if lastCandidate
                 sourceComp.action: ACTIONS.switchScreen.create(lastCandidate.screen)
                 componentActionChanged sourceComp
                 animateLinkOverlaySet()
+                activeLinkOverlay.safeDistance: Math.max(LINK_ARROW_MOUSEMOVE_SAFE_DISTANCE, distanceToLinkOverlay(pt) + LINK_ARROW_INITIAL_MOUSEMOVE_MIN_SAFE_DISTANCE)
                 activateInspector 'action'
             else
                 # TODO: render old link if any
