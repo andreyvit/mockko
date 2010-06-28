@@ -2532,10 +2532,6 @@ jQuery ($) ->
             group.addClass('transient-group')
         group
 
-    fillPalette: ->
-        for ctg in MakeApp.paletteDefinition
-            renderPaletteGroup ctg, true
-
     constrainImageSize: (imageSize, maxSize) ->
       if imageSize.w <= maxSize.w and imageSize.h <= maxSize.h
         imageSize
@@ -2575,7 +2571,8 @@ jQuery ($) ->
         $('#palette').scrollToBottom()
 
     initPalette: ->
-        fillPalette()
+        for ctg in MakeApp.paletteDefinition
+            renderPaletteGroup ctg, true
         updateCustomImagesPalette()
 
 
