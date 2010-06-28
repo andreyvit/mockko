@@ -90,16 +90,16 @@ jQuery ($) ->
             saveApplicationChanges: (app, appId, callback) ->
                 #
 
-            uploadImageFile: (groupName, fileName, file, callback) ->
+            uploadImage: (groupName, fileName, file, callback) ->
                 #
 
-            loadCustomImages: (callback) ->
+            loadImages: (callback) ->
                 #
 
-            deleteCustomImage: (groupName, imageId, callback) ->
+            deleteImage: (groupName, imageId, callback) ->
                 #
 
-            getImageGroupInfo: (imageGroupId, callback) ->
+            loadImageGroup: (imageGroupId, callback) ->
                 #
         }
 
@@ -139,7 +139,7 @@ jQuery ($) ->
                         handleHttpError failedActivity, status, e
                 }
 
-            uploadImageFile: (groupName, fileName, file, callback) ->
+            uploadImage: (groupName, fileName, file, callback) ->
                 failedActivity: "Could not upload your image"
                 $.ajax {
                     type: 'POST'
@@ -156,7 +156,7 @@ jQuery ($) ->
                         handleHttpError failedActivity, status, e
                 }
 
-            loadCustomImages: (callback) ->
+            loadImages: (callback) ->
                 failedActivity: "Could not load the list of your images"
                 $.ajax {
                     type: 'GET'
@@ -169,7 +169,7 @@ jQuery ($) ->
                         handleHttpError failedActivity, status, e
                 }
 
-            deleteCustomImage: (groupName, imageId, callback) ->
+            deleteImage: (groupName, imageId, callback) ->
                 failedActivity: "Could not delete the image"
                 $.ajax {
                     type: 'DELETE'
@@ -182,7 +182,7 @@ jQuery ($) ->
                         handleHttpError failedActivity, status, e
                 }
 
-            getImageGroupInfo: (imageGroupId, callback) ->
+            loadImageGroup: (imageGroupId, callback) ->
                 console.log "Requesting /images/$imageGroupId"
                 failedActivity: "Could not load image group info"
                 $.ajax {
@@ -230,16 +230,16 @@ jQuery ($) ->
                     # { 'id': 43, 'body': JSON.stringify(MakeApp.appTemplates.basic) }
                 ]
 
-            uploadImageFile: (groupName, fileName, file, callback) ->
+            uploadImage: (groupName, fileName, file, callback) ->
                 #
 
-            loadCustomImages: (callback) ->
+            loadImages: (callback) ->
                 #
 
-            deleteCustomImage: (groupName, imageId, callback) ->
+            deleteImage: (groupName, imageId, callback) ->
                 #
 
-            getImageGroupInfo: (imageGroupId, callback) ->
+            loadImageGroup: (imageGroupId, callback) ->
                 #
         }
     }
@@ -915,7 +915,7 @@ jQuery ($) ->
                 pending[image.group].push([image, effect, callback])
             else
                 pending[image.group]: [[image, effect, callback]]
-                serverMode.getImageGroupInfo image.group, (info) ->
+                serverMode.loadImageGroup image.group, (info) ->
                     _updateGroup image.group, info['images']
                     for [image, effect, callback] in pending[image.group]
                         _returnImageUrl image, effect, callback
@@ -1674,7 +1674,7 @@ jQuery ($) ->
     showComponentContextMenu: (comp, pt) -> $('#component-context-menu').showAsContextMenuAt pt, comp
 
     $('#delete-custom-image-menu-item').bind {
-        selected: (e, image) -> deleteCustomImage image
+        selected: (e, image) -> deleteImage image
     }
 
 
@@ -3135,13 +3135,13 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Image Upload
 
-    uploadImageFile: (file) ->
+    uploadImage: (group, file) ->
         console.log "Uploading ${file.fileName} of size ${file.fileSize}"
-        serverMode.uploadImageFile file.fileName, file, ->
+        serverMode.uploadImage group, file.fileName, file, ->
             updateCustomImages()
 
     updateCustomImages: ->
-        serverMode.loadCustomImages (groups) ->
+        serverMode.loadImages (groups) ->
             for group in groups
                 _updateGroup group['name'], group['images']
                 gg: {
@@ -3156,6 +3156,12 @@ jQuery ($) ->
                 } for img in group['images'])
                 customImages[group['id']]: gg
             updateCustomImagesPalette()
+
+    # Looks up group to use to drop images to after drag-and-drop
+    findImageDropGroup: ->
+        for groupId, groupInfo of customImages
+            if groupInfo.writeable
+                return groupId
 
     $('body').each ->
         this.ondragenter: (e) ->
@@ -3189,13 +3195,14 @@ jQuery ($) ->
                 if filesToUpload.length > 0
                     message += "\nThe following files WILL be uploaded: " + _(filesToUpload).map((f) -> f.fileName).join(", ")
                 alert message
+            dropGroup: findImageDropGroup()
             for file in filesToUpload
                 addCustomImagePlaceholder()
-                uploadImageFile file
+                uploadImage dropGroup, file
             $('#palette').scrollToBottom()
 
-    deleteCustomImage: (image) ->
-        serverMode.deleteCustomImage image.id, ->
+    deleteImage: (image) ->
+        serverMode.deleteImage image.id, ->
             $(image.node).fadeOut 250, ->
                 $(image.node).remove()
 
