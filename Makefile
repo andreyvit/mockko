@@ -1,11 +1,6 @@
 .PHONY: all clean optimize deploy watch
 .DEFAULT_GOAL := all
 
-# Per-system configuration
-ifeq ($(shell uname -s),Darwin)
-  COFFEE_ARGS=--growl
-endif
-
 DEVAPPSERVER_ARGS=--show_mail_body \
 	--datastore_path=$(CURDIR)/.dev_appserver.datastore \
 	--history_path=$(CURDIR)/.dev_appserver.datastore.history
