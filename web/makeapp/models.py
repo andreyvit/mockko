@@ -41,3 +41,4 @@ class Image(db.Model):
     group = db.ReferenceProperty(ImageGroup)
 
     data = db.ReferenceProperty(ImageData)
+    digest = db.StringProperty()

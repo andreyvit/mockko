@@ -5,6 +5,7 @@ import os
 import logging
 import mimetypes
 import re
+import hashlib
 
 from tipfy import RequestHandler, url_for, redirect, redirect_to, render_json_response, request, BadRequest, NotFound, Response
 from tipfy.ext.jinja2 import render_response
@@ -146,7 +147,8 @@ def format_image(image):
         'id': image.key().id_or_name(),
         'fileName': image.file_name,
         'width': image.width,
-        'height': image.height
+        'height': image.height,
+        'digest': image.digest
     }
 
 def format_images(group):
@@ -207,15 +209,16 @@ class SaveImageHandler(RequestHandler):
 
         img = images.Image(data)
 
-        data = ImageData(data=data)
-        data.put()
+        imgdata = ImageData(data=data)
+        imgdata.put()
 
         image = Image(file_name=file_name,
                       width=img.width,
                       height=img.height,
                       mime_type=mime_type,
                       group=group,
-                      data=data)
+                      data=imgdata,
+                      digest=hashlib.sha1(data).hexdigest())
         image.put()
 
         return render_json_response({ 'name': image.file_name })

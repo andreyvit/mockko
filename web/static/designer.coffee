@@ -859,16 +859,16 @@ jQuery ($) ->
     pending: {}
 
     _returnImageUrl: (image, effect, cb) ->
-        hsh: groups[image.group][image.name]
+        digest: groups[image.group][image.name]
         if effect and serverMode.supportsImageEffects
-            cb "images/${encodeURIComponent image.group}/${encodeURIComponent (_imageEffectName image.name, effect)}?${hsh}"
+            cb "images/${encodeURIComponent image.group}/${encodeURIComponent (_imageEffectName image.name, effect)}?${digest}"
         else
-            cb "images/${encodeURIComponent image.group}/${encodeURIComponent image.name}?${hsh}"
+            cb "images/${encodeURIComponent image.group}/${encodeURIComponent image.name}?${digest}"
 
     _updateGroup: (groupName, group) ->
         info: {}
         for imginfo in group
-            info[imginfo['fileName']]: imginfo['hash']
+            info[imginfo['fileName']]: imginfo['digest']
         groups[groupName]: info
 
     getImageUrl: (image, effect, callback) ->
