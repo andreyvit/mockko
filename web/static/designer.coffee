@@ -2502,8 +2502,6 @@ jQuery ($) ->
     ##########################################################################################################
     ##  palette
 
-    paletteWanted: on
-
     customImages: {}
 
     bindPaletteItem: (item, compTemplate) ->
