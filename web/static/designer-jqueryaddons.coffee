@@ -112,7 +112,7 @@ window.setOf: (list) ->
         set[ihash item] = item
     return set
 
-window.inSet: (el, set) -> ihash(el) in set
+window.inSet: (el, set) -> ihash(el) of set
 
 window.timeouts: {
     set: (ms, func) -> setTimeout(func, ms)

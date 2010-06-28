@@ -284,7 +284,7 @@ jQuery ($) ->
     ##  utilities
 
     aOrAn: (s) ->
-        if s[0] in {'a': yes, 'e': yes, 'i': yes, 'o': yes, 'u': yes} then "an ${s}" else "a ${s}"
+        if s[0] of {'a': yes, 'e': yes, 'i': yes, 'o': yes, 'u': yes} then "an ${s}" else "a ${s}"
 
     ##########################################################################################################
     ##  external representation
@@ -1231,7 +1231,7 @@ jQuery ($) ->
         _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20
 
     handleStacking: (comp, rect, stacks, action) ->
-        return { moves: [] } unless comp.type.name in TABLE_TYPES
+        return { moves: [] } unless comp.type.name of TABLE_TYPES
 
         sourceStack: if action == 'duplicate' then null else comp.stack
         targetStack: if rect? then findStackByProximity(rect, stacks) else null
@@ -2140,7 +2140,7 @@ jQuery ($) ->
         return null unless target? or rect?
         if pin: comp.type.pin
             new PinnedLayout(activeScreen.rootComponent)
-        else if comp.type.name in TABLE_TYPES
+        else if comp.type.name of TABLE_TYPES
             new TableRowLayout(activeScreen.rootComponent)
         else if comp.type.name is 'tab-bar-item'
             if target: findChildByType(activeScreen.rootComponent, Types['tabBar'])
@@ -3335,7 +3335,7 @@ jQuery ($) ->
             ct.name: typeName
             ct.style ||= {}
             if not ct.supportsBackground?
-                ct.supportsBackground: 'background' in ct.style
+                ct.supportsBackground: 'background' of ct.style
             if not ct.textStyleEditable?
                 ct.textStyleEditable: ct.defaultText?
             ct.supportsText: ct.defaultText?
@@ -3345,7 +3345,7 @@ jQuery ($) ->
             'Amazing', 'Awesome', 'Fantastic', 'Beautiful', 'Unbelievable', 'Remarkable']
         names: ("${adj} App" for adj in adjs)
         usedNames: setOf(_.compact(app.content.name for app in (applicationList || [])))
-        names: _(names).reject (n) -> n in usedNames
+        names: _(names).reject (n) -> n of usedNames
         if names.length == 0
             "Yet Another App"
         else
