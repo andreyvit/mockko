@@ -313,7 +313,8 @@ class ServeImageHandler(RequestHandler):
             response_type = 'image/png' # We know overlay_png returns PNG
 
         return Response(response=response_data,
-                        mimetype=response_type)
+                        mimetype=response_type,
+                        headers={'Cache-Control' : 'private, max-age=31536000'})
 
 class DeleteImageHandler(RequestHandler):
     @auth
