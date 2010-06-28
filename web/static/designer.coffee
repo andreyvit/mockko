@@ -3106,6 +3106,7 @@ jQuery ($) ->
     updateCustomImages: ->
         serverMode.loadCustomImages (groups) ->
             for group in groups
+                _updateGroup group['name'], group['images']
                 gg: {
                     name: group['name'] + (if group['writeable'] then ' (drop your image files here)' else '')
                     effect: group['effect']
