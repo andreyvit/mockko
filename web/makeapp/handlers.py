@@ -3,6 +3,8 @@ import png
 from StringIO import StringIO
 import os
 import logging
+import mimetypes
+import re
 
 from tipfy import RequestHandler, url_for, redirect, redirect_to, render_json_response, request, BadRequest, NotFound, Response
 from tipfy.ext.jinja2 import render_response
@@ -60,7 +62,12 @@ def auth(func):
         user = users.get_current_user()
         if user is None:
             return render_json_response({'error': 'signed-out'})
-        return func(self, user, *args, **kwargs)
+        account = Account.all().filter('user', user).get()
+        if account is None:
+            account = Account(user=user)
+            account.put()
+            notify_admins_about_new_user_signup(user)
+        return func(self, user, account, *args, **kwargs)
     return _auth
 
 class GetUserDataHandler(RequestHandler):
@@ -81,15 +88,11 @@ class GetUserDataHandler(RequestHandler):
 class GetAppListHandler(RequestHandler):
 
     @auth
-    def get(self, user, **kwargs):
-        account = Account.all().filter('user', user).get()
-        if account is None:
-            apps = []
-        else:
-            apps = App.all()
-            if not users.is_current_user_admin():
-                apps = apps.filter('editors', account.key())
-            apps = apps.order('-updated_at').fetch(100)
+    def get(self, user, account, **kwargs):
+        apps = App.all()
+        if not users.is_current_user_admin():
+            apps = apps.filter('editors', account.key())
+        apps = apps.order('-updated_at').fetch(100)
 
         apps_json = [ { 'id': app.key().id(),
                         'created_by': app.created_by.user.user_id(),
@@ -100,7 +103,7 @@ class GetAppListHandler(RequestHandler):
 class SaveAppHandler(RequestHandler):
 
     @auth
-    def post(self, user, **kwargs):
+    def post(self, user, account, **kwargs):
         app_id = (kwargs['app_id'] if 'app_id' in kwargs else 'new')
         body_json = request.data
         body = json.loads(body_json)
@@ -108,11 +111,6 @@ class SaveAppHandler(RequestHandler):
         if 'name' not in body:
             return BadRequest("Invalid JSON data")
 
-        account = Account.all().filter('user', user).get()
-        if account is None:
-            account = Account(user=user)
-            account.put()
-            notify_admins_about_new_user_signup(user)
         if app_id == 'new':
             app = App(name=body['name'], created_by=account.key(), editors=[account.key()])
         else:
@@ -129,13 +127,9 @@ class SaveAppHandler(RequestHandler):
 class DeleteAppHandler(RequestHandler):
 
     @auth
-    def delete(self, user, **kwargs):
+    def delete(self, user, account, **kwargs):
         app_id = kwargs['app_id']
 
-        account = Account.all().filter('user', user).get()
-        if account is None:
-            account = Account(user=user)
-            account.put()
         app = App.get_by_id(int(app_id))
         if app is None:
             return render_json_response({ 'error': 'app-not-found' })
@@ -160,24 +154,20 @@ def format_images(group):
         yield format_image(image)
 
 def format_group(group, read_write):
-    return [{'id': group.key().id_or_name(),
-             'name': group.name,
-             'writeable': read_write,
-             'effect': group.effect,
-             'images': list(format_images(group)) }]
+    return {'id': group.key().id_or_name(),
+            'name': group.name,
+            'writeable': read_write,
+            'effect': group.effect,
+            'images': list(format_images(group))}
 
-class GetImageGroupHandler(RequestHandler):
-    @auth
-    def get(self, user, group_id):
-        account = Account.all().filter('user', user).get()
-        if account is None:
-            raise NotFound()
-
+def get_image_group_or_404(group_id):
+    try:
         group = ImageGroup.get_by_id(int(group_id))
-        if not group:
-            raise NotFound()
-
-        return render_json_response(format_group(group, group.owner == account))
+    except ValueError:
+        group =ImageGroup.get_by_key_name(group_id)
+    if not group:
+        raise NotFound()
+    return group
 
 class GetImageListHandler(RequestHandler):
 
@@ -185,31 +175,71 @@ class GetImageListHandler(RequestHandler):
         "SELECT * FROM ImageGroup WHERE owner = NULL ORDER BY priority"
 
     @auth
-    def get(self, user, **kwargs):
+    def get(self, user, account, **kwargs):
         images = []
-        account = Account.all().filter('user', user).get()
-        # FIXME: output list of images split by group
-        if account:
-            for group in db.GqlQuery(self.COMMON_GROUPS_QUERY):
-                images += format_group(group, False)
-            for group in account.imagegroup_set.order('priority'):
-                images += format_group(group, True)
-
+        for group in db.GqlQuery(self.COMMON_GROUPS_QUERY):
+            images += [format_group(group, False)]
+        for group in account.imagegroup_set.order('priority'):
+            images += [format_group(group, True)]
         return render_json_response(images)
 
-class ServeImageHandler(RequestHandler):
+class GetImageGroupHandler(RequestHandler):
+    @auth
+    def get(self, user, account, group_name):
+        group = get_image_group_or_404(group_name)
+        return render_json_response(format_group(group, group.owner == account))
 
-    def get(self, image_name):
-        img = Image.get_by_key_name(image_name)
-        if img is None:
-            raise NotFound()
+class SaveImageHandler(RequestHandler):
+    @auth
+    def post(self, user, account, group_name):
+        group = get_image_group_or_404(group_name)
 
-        img_data = ImageData.get_by_key_name(image_name)
-        if img_data is None:
-            raise NotFound()
+        # FIXME: admins!
+        if group.owner.key() != account.key():
+            return render_json_response({ 'error': 'access-denied'})
 
-        return Response(response=img_data.data, mimetype='image/png')
+        file_name = request.headers['X-File-Name']
+        data = request.data
 
+        mime_type = mimetypes.guess_type(file_name)
+        if not mime_type.startswith('image/'):
+            return render_json_response({'error': 'wrong-file-type'})
+
+        img = images.Image(data)
+
+        data = ImageData(data=data)
+        data.put()
+
+        image = Image(file_name=file_name,
+                      width=img.width,
+                      height=img.height,
+                      mime_type=mime_type,
+                      group=group,
+                      data=data)
+        image.put()
+
+        return render_json_response({ 'name': image.file_name })
+
+#
+# UGLY HACK: effect name is embedded to filename
+#
+KNOWN_EFFECTS = set(['iphone-tabbar-active', 'iphone-tabbar-inactive'])
+FILENAME_RE = re.compile('^(.+\.)([^.]+)\.([^.]+)$')
+
+def parse_image_name(name):
+    '''
+    This function parses image name and extracts effect name from it.
+    It is supposed that effect names do not have '.' inside and image
+    names contain single extension immediately preceded by effect name.
+    '''
+    r = FILENAME_RE.match(name)
+    if r and r.group(2) in KNOWN_EFFECTS:
+        return r.group(1) + r.group(3), r.group(2)
+    else:
+        return name, None
+#
+# END OF UGLY HACK
+#
 
 def overlay_png(underlay, overlay):
     '''
@@ -258,91 +288,51 @@ def overlay_png(underlay, overlay):
     png.Writer(sw, sh, bitdepth=8, alpha=True, planes=4).write(f, res)
     return f
 
-class ServeProcessedImageHandler(RequestHandler):
+class ServeImageHandler(RequestHandler):
+    def get(self, group_name, image_name):
+        filename, effect = parse_image_name(image_name)
 
-    def get(self, image_name, effect):
-        if effect in ('iphone-tabbar-active', 'iphone-tabbar-inactive'):
-            if image_name.startswith('stock--'):
-                path = os.path.join(os.path.dirname(__file__), '..', 'server-images', image_name.replace('--', '/'))
-                kw = dict(file=open(path, 'rb'))
-            else:
-                img = Image.get_by_key_name(image_name)
-                if img is None:
-                    raise NotFound()
+        group = get_image_group_or_404(group_name)
 
-                img_data = ImageData.get_by_key_name(image_name)
-                if img_data is None:
-                    raise NotFound()
+        img = db.GqlQuery("SELECT * FROM Image WHERE file_name = :1 AND group = :2",
+                          filename, group).get()
+        if not img or not img.data:
+            raise NotFound()
 
-                kw = dict(bytes=img_data.data)
+        if not effect:
+            response_data = img.data.data
+            response_type = img.mime_type
+        else:
+            square_file = os.path.join(os.path.dirname(__file__), '..',
+                                       'server-images', effect + '.png')
 
-            square_file = os.path.join(os.path.dirname(__file__), '..', 'server-images', effect + '.png')
+            f = overlay_png(png.Reader(file=open(square_file, 'rb')),
+                            png.Reader(bytes=img.data.data))
 
-            f = overlay_png(png.Reader(file=open(square_file, 'rb')), png.Reader(**kw))
+            response_data = f.getvalue()
+            response_type = 'image/png' # We know overlay_png returns PNG
 
-            return Response(response=f.getvalue(), mimetype='image/png')
+        return Response(response=response_data,
+                        mimetype=response_type)
 
 class DeleteImageHandler(RequestHandler):
-
     @auth
-    def delete(self, user, image_name):
-        account = Account.all().filter('user', user).get()
-        if account is None:
-            raise NotFound()
+    def delete(self, user, account, group_name, image_name):
+        group = get_image_group_or_404(group_name)
+
+        # FIXME: admins!
+        if group.owner.key() != account.key():
+            return render_json_response({'error': 'access-denied'})
 
         img = Image.get_by_key_name(image_name)
         if img is None:
             raise NotFound()
 
-        group = ImageGroup.get(img.group.key())
-        if group is None:
-            raise NotFound()
-
-        if group.owner.key() != account.key():
-            return render_json_response({ 'error': 'access-denied' })
-
-        img_data = ImageData.get_by_key_name(image_name)
-        if img_data is None:
-            raise NotFound()
-
+        if img.data:
+            img.data.delete()
         img.delete()
-        img_data.delete()
 
-        return render_json_response({ 'status': 'ok' })
-
-class SaveImageHandler(RequestHandler):
-
-    # FIXME: use actual drop position to figure out Group
-    def set_group(self, account, image):
-        groups = db.GqlQuery("SELECT * FROM ImageGroup WHERE owner = :1", account)
-        if groups.count() == 0:
-            group = ImageGroup(name='Custom Images', owner=account, priority=1)
-            group.put()
-        else:
-            group = groups[0]
-        image.group = group
-
-    @auth
-    def post(self, user, **kwargs):
-        account = Account.all().filter('user', user).get()
-        if account is None:
-            account = Account(user=user)
-            account.put()
-
-        file_name = request.headers['X-File-Name']
-        data = request.data
-
-        img = images.Image(data)
-
-        image_key = "img-%s-%s" % (account.key().id_or_name(), file_name)
-        image = Image(key_name=image_key, account=account, file_name=file_name, width=img.width, height=img.height)
-        self.set_group(account, image)
-        image.put()
-
-        image_data = ImageData(key_name=image_key, data=data)
-        image_data.put()
-
-        return render_json_response({ 'id': image.key().id()    })
+        return render_json_response({'status': 'ok'})
 
 class RunAppHandler(RequestHandler):
 

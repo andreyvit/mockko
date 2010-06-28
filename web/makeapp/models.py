@@ -25,16 +25,19 @@ class ImageGroup(db.Model):
 
     effect = db.StringProperty()
 
+class ImageData(db.Model):
+    data = db.BlobProperty()
+
 class Image(db.Model):
     account   = db.ReferenceProperty(Account)
     file_name = db.StringProperty()
     width     = db.IntegerProperty()
     height    = db.IntegerProperty()
+    mime_type = db.StringProperty()
 
     created_at = db.DateTimeProperty(auto_now_add=True)
     updated_at = db.DateTimeProperty(auto_now=True)
 
     group = db.ReferenceProperty(ImageGroup)
 
-class ImageData(db.Model):
-    data = db.BlobProperty()
+    data = db.ReferenceProperty(ImageData)

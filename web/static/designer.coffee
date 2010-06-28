@@ -87,9 +87,17 @@ jQuery ($) ->
             saveApplicationChanges: (app, appId, callback) ->
                 #
 
-            uploadImageFile: (fileName, file, callback) ->
+            uploadImageFile: (groupName, fileName, file, callback) ->
+                #
+
             loadCustomImages: (callback) ->
-            deleteCustomImage: (imageId, callback) ->
+                #
+
+            deleteCustomImage: (groupName, imageId, callback) ->
+                #
+
+            getImageGroupInfo: (imageGroupId, callback) ->
+                #
         }
 
         'authenticated': {
@@ -128,11 +136,11 @@ jQuery ($) ->
                         handleHttpError failedActivity, status, e
                 }
 
-            uploadImageFile: (fileName, file, callback) ->
+            uploadImageFile: (groupName, fileName, file, callback) ->
                 failedActivity: "Could not upload your image"
                 $.ajax {
                     type: 'POST'
-                    url: '/images/'
+                    url: '/images/${encodeURIComponent groupName}'
                     data: file
                     processData: no
                     beforeSend: (xhr) -> xhr.setRequestHeader("X-File-Name", fileName)
@@ -158,15 +166,30 @@ jQuery ($) ->
                         handleHttpError failedActivity, status, e
                 }
 
-            deleteCustomImage: (imageId, callback) ->
+            deleteCustomImage: (groupName, imageId, callback) ->
                 failedActivity: "Could not delete the image"
                 $.ajax {
                     type: 'DELETE'
-                    url: "/images/${encodeURIComponent imageId}"
+                    url: "/images/${encodeURIComponent groupName}/${encodeURIComponent imageId}"
                     dataType: 'json'
                     success: (r) ->
                         return if processPossibleErrorResponse(failedActivity, r)
                         callback()
+                    error: (xhr, status, e) ->
+                        handleHttpError failedActivity, status, e
+                }
+
+            getImageGroupInfo: (imageGroupId, callback) ->
+                console.log "Requesting /images/$imageGroupId"
+                failedActivity: "Could not load image group info"
+                $.ajax {
+                    type: 'GET'
+                    url: "/images/$imageGroupId"
+                    dataType: 'json'
+                    success: (r) ->
+                        console.log "Finished requesting /images/$imageGroupId"
+                        return if processPossibleErrorResponse(failedActivity, r)
+                        callback(r)
                     error: (xhr, status, e) ->
                         handleHttpError failedActivity, status, e
                 }
@@ -204,9 +227,17 @@ jQuery ($) ->
                     # { 'id': 43, 'body': JSON.stringify(MakeApp.appTemplates.basic) }
                 ]
 
-            uploadImageFile: (fileName, file, callback) ->
+            uploadImageFile: (groupName, fileName, file, callback) ->
+                #
+
             loadCustomImages: (callback) ->
-            deleteCustomImage: (imageId, callback) ->
+                #
+
+            deleteCustomImage: (groupName, imageId, callback) ->
+                #
+
+            getImageGroupInfo: (imageGroupId, callback) ->
+                #
         }
     }
 
@@ -327,18 +358,14 @@ jQuery ($) ->
 
     externalizeImage: (image) ->
         {
-            'kind': image.kind
             'group': image.group
             'name': image.name
-            'id': image.id
         }
 
     internalizeImage: (image) ->
         {
-            kind: image['kind']
             group: image['group']
             name: image['name']
-            id: image['id']
         }
 
     externalizeComponent: (c) ->
@@ -392,7 +419,7 @@ jQuery ($) ->
         if rc.image?.constructor is String
             if rc.image.substr(0, 'images/'.length) == 'images/'
                 encodedId: rc.image.substr('images/'.length)
-                rc.image: { kind: 'custom', id: decodeURIComponent encodedId }
+                rc.image: { id: decodeURIComponent encodedId }
             else
                 throw "Invalid image reference: ${rc.image}"
         rc.style: $.extend({}, (if rc.type.textStyleEditable then DEFAULT_TEXT_STYLES else {}), rc.type.style || {}, internalizeStyle(c['style'] || {}))
@@ -811,13 +838,52 @@ jQuery ($) ->
             when 'iphone-tabbar-inactive' then { w: 35, h: 32 }
             else image.size
 
-    imageUrlForImage: (image, effect) ->
-        switch image.kind
-            when 'custom'
-                if effect and serverMode.supportsImageEffects
-                    "images/${encodeURIComponent image.id}/${effect}"
-                else
-                    "images/${encodeURIComponent image.id}"
+    _imageEffectName: (image, effect) ->
+        splitext: /^(.*)\.([^.]+)$/
+        split: splitext.exec image
+        if split?
+            "${split[1]}.${effect}.${split[2]}"
+        else
+            throw "Unable to split ${image} into filename and extensions"
+
+    #
+    # UI may request URLs for many images belonging to the same image group.
+    #
+    # To avoid issuing sheer amount of requests to server, first call will mark
+    # image group as "pending", so subsequent calls will add callback to the
+    # list of "waiting for image group $foo". All callbacks will be executed
+    # when AJAX handler is executed.
+    #
+
+    groups: {}
+    pending: {}
+
+    _returnImageUrl: (image, effect, cb) ->
+        hsh: groups[image.group][image.name]
+        if effect and serverMode.supportsImageEffects
+            cb "images/${encodeURIComponent image.group}/${encodeURIComponent (_imageEffectName image.name, effect)}?${hsh}"
+        else
+            cb "images/${encodeURIComponent image.group}/${encodeURIComponent image.name}?${hsh}"
+
+    _updateGroup: (groupName, group) ->
+        info: {}
+        for imginfo in group
+            info[imginfo['fileName']]: imginfo['hash']
+        groups[groupName]: info
+
+    getImageUrl: (image, effect, callback) ->
+        if not(image.group of groups)
+            if image.group of pending
+                pending[image.group].push([image, effect, callback])
+            else
+                pending[image.group]: [[image, effect, callback]]
+                serverMode.getImageGroupInfo image.group, (info) ->
+                    _updateGroup image.group, info['images']
+                    for [image, effect, callback] in pending[image.group]
+                        _returnImageUrl image, effect, callback
+                    delete pending[image.group]
+        else
+            _returnImageUrl image, effect, callback
 
     renderImageDefault: (comp, node, imageUrl) ->
         $(imageNodeOfComponent comp, node).css { backgroundImage: "url(${imageUrl})"}
@@ -846,7 +912,7 @@ jQuery ($) ->
         $(textNodeOfComponent c, cn).css css
 
         if style.background?
-            if not BACKGROUND_STYLES[style.background]
+            if not (BACKGROUND_STYLES[style.background])
                 console.log "!! Unknown backgrond style ${style.background} for ${c.type.name}"
             bgn: cn || c.node
             if bgsel: c.type.backgroundSelector
@@ -859,8 +925,8 @@ jQuery ($) ->
         if c.text? and not c.dirtyText
             $(textNodeOfComponent c, cn).html(c.text)
         if c.image?
-            imageUrl: imageUrlForImage(c.image, style.imageEffect || null)
-            (c.type.renderImage || renderImageDefault)(c, cn, imageUrl)
+            getImageUrl c.image, (style.imageEffect || null), (imageUrl) ->
+                (c.type.renderImage || renderImageDefault)(c, cn, imageUrl)
         actionURL: encodeActionAsURL(c)
         $(cn).attr('action', actionURL)
         $(cn).alterClass('has-action', actionURL != '')
@@ -966,7 +1032,7 @@ jQuery ($) ->
         traverse activeScreen.rootComponent, (comp) ->
             if inSet comp, exclusionSet
                 return skipTraversingChildren
-            if not doesRectIntersectRect rect, rectOf comp
+            if not (doesRectIntersectRect rect, rectOf comp)
                 return skipTraversingChildren
             if comp.type is type
                 match: comp
@@ -2433,13 +2499,14 @@ jQuery ($) ->
                 i: {
                     type: 'image'
                     label: "${image.fileName} ${image.width}x${image.height}"
-                    image: { kind: 'custom', id: image.id }
+                    image: { name: image.fileName, group: group_id }
                     # TODO landscape
                     size: constrainImageSize { w: image.width, h: image.height }, { w: 320, h: 480 }
                     imageEl: image
                 }
                 if group.effect
                     i.style = { imageEffect: group.effect }
+                    i.size = imageSizeForImage i, group.effect
                 group.items.push(i)
             renderPaletteGroup group, false
             renderPaletteGroupContent group, group.element, (item, node) ->
@@ -3045,7 +3112,6 @@ jQuery ($) ->
                     writeable: group['writeable']
                 }
                 gg.images: ({
-                    id: img['id']
                     width: img['width']
                     height: img['height']
                     fileName: img['fileName']
@@ -3184,7 +3250,6 @@ jQuery ($) ->
                 deactivateMode()
             accept: (newText) ->
                 app.content.name: newText
-                console.log app.content
                 serverMode.saveApplicationChanges externalizeApplication(app.content), app.id, (newId) ->
                     refreshApplicationList()
         }
@@ -3312,7 +3377,6 @@ jQuery ($) ->
     renderApplication: (appData, destination, show_name) ->
         appId: appData['id']
         app: JSON.parse(appData['body'])
-        console.log app
         app: internalizeApplication(app)
         an: domTemplate('app-template')
         $('.caption', $(an)).html(if show_name then app.name + ' (' + appData['nickname'] + ')' else app.name)
@@ -3357,9 +3421,7 @@ jQuery ($) ->
         switchToDashboard()
 
     loadDesigner: (userData) ->
-        console.log userData
         $("body").removeClass("anonymous-user authenticated-user").addClass("${userData['status']}-user")
-        serverMode = SERVER_MODES[userData['status']]
         console.log serverMode
         serverMode.adjustUI userData
         serverMode.startDesigner userData
@@ -3401,9 +3463,7 @@ jQuery ($) ->
     if window.location.href.match /^file:/
         serverMode: SERVER_MODES['local']
     else
-        serverMode: SERVER_MODES['anonymous']
-        if window.location.href.match /^http:\/\/localhost/
-            SERVER_MODES['anonymous'].supportsImageEffects: SERVER_MODES['authenticated'].supportsImageEffects: no
+        serverMode: SERVER_MODES['authenticated']
 
     initComponentTypes()
     initPalette()

@@ -12,12 +12,9 @@ def get_rules():
         Rule('/apps/<int:app_id>/', endpoint='api/save-app', methods=['POST'], handler='makeapp.handlers:SaveAppHandler'),
         Rule('/apps/<int:app_id>/', endpoint='api/delete-app', methods=['DELETE'], handler='makeapp.handlers:DeleteAppHandler'),
 
-        Rule('/image-groups/<group_id>', endpoint='api/image-group', methods=['GET'], handler='makeapp.handlers:GetImageGroupHandler'),
-
         Rule('/images/', endpoint='api/get-image-list', methods=['GET'], handler='makeapp.handlers:GetImageListHandler'),
-        Rule('/images/<image_name>', endpoint='api/serve-image', methods=['GET'], handler='makeapp.handlers:ServeImageHandler'),
-        Rule('/images/<image_name>/<effect>', endpoint='api/serve-processed-image', methods=['GET'], handler='makeapp.handlers:ServeProcessedImageHandler'),
-
-        Rule('/images/', endpoint='api/save-image', methods=['POST'], handler='makeapp.handlers:SaveImageHandler'),
-        Rule('/images/<image_name>', endpoint='api/delete-image', methods=['DELETE'], handler='makeapp.handlers:DeleteImageHandler'),
+        Rule('/images/<group_name>', endpoint='api/image-group', methods=['GET'], handler='makeapp.handlers:GetImageGroupHandler'),
+        Rule('/images/<group_name>', endpoint='api/save-image', methods=['POST'], handler='makeapp.handlers:SaveImageHandler'),
+        Rule('/images/<group_name>/<image_name>', endpoint='api/serve-image', methods=['GET'], handler='makeapp.handlers:ServeImageHandler'),
+        Rule('/images/<group_name>/<image_name>', endpoint='api/delete-image', methods=['DELETE'], handler='makeapp.handlers:DeleteImageHandler'),
     ]
