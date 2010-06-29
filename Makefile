@@ -98,10 +98,12 @@ SUM_FILES = .designerjs.sum .themecss.sum .iphonecss.sum \
 
 ${OPT_DIR}/designer.min.html: web/designer.html .designerjs.sum .themecss.sum .iphonecss.sum
 	@echo "  HTML SED" $@
+	@mkdir -p $(dir $@)
 	grep -v 'designer-.*\.js\|jpicker\.js\|lib/.*\.js\|animations.css\|theme-designer.css\|theme-dashboard.css' < $< | perl -pe "s/designer\.js/designer.min.js?"$$(cat .designerjs.sum)"/g; s/iphone.css/iphone.min.css?"$$(cat .iphonecss.sum)"/g; s/theme-common.css/theme.min.css?"$$(cat .themecss.sum)"/g" > $@ || (rm -f $@; false)
 
 ${OPT_DIR}/iphone.min.css: web/static/iphone/iphone.css .iphone-images.sum
 	@echo "  YUI " $<
+	@mkdir -p $(dir $@)
 	${YUI} $< | perl -pe "s,(images/[^\"]+),\1?"$$(cat .iphone-images.sum)",g" > $@ || (rm -f $@; false)
 
 THEME_CSS = web/static/lib/animations.css \
@@ -111,6 +113,7 @@ THEME_CSS = web/static/lib/animations.css \
 
 ${OPT_DIR}/theme.min.css: ${THEME_CSS} .theme-images.sum
 	@echo "  YUI theme.css"
+	@mkdir -p $(dir $@)
 	(for i in $(filter %.css,$^); do ${YUI} $$i; done) | \
 		perl -pe "s,(images/[^\"]+),\1?"$$(cat .theme-images.sum)",g" > $@ || (rm -f $@; false)
 
@@ -122,6 +125,7 @@ JS_LIBS = $(addprefix web/static/lib/, \
 
 ${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.closure.js
 	@echo "  YUI designer.js"
+	@mkdir -p $(dir $@)
 	(for i in $(filter %.js,$^); do ${YUI} $$i; done) > $@ || (rm -f $@; false)
 
 %.closure.js: %.premin.js
