@@ -96,6 +96,16 @@ handlers:
   static_dir: static/theme/images
   login: admin
 
+# Webios
+
+- url: /webios/
+  static_files: webios/demo.html
+  upload: webios/demo.html
+
+- url: /webios/(.*\.(?:html|js|css|coffee|less|haml|png))
+  static_files: webios/\1
+  upload: webios/.*\.(?:html|js|css|coffee|less|haml|png)
+
 # Other boring stuff
 
 - url: /remote_api

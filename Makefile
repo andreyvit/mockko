@@ -10,9 +10,9 @@ YUI=java -jar scripts/yuicompressor-2.4.2.jar
 PREMIN=ruby scripts/preminifier/premin.rb
 
 # Source code
-COFFEE = $(wildcard web/static/*.coffee)
-LESS = $(wildcard web/static/*.less) $(wildcard web/static/*/*.less)
-HAML = $(wildcard web/*.haml)
+COFFEE = $(wildcard web/static/*.coffee) $(wildcard web/webios/webios/*.coffee)
+LESS = $(wildcard web/static/*.less) $(wildcard web/static/*/*.less) $(wildcard web/webios/webios/*.less)
+HAML = $(wildcard web/*.haml) $(wildcard web/static/*/*.haml) $(wildcard web/webios/*.haml)
 
 # Compiled code
 JS = $(patsubst %.coffee,%.js,${COFFEE})
