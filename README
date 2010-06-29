@@ -2,7 +2,7 @@
 
 * GNU make
 * ruby-haml
-* ruby-less
+* less.js
 * coffeescript [trunk]
 * nodejs [< 0.1.97]
 * GAE Python SDK (for 'make run' and 'make deploy')
