@@ -43,6 +43,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         heightPolicy: { autoSize: 'fill' }
         unmovable: yes
         supportsBackground: yes
+        canHazLink: no
         style: {
             background: 'striped'
         }
@@ -81,6 +82,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         heightPolicy: { fixedSize: 20 }
         pin: Pins.top
         singleInstance: yes
+        canHazLink: no
     }
     'tabBar': {
         label: 'Tab Bar'
@@ -91,6 +93,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         singleInstance: yes
         hitAreaInset: 10
         hitAreaOutset: 10
+        canHazLink: no
     }
     'tab-bar-item': {
         label: 'Tab Bar Item'
@@ -118,6 +121,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         container: yes
         pin: Pins.secondTop
         singleInstance: yes
+        canHazLink: no
     }
     'backButton': {
         label: 'Back Button'
@@ -154,6 +158,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         container: yes
         pin: Pins.secondBottom
         singleInstance: yes
+        canHazLink: no
     }
     'roundedButton': {
         label: 'Rounded Button'
@@ -336,6 +341,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         html: '<ul class="segmented"></ul>'
         hitAreaInset: 10
         hitAreaOutset: 10
+        canHazLink: no
     }
     'segment': {
         label: 'Segment of Segmented Control'

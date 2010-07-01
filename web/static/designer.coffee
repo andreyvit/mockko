@@ -1433,7 +1433,8 @@ jQuery ($) ->
             $(handle).css({ left: pos.x, top: pos.y }).alterClass('disabled', disabled).alterClass('hidden', not visible)
         $('#hover-panel .duplicate-handle').alterClass('disabled', hoveredComponent.type.singleInstance)
         $('#hover-panel').alterClass('controls-outside', controlsOutside)
-        $('.unlink-handle').alterClass('disabled', not hoveredComponent.action?)
+        $('.link-handle').alterClass('disabled', not hoveredComponent.type.canHazLink)
+        $('.unlink-handle').alterClass('disabled', not (hoveredComponent.type.canHazLink and hoveredComponent.action?))
         if hoveredComponent.action?
             renderActionOverlay(hoveredComponent)
         else
@@ -3458,6 +3459,8 @@ jQuery ($) ->
             ct.supportsText: ct.defaultText?
             unless ct.canHazColor?
                 ct.canHazColor: yes
+            unless ct.canHazLink?
+                ct.canHazLink: yes
 
     createNewApplicationName: ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
