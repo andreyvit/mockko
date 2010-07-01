@@ -77,32 +77,6 @@ jQuery ($) ->
             false
 
     SERVER_MODES = {
-        'anonymous': {
-            supportsImageEffects: yes
-
-            adjustUI: (userData) ->
-                $('.login-button').attr 'href', userData['login_url']
-
-            startDesigner: (userData) ->
-                createNewApplication()
-                $('#welcome-screen').show()
-
-            saveApplicationChanges: (app, appId, callback) ->
-                #
-
-            uploadImage: (groupName, fileName, file, callback) ->
-                #
-
-            loadImages: (callback) ->
-                #
-
-            deleteImage: (groupName, imageId, callback) ->
-                #
-
-            loadImageGroup: (imageGroupId, callback) ->
-                #
-        }
-
         'online': {
             supportsImageEffects: yes
 
@@ -3464,7 +3438,7 @@ jQuery ($) ->
         switchToDashboard()
 
     loadDesigner: (userData) ->
-        $("body").removeClass("anonymous-user authenticated-user").addClass("${userData['status']}-user")
+        $("body").removeClass("offline-user online-user").addClass("${userData['status']}-user")
         console.log serverMode
         serverMode.adjustUI userData
         serverMode.startDesigner userData
