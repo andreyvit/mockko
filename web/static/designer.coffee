@@ -103,7 +103,7 @@ jQuery ($) ->
                 #
         }
 
-        'authenticated': {
+        'online': {
             supportsImageEffects: yes
 
             adjustUI: (userData) ->
@@ -211,7 +211,7 @@ jQuery ($) ->
                 }
         }
 
-        'local': {
+        'offline': {
             supportsImageEffects: no
 
             adjustUI: (userData) ->
@@ -3503,9 +3503,9 @@ jQuery ($) ->
         adjustDeviceImagePosition()
 
     if window.location.href.match /^file:/
-        serverMode: SERVER_MODES['local']
+        serverMode: SERVER_MODES['offline']
     else
-        serverMode: SERVER_MODES['authenticated']
+        serverMode: SERVER_MODES['online']
 
     initComponentTypes()
     initPalette()
