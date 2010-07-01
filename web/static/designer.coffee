@@ -3500,6 +3500,3 @@ jQuery ($) ->
 
     serverMode.getUserInfo (userInfo) ->
         loadDesigner userInfo
-
-    # Make-App Dump
-    window.mad: -> activeScreen
