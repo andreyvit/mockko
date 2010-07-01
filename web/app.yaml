@@ -131,6 +131,9 @@ admin_console:
   - name: App Stats
     url: /admin/stats
 
+derived_file_type:
+- python_precompiled
+
 skip_files:
 - ^(.*/)?app\.yaml
 - ^(.*/)?app\.yml
