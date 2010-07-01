@@ -652,6 +652,15 @@ jQuery ($) ->
             liveMover.moveComponents moves
             liveMover.commit(delay)
 
+    commitMovesImmediately: (moves) ->
+        for m in moves
+            for c in m.comps || [m.comp]
+                offset: m.offset || subPtPt(m.abspos, c.abspos)
+                traverse c, (child) ->
+                    child.abspos: { x: child.abspos.x + offset.x; y: child.abspos.y + offset.y }
+                    child.size: m.size if m.size
+                    componentPositionChangedPernamently child
+
     ##########################################################################################################
     ##  component management
 
@@ -699,6 +708,7 @@ jQuery ($) ->
             $(rootc.node).hide 'drop', { direction: 'down' }, 'normal', -> $(rootc.node).remove()
         else
             $(rootc.node).remove()
+        containerChildrenChanged rootc.parent
         deselectComponent() if isComponentOrDescendant selectedComponent, rootc
         componentUnhovered() if isComponentOrDescendant hoveredComponent, rootc
 
@@ -721,22 +731,26 @@ jQuery ($) ->
         # make sure all ids are reassigned
         traverse newComp, (c) -> c.id: null
 
+        $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
+        traverse newComp, (c) -> updateEffectiveSize c
+
         effect: computeDuplicationEffect newComp, comp
         if effect is null
+            $(newComp.node).remove()
             alert "Cannot duplicate the component because another copy does not fit into the designer"
             return
+
+        comp.parent.children.push newComp
 
         newRect: effect.rect
         if newRect.w != comp.effsize.w or newRect.h != comp.effsize.h
             newComp.size: { w: newRect.w, h: newRect.h }
+        moveComponent newComp, newRect
+        componentPositionChangedPernamently newComp
 
         commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION
-        moveComponent newComp, newRect
 
-        comp.parent.children.push newComp
-        $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
-        traverse newComp, (c) -> updateEffectiveSize c
-
+        containerChildrenChanged comp.parent
         componentsChanged()
 
     # findParent: (c) -> c.parent
@@ -764,6 +778,14 @@ jQuery ($) ->
 
         trav(activeScreen.rootComponent)?.comp || activeScreen.rootComponent
 
+    containerChildrenChanged: (container) ->
+        sorted: _(container.children).sortBy (child) -> child.abspos.x
+        if _(_(sorted).zip(container.children)).any((a, b) -> a isnt b)
+            for node in (n for n in container.node.childNodes)
+                container.node.removeChild node
+            for node in (child.node for child in sorted)
+                container.node.appendChild node
+
     ##########################################################################################################
     ##  DOM rendering
 
@@ -788,34 +810,60 @@ jQuery ($) ->
             renderComponentPosition ch, n if ch != c
             n
 
-    renderInteractiveComponentHeirarchy: (c) ->
+    renderPaletteComponentHierarchy: (c) ->
         _renderComponentHierarchy c, (ch, n) ->
+            ch.node: n
+            renderComponentVisualProperties ch
+            renderComponentPosition ch if ch != c
+            n
+
+    updateEffectiveSizesInHierarchy: (c) ->
+        traverse c, (child) ->
+            updateEffectiveSize child
+
+    relayoutHierarchy: (c) ->
+        traverse c, (child) ->
+            if effect: computeContainerLayout(child).relayout()
+                commitMovesImmediately effect.moves
+                containerChildrenChanged child
+
+    renderInteractiveComponentHeirarchy: (c) ->
+        rootNode: _renderComponentHierarchy c, (ch, n) ->
             storeAndBindComponentNode ch, n
             renderComponentProperties ch
             n
+        traverse c, (child) ->
+            if effect: computeContainerLayout(child).relayout()
+                commitMovesImmediately effect.moves
+        rootNode
 
     findComponentAt: (pt) ->
         if activeLinkOverlay && activeLinkOverlay.justAdded
             pagePt: addPtPt(pt, ptFromNode('#design-area'))
             if (d: distanceToLinkOverlay(pagePt)) < activeLinkOverlay.safeDistance
                 return activeLinkOverlay.comp
+
+        result: null
+        visitor: (child) ->
+            rect: rectOf(child)
+            hitRect: if o: child.type.hitAreaOutset then insetRect rect, { l: -o, r: -o, t: -o, b: -o } else rect
+            unless ptInRect(pt, hitRect)
+                return skipTraversingChildren
+            result: child
+            if o: child.type.hitAreaInset
+                # hit the container instead of children if the mouse is within o px from its border
+                hitRect: insetRect rect, { l: o, r: o, t: o, b: o }
+                unless ptInRect(pt, hitRect)
+                    return skipTraversingChildren
+
         if hoveredComponent
             rect: insetRect rectOf(hoveredComponent), { l: -7, r: -7, t: -20, b: -7 }
             if ptInRect(pt, rect)
                 result: hoveredComponent
-                traverse hoveredComponent, (child) ->
-                    rect: rectOf(child)
-                    unless ptInRect(pt, rect)
-                        return skipTraversingChildren
-                    result: child
+                traverse hoveredComponent, visitor
                 return result
 
-        result: null
-        traverse activeScreen.rootComponent, (child) ->
-            rect: rectOf(child)
-            unless ptInRect(pt, rect)
-                return skipTraversingChildren
-            result: child
+        traverse activeScreen.rootComponent, visitor
         result
 
     findComponentByEvent: (e) ->
@@ -835,7 +883,6 @@ jQuery ($) ->
                     'x': c.abspos.x - ((c.parent?.dragpos && false || c.parent?.abspos)?.x || 0)
                     'y': c.abspos.y - ((c.parent?.dragpos && false || c.parent?.abspos)?.y || 0)
                 }
-
         $(cn || c.node).css({
             left:   "${relpos.x}px"
             top:    "${relpos.y}px"
@@ -926,7 +973,8 @@ jQuery ($) ->
         style: $.extend({}, dynamicStyle, c.stylePreview || c.style)
         css: {}
         css.fontSize: style.fontSize if style.fontSize?
-        css.color: style.textColor if style.textColor?
+        if c.type.canHazColor
+            css.color: style.textColor if style.textColor?
         css.fontWeight: (if style.fontBold then 'bold' else 'normal') if style.fontBold?
         css.fontStyle: (if style.fontItalic then 'italic' else 'normal') if style.fontItalic?
 
@@ -1141,7 +1189,8 @@ jQuery ($) ->
             w: recomputeEffectiveSizeInDimension size.w, ct.widthPolicy, 320
             h: recomputeEffectiveSizeInDimension size.h, ct.heightPolicy, 480
         }
-        $(cn || c.node).css({ width: sizeToPx(effsize.w), height: sizeToPx(effsize.h) })
+        $(cn || c.node).css('width', sizeToPx(effsize.w))
+        $(cn || c.node).css('height', sizeToPx(effsize.h))
         return effsize
 
     updateEffectiveSize: (c) ->
@@ -1374,7 +1423,7 @@ jQuery ($) ->
         xenable: { 'l': yes, 'c': (hoveredComponent.effsize.w >= 23), 'r': yes }
         yenable: { 't': yes, 'c': (hoveredComponent.effsize.h >= 23), 'b': yes }
         # hoveredComponent.effsize.w < 63 or hoveredComponent.effsize.h <= 25
-        controlsOutside: yes
+        controlsOutside: not (hoveredComponent.parent?.type?.hitAreaInset)
         _($('#hover-panel .resizing-handle')).each (handle, index) ->
             [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]]
             pos: { x: xpos[hmode], y: ypos[vmode] }
@@ -1862,33 +1911,6 @@ jQuery ($) ->
                 if delay? then setTimeout(cleanup, delay) else cleanup()
         }
 
-    positionTabBarItems: (count, tabBarRect) ->
-        [hinset, hgap, vinset]: [5, 2, 3]
-        itemSize: { w: (tabBarRect.w - 2*hinset - hgap*(count-1)) / count
-                    h: Types['tab-bar-item'].heightPolicy.fixedSize }
-        pt: { x: tabBarRect.x + hinset, y: tabBarRect.y + vinset }
-        switch count
-            when 0 then []
-            when 1 then [rectFromPtAndSize(pt, itemSize)]
-            else
-                index: 0
-                while index++ < count
-                    r: rectFromPtAndSize(pt, itemSize)
-                    pt.x += itemSize.w + hgap
-                    r
-
-    positionToolbarItems: (children, outerRect) ->
-        return [] if children.length is 0
-
-        totalW: _(children).reduce 0, (memo, child) -> memo + child.effsize.w
-        hgap = (outerRect.w - totalW) / (children.length + 1)
-
-        x: outerRect.x + hgap
-        for child in children
-            r: rectFromPtAndSize { x: x, y: outerRect.y + (outerRect.h-child.effsize.h)/2 }, child.effsize
-            x += child.effsize.w + hgap
-            r
-
     newItemsForHorizontalStack: (items, comp, rect) ->
         if _(items).include(comp)
             filteredItems: _(_(items).without(comp)).sortBy (child) -> child.abspos.x
@@ -2012,6 +2034,7 @@ jQuery ($) ->
                 for e in effects
                     e.apply()
                 liveMover.commit()
+                containerChildrenChanged comp.parent
                 true
             else
                 comp.dragpos: null
@@ -2087,41 +2110,30 @@ jQuery ($) ->
                         moves.push { comp: child, abspos: newRect }
             { moves }
 
-    class TabBarItemLayout extends Layout
+        relayout: -> throw "Unsupported operation: unreachable at the moment"
+
+    class ContainerDeterminedLayout extends Layout
 
         computeDropEffect: (comp, rect, moveOptions) ->
             newChildren: newItemsForHorizontalStack @target.children, comp, rect
-            itemRects: positionTabBarItems newChildren.length, rectOf(@target)
+            itemRects: @target.type.layoutChildren newChildren, rectOf(@target)
             { rect, moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
             { isAnchored: yes, rect, moves }
 
         computeDuplicationEffect: (oldComp, newComp) ->
             newChildren: newItemsForHorizontalStackDuplication @target.children, oldComp, newComp
-            itemRects: positionTabBarItems newChildren.length, rectOf(@target)
+            itemRects: @target.type.layoutChildren newChildren, rectOf(@target)
             computeDropEffectFromNewRects newChildren, itemRects, newComp
 
         computeDeletionEffect: (comp) ->
             newChildren: newItemsForHorizontalStack @target.children, comp, null
-            itemRects: positionTabBarItems newChildren.length, rectOf(@target)
+            itemRects: @target.type.layoutChildren newChildren, rectOf(@target)
             { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
 
-    class ToolbarContentLayout extends Layout
-
-        computeDropEffect: (comp, rect, moveOptions) ->
-            newChildren: newItemsForHorizontalStack @target.children, comp, rect
-            itemRects: positionToolbarItems newChildren, rectOf(@target)
-            { rect, moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
-            { isAnchored: yes, rect, moves }
-
-        computeDuplicationEffect: (oldComp, newComp) ->
-            newChildren: newItemsForHorizontalStackDuplication @target.children, oldComp, newComp
-            itemRects: positionToolbarItems newChildren, rectOf(@target)
-            computeDropEffectFromNewRects newChildren, itemRects, newComp
-
-        computeDeletionEffect: (comp) ->
-            newChildren: newItemsForHorizontalStack @target.children, comp, null
-            itemRects: positionToolbarItems newChildren, rectOf(@target)
-            { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
+        relayout: ->
+            children: _(@target.children).sortBy (child) -> child.abspos.x
+            itemRects: @target.type.layoutChildren children, rectOf(@target)
+            computeDropEffectFromNewRects children, itemRects, null
 
     class RegularLayout extends Layout
 
@@ -2178,29 +2190,45 @@ jQuery ($) ->
         computeDeletionEffect: (comp) ->
             { moves: [] }
 
+        relayout: ->
+            #
+
     class TableRowLayout extends RegularLayout
 
         computeDropTarget: (target, comp, rect, moveOptions) ->
 
+    computeContainerLayout: (container) ->
+        if container.type.layoutChildren
+            new ContainerDeterminedLayout(container)
+        else
+            new RegularLayout(container)
 
     # either target or rect is specified
     computeLayout: (comp, target, rect) ->
         return null unless target? or rect?
+
         if pin: comp.type.pin
             new PinnedLayout(activeScreen.rootComponent)
         else if comp.type.name of TABLE_TYPES
             new TableRowLayout(activeScreen.rootComponent)
         else if comp.type.name is 'tab-bar-item'
             if target: findChildByType(activeScreen.rootComponent, Types['tabBar'])
-                new TabBarItemLayout(target)
+                new ContainerDeterminedLayout(target)
             else
                 null
         else if (target and target.type.name is 'toolbar') or (rect and (target: findComponentByTypeIntersectingRect(Types['toolbar'], rect, setOf [comp])))
-            new ToolbarContentLayout(target)
-        else if target or (rect and (target: findBestTargetContainerForRect rect, [comp]))
-            new RegularLayout(target)
+            new ContainerDeterminedLayout(target)
         else
-            null
+            unless target
+                for possibleType in comp.type.allowedContainers || []
+                    if target: findComponentByTypeIntersectingRect Types[possibleType], rect, setOf [comp]
+                        break
+                unless target
+                    target: findBestTargetContainerForRect rect, [comp]
+            if target
+                computeContainerLayout target
+            else
+                null
 
     computeDropEffect: (comp, rect, moveOptions) ->
         if comp.type.name is 'image' and (target: findComponentByTypeIntersectingRect(Types['tab-bar-item'], rect, setOf [comp]))
@@ -2398,6 +2426,7 @@ jQuery ($) ->
                 updateEffectiveSize comp
                 renderComponentPosition comp
                 updateHoverPanelPosition()
+                relayoutHierarchy comp
 
             dropAt: (pt) ->
                 @moveTo pt
@@ -2509,9 +2538,11 @@ jQuery ($) ->
         func ||= ((ct, n) ->)
         for compTemplate in ctg.items
             c: cloneTemplateComponent(externalizePaletteComponent(compTemplate))
-            n: renderStaticComponentHierarchy c
+            n: renderPaletteComponentHierarchy c
             $(n).attr('title', compTemplate.label || c.type.label)
             $(n).addClass('item').appendTo(items)
+            updateEffectiveSizesInHierarchy c
+            relayoutHierarchy c
             bindPaletteItem n, externalizePaletteComponent(compTemplate)
             func compTemplate, n
 
@@ -2560,7 +2591,11 @@ jQuery ($) ->
         #$(customImagesPaletteCategory.itemsNode).append $("<div />", { className: 'customImagePlaceholder' })
         $('#palette').scrollToBottom()
 
+    paletteInitialized: no
     initPalette: ->
+        return if paletteInitialized
+        paletteInitialized: yes
+
         for ctg in MakeApp.paletteDefinition
             renderPaletteGroup ctg, true
         updateCustomImagesPalette()
@@ -3363,6 +3398,54 @@ jQuery ($) ->
 
 
     ##########################################################################################################
+    ##  Specific Component Types
+
+    Types['segmented'].layoutChildren: (children, outerRect) ->
+        return [] if children.length is 0
+
+        remainingContainerW: outerRect.w
+        remainingChildrenCount: children.length
+
+        x: outerRect.x
+        for child in children
+            w: remainingContainerW / remainingChildrenCount
+            r: { x: x, y: outerRect.y, w, h: outerRect.h }
+            x += w
+            remainingContainerW -= w
+            remainingChildrenCount -= 1
+            r
+
+    Types['tabBar'].layoutChildren: (children, tabBarRect) ->
+        count: children.length
+        [hinset, hgap, vinset]: [5, 2, 3]
+        itemSize: { w: (tabBarRect.w - 2*hinset - hgap*(count-1)) / count
+                    h: Types['tab-bar-item'].heightPolicy.fixedSize }
+        pt: { x: tabBarRect.x + hinset, y: tabBarRect.y + vinset }
+        switch count
+            when 0 then []
+            when 1 then [rectFromPtAndSize(pt, itemSize)]
+            else
+                index: 0
+                while index++ < count
+                    r: rectFromPtAndSize(pt, itemSize)
+                    pt.x += itemSize.w + hgap
+                    r
+
+    Types['toolbar'].layoutChildren: (children, outerRect) ->
+        return [] if children.length is 0
+
+        totalW: _(children).reduce 0, (memo, child) -> memo + child.effsize.w
+        console.log "Toolbar: total child width is ${totalW}"
+        hgap = (outerRect.w - totalW) / (children.length + 1)
+
+        x: outerRect.x + hgap
+        for child in children
+            r: rectFromPtAndSize { x: x, y: outerRect.y + (outerRect.h-child.effsize.h)/2 }, child.effsize
+            x += child.effsize.w + hgap
+            r
+
+
+    ##########################################################################################################
 
     initComponentTypes: ->
         for typeName, ct of Types
@@ -3373,6 +3456,8 @@ jQuery ($) ->
             if not ct.textStyleEditable?
                 ct.textStyleEditable: ct.defaultText?
             ct.supportsText: ct.defaultText?
+            unless ct.canHazColor?
+                ct.canHazColor: yes
 
     createNewApplicationName: ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
@@ -3436,6 +3521,7 @@ jQuery ($) ->
     switchToDesign: ->
         $(".screen").hide()
         $('#design-screen').show()
+        initPalette()
         # if any
         deactivateMode()
         adjustDeviceImagePosition()
@@ -3501,7 +3587,6 @@ jQuery ($) ->
         serverMode: SERVER_MODES['online']
 
     initComponentTypes()
-    initPalette()
     hookKeyboardShortcuts()
 
     serverMode.getUserInfo (userInfo) ->

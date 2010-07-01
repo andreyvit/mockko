@@ -89,6 +89,8 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         container: yes
         pin: Pins.bottom
         singleInstance: yes
+        hitAreaInset: 10
+        hitAreaOutset: 10
     }
     'tab-bar-item': {
         label: 'Tab Bar Item'
@@ -326,6 +328,24 @@ Pins.bottom.dependantPins.push Pins.secondBottom
             fontSize: 15
         }
     }
+    'segmented': {
+        label: 'Segmented Control'
+        container: yes
+        widthPolicy:  { userSize: yes; fixedSize: 160 }
+        heightPolicy: { fixedSize: 39 }
+        html: '<ul class="segmented"></ul>'
+        hitAreaInset: 10
+        hitAreaOutset: 10
+    }
+    'segment': {
+        label: 'Segment of Segmented Control'
+        defaultText: 'Segment'
+        widthPolicy:  { fixedSize: 100 }
+        heightPolicy: { fixedSize: 39 }
+        html: '<li class="segment"></li>'
+        canHazColor: no
+        allowedContainers: ['segmented']
+    }
 }
 
 window.MakeApp: {} unless window.MakeApp?
@@ -382,16 +402,12 @@ window.MakeApp.paletteDefinition: [
                         type: 'tab-bar-item'
                         text: "Tab 1"
                         image: { group: 'glyphish-icons', name: '53-house.png' }
-                        location: { x: 5, y: 3 }
-                        size: { w: 154, h: null }
                         state: on
                     }
                     {
                         type: 'tab-bar-item'
                         text: "Tab 2"
                         image: { group: 'glyphish-icons', name: '83-calendar.png' }
-                        location: { x: 161, y: 3 }
-                        size: { w: 154, h: null }
                         state: off
                     }
                 ]
@@ -564,8 +580,6 @@ window.MakeApp.paletteDefinition: [
                         type: 'barButton'
                         styleName: 'normal'
                         text: "Do something"
-                        location: { x: 108.5, y: 7 }
-                        size: { width: null, height: null }
                     }
                 ]
             }
@@ -578,8 +592,6 @@ window.MakeApp.paletteDefinition: [
                         type: 'barButton'
                         styleName: 'black'
                         text: "Do something"
-                        location: { x: 108.5, y: 7 }
-                        size: { width: null, height: null }
                     }
                 ]
             }
@@ -592,8 +604,6 @@ window.MakeApp.paletteDefinition: [
                         type: 'barButton'
                         styleName: 'black'
                         text: "Do something"
-                        location: { x: 108.5, y: 7 }
-                        size: { width: null, height: null }
                     }
                 ]
             }
@@ -640,6 +650,37 @@ window.MakeApp.paletteDefinition: [
                 type: 'buyButton'
                 styleName: 'blue'
                 label: 'Price Button'
+            }
+        ]
+    }
+    {
+        name: "Segmented Control"
+        items: [
+            {
+                type: 'segmented'
+                size: { w: 200 }
+                children: [
+                    {
+                        type: 'segment'
+                        text: 'None'
+                        location: { x: 0, y: 0 }
+                    }
+                    {
+                        type: 'segment'
+                        text: 'A'
+                        location: { x: 1, y: 0 }
+                    }
+                    {
+                        type: 'segment'
+                        text: 'B'
+                        location: { x: 2, y: 0 }
+                    }
+                ]
+            }
+            {
+                type: 'segment'
+                text: 'C'
+                size: { w: 100 }
             }
         ]
     }

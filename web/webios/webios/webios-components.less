@@ -126,28 +126,31 @@ ul.rounded:first-child {
 }
 
 // Segmented Control
+.segmented li, .segment {
+    font: bold 14px Helvetica, sans-serif;
+    line-height: 39px;
+    -webkit-box-sizing: border-box;
+    cursor: pointer;
+    min-width: 40px;
+    margin: 0px;
+    text-align: center;
+    display: block;
+    float: left;
+    height: 39px;
+    color: #7f7f7f;
+    text-shadow: 0px 1px rgba(255,255,255,0.5);
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
 .segmented {
+    -webkit-box-sizing: border-box;
     display: inline-block;
     margin: 0px; padding: 0px;
     height: 39px;
-    font: bold 14px Helvetica, sans-serif;
-    line-height: 39px;
 
     @default-padding: 8px;
     @ten-px: 8px;
     
-    li {
-        cursor: pointer;
-        min-width: 40px;
-        margin: 0px;
-        text-align: center;
-        display: block;
-        float: left;
-        height: 39px;
-        color: #7f7f7f;
-        text-shadow: 0px 1px rgba(255,255,255,0.5);
-        -webkit-tap-highlight-color: rgba(0,0,0,0);
-    }
     li.active {
         color: #ffffff;
         text-shadow: 0px -1px rgba(0,0,0,0.5);
@@ -186,6 +189,11 @@ ul.rounded:first-child {
         -webkit-border-image: url(images/segmented-plain-right-active.png) 2 10 2 2;
     }
 }
+.segmented li:only-child, .segment {
+    padding: 0px 0px;
+    border-width: 2px 10px;
+    -webkit-border-image: url(images/segmented-plain-only-inactive.png) 2 10;
+}
 .segmented.bordered {
     li, li.active + li {
         -webkit-border-image: url(images/segmented-bordered-middle-inactive.png) 2 2;
@@ -212,11 +220,13 @@ ul.rounded:first-child {
         -webkit-border-image: url(images/segmented-bordered-right-active.png) 2 10 2 2;
     }
 }
+.segmented.bordered li:only-child, .segment.bordered {
+    padding: 0px 0px;
+    border-width: 2px 10px;
+    -webkit-border-image: url(images/segmented-bordered-only-inactive.png) 2 10;
+}
 .segmented.row {
     margin: 0px 10px;
-    li {
-        -webkit-box-sizing: border-box;
-    }
 }
 .segmented.row.x1 li { width: 300px; }
 .segmented.row.x2 li { width: 150px; }
