@@ -1208,7 +1208,7 @@ jQuery ($) ->
                 $(prev.node).addClass('last-in-stack') if prev
 
     discoverStacksInComponent: (container, stacks) ->
-        peers: _(container.children).select (c) -> c.type.name in TABLE_TYPES
+        peers: _(container.children).select (c) -> c.type.name of TABLE_TYPES
         peers: _(peers).sortBy (c) -> c.abspos.y
 
         contentSoFar: []
