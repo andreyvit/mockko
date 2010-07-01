@@ -1152,6 +1152,11 @@ jQuery ($) ->
         # get browser-computed size if needed
         if c.effsize.w is null then c.effsize.w = c.node.offsetWidth
         if c.effsize.h is null then c.effsize.h = c.node.offsetHeight
+        updateComponentTooltip c
+
+    updateComponentTooltip: (c) ->
+        r: rectOf c
+        $(c.node).attr('title', "${c.type.label} — (${r.x}, ${r.y}) ${r.w}x${r.h}")
 
 
     ##########################################################################################################
