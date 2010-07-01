@@ -83,6 +83,16 @@ jQuery ($) ->
             adjustUI: (userData) ->
                 $('.logout-button').attr 'href', userData['logout_url']
 
+            getUserInfo: (callback) ->
+                $.ajax {
+                    url: '/user-info.json'
+                    dataType: 'json'
+                    success: (userData) -> callback userData
+                    error: (xhr, status, e) ->
+                        alert "Failed to load the application: ${status} - ${e}"
+                        # TODO ERROR HANDLING!
+                }
+
             startDesigner: (userData) ->
                 switchToDashboard()
 
@@ -190,6 +200,9 @@ jQuery ($) ->
 
             adjustUI: (userData) ->
                 #
+
+            getUserInfo: (callback) ->
+                callback { 'status': 'offline' }
 
             startDesigner: (userData) ->
                 loadApplication internalizeApplication(JSON.parse(SAMPLE_APPS[0]['body'])), null
@@ -3485,17 +3498,8 @@ jQuery ($) ->
     initPalette()
     hookKeyboardShortcuts()
 
-    if window.location.href.match /^file:/
-        loadDesigner { 'status': 'local' }
-    else
-        $.ajax {
-            url: '/user-info.json'
-            dataType: 'json'
-            success: (userData) -> loadDesigner userData
-            error: (xhr, status, e) ->
-                alert "Failed to load the application: ${status} - ${e}"
-                # TODO ERROR HANDLING!
-        }
+    serverMode.getUserInfo (userInfo) ->
+        loadDesigner userInfo
 
     # Make-App Dump
     window.mad: -> activeScreen
