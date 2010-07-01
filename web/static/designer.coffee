@@ -3480,10 +3480,11 @@ jQuery ($) ->
 
         $('#device-panel').css({ left: devicePos.x, top: devicePos.y })
 
-    unless $.browser.webkit
-        $('#welcome-screen .buttons').hide()
-        $('#welcome-screen .unsupported').show()
-        $('#welcome-screen').show()
+    supportedBrowser: ->
+        $.browser.webkit or window.location.href.match('[?&]nocheckbrowser')
+
+    if not supportedBrowser()
+        window.location: '/'
         return
 
     $(window).resize ->
