@@ -20,6 +20,7 @@ handlers:
 - url: /designer
   static_files: minified/designer.min.html
   upload: minified/designer.min.html
+  login: required
 
 - url: /static/designer\.min\.js
   static_files: minified/designer.min.js
