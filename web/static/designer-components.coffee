@@ -1,4 +1,25 @@
 
+##########################################################################################################
+## imports
+
+{
+    #  Legacy
+    isRectInsideRect, doesRectIntersectRect, rectIntersection, areaOfIntersection, proximityOfRectToRect
+    ptDiff, ptSum, ptMul, distancePtToPtMod, distancePtToPtSqr
+    #  Point
+    ZeroPt, ptToString, distancePtPt1, distancePtPt2, addPtPt, subPtPt, mulPtSize, ptFromLT, ptFromNode
+    unitVecOfPtPt, mulVecLen, ptInRect
+    #  Size
+    ZeroSize, sizeToString, domSize, centerOfSize
+    #  Rect
+    rectToString, rectFromPtAndSize, rectFromPtPt, dupRect, addRectPt, subRectPt, topLeftOf, bottomRightOf
+    rectOfNode, canonRect, insetRect, centerOfRect, centerSizeInRect
+    #  Line / Segment
+    lineFromPtPt, lineFromABPt, signum, classifyPtLine, perpendicularLineThroughPoint, distancePtLine
+    distancePtSegment
+}: Mockko.geom
+
+
 window.Pins: {
     bottom: {
         computeRect: (area, comp, findRectOfPinned) ->
@@ -94,6 +115,23 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         hitAreaInset: 10
         hitAreaOutset: 10
         canHazLink: no
+        
+        layoutChildren: (children, tabBarRect) ->
+            count: children.length
+            [hinset, hgap, vinset]: [5, 2, 3]
+            tabHeight: 44
+            itemSize: { w: (tabBarRect.w - 2*hinset - hgap*(count-1)) / count
+                        h: tabHeight }
+            pt: { x: tabBarRect.x + hinset, y: tabBarRect.y + vinset }
+            switch count
+                when 0 then []
+                when 1 then [rectFromPtAndSize(pt, itemSize)]
+                else
+                    index: 0
+                    while index++ < count
+                        r: rectFromPtAndSize(pt, itemSize)
+                        pt.x += itemSize.w + hgap
+                        r
     }
     'tab-bar-item': {
         label: 'Tab Bar Item'
@@ -159,6 +197,18 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         pin: Pins.secondBottom
         singleInstance: yes
         canHazLink: no
+        
+        layoutChildren: (children, outerRect) ->
+            return [] if children.length is 0
+
+            totalW: _(children).reduce 0, (memo, child) -> memo + child.effsize.w
+            hgap = (outerRect.w - totalW) / (children.length + 1)
+
+            x: outerRect.x + hgap
+            for child in children
+                r: rectFromPtAndSize { x: x, y: outerRect.y + (outerRect.h-child.effsize.h)/2 }, child.effsize
+                x += child.effsize.w + hgap
+                r
     }
     'roundedButton': {
         label: 'Rounded Button'
@@ -342,6 +392,21 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         hitAreaInset: 10
         hitAreaOutset: 10
         canHazLink: no
+        
+        layoutChildren: (children, outerRect) ->
+            return [] if children.length is 0
+
+            remainingContainerW: outerRect.w
+            remainingChildrenCount: children.length
+
+            x: outerRect.x
+            for child in children
+                w: remainingContainerW / remainingChildrenCount
+                r: { x: x, y: outerRect.y, w, h: outerRect.h }
+                x += w
+                remainingContainerW -= w
+                remainingChildrenCount -= 1
+                r
     }
     'segment': {
         label: 'Segment of Segmented Control'

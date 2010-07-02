@@ -57,6 +57,13 @@ jQuery ($) ->
         renderComponentHierarchy
     }: Mockko.renderer
 
+    {
+        sizeOf, rectOf
+        traverse, skipTraversingChildren
+        findChildByType, findBestTargetContainerForRect, findComponentByRect
+        findComponentByTypeIntersectingRect
+        compWithChildrenAndParents
+    }: Mockko.model
 
     ##########################################################################################################
     ## global variables
@@ -171,27 +178,24 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Component Utilities
 
-    sizeOf: (c) -> { w: c.effsize.w, h: c.effsize.h }
-    rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
+    commitMoves: (moves, exclusions, delay) ->
+        if moves.length > 0
+            liveMover: newLiveMover exclusions
+            liveMover.moveComponents moves
+            liveMover.commit(delay)
 
-    skipTraversingChildren: {}
-    # traverse(comp-or-array-of-comps, [parent], func)
-    traverse: (comp, parent, func) ->
-        return if not comp?
-        if not func
-            func = parent; parent = null
-        if _.isArray comp
-            for child in comp
-                traverse child, parent, func
-        else
-            r: func(comp, parent)
-            if r isnt skipTraversingChildren
-                for child in comp.children || []
-                    traverse child, comp, func
-        null
+    commitMovesImmediately: (moves) ->
+        for m in moves
+            for c in m.comps || [m.comp]
+                offset: m.offset || subPtPt(m.abspos, c.abspos)
+                traverse c, (child) ->
+                    child.abspos: { x: child.abspos.x + offset.x; y: child.abspos.y + offset.y }
+                    child.size: m.size if m.size
+                    componentPositionChangedPernamently child
 
-    findChildByType: (parent, type) ->
-        _(parent.children).detect (child) -> child.type is type
+
+    ##########################################################################################################
+    ##  Hit Testing
 
     findComponentAt: (pt) ->
         if activeLinkOverlay && activeLinkOverlay.justAdded
@@ -226,40 +230,6 @@ jQuery ($) ->
         origin: ptFromLT $('#design-area').offset()
         findComponentAt subPtPt({ x: e.pageX, y: e.pageY }, origin)
 
-    findBestTargetContainerForRect: (r, excluded) ->
-        trav: (comp) ->
-            return null if _.include excluded, comp
-
-            bestHere: null
-            for child in comp.children
-                if res: trav(child)
-                    if bestHere == null or res.area > bestHere.area
-                        bestHere = res
-
-            if bestHere is null
-                rc: rectOf comp
-                if isRectInsideRect r, rc
-                    if (area: areaOfIntersection r, rc) > 0
-                        bestHere: { comp: comp, area: area }
-            else
-                bestHere
-
-        trav(activeScreen.rootComponent)?.comp || activeScreen.rootComponent
-
-    commitMoves: (moves, exclusions, delay) ->
-        if moves.length > 0
-            liveMover: newLiveMover exclusions
-            liveMover.moveComponents moves
-            liveMover.commit(delay)
-
-    commitMovesImmediately: (moves) ->
-        for m in moves
-            for c in m.comps || [m.comp]
-                offset: m.offset || subPtPt(m.abspos, c.abspos)
-                traverse c, (child) ->
-                    child.abspos: { x: child.abspos.x + offset.x; y: child.abspos.y + offset.y }
-                    child.size: m.size if m.size
-                    componentPositionChangedPernamently child
 
     ##########################################################################################################
     ##  component management
@@ -465,33 +435,6 @@ jQuery ($) ->
         }
     }
 
-    findComponentByRect: (r, exclusionSet) ->
-        match: null
-        traverse activeScreen.rootComponent, (comp) ->
-            unless inSet comp, exclusionSet
-                if doesRectIntersectRect r, rectOf comp
-                    # don't return yet to find the innermost match
-                    match: r
-        match
-
-    findComponentByTypeIntersectingRect: (type, rect, exclusionSet) ->
-        match: null
-        traverse activeScreen.rootComponent, (comp) ->
-            if inSet comp, exclusionSet
-                return skipTraversingChildren
-            if not (doesRectIntersectRect rect, rectOf comp)
-                return skipTraversingChildren
-            if comp.type is type
-                match: comp
-        match
-
-    compWithChildrenAndParents: (comp) ->
-        items: []
-        traverse comp, (child) -> items.push child
-        while comp: comp.parent
-            items.push comp
-        items
-
     possibleAlignmentOf: (comp) ->
         return Alignments.unknown unless comp.parent
 
@@ -502,7 +445,7 @@ jQuery ($) ->
         return Alignments.right if pr.x+pr.w - ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX <= cr.x+cr.w <= pr.x+pr.w
 
         nonSiblings: setOf compWithChildrenAndParents comp
-        findConstrainingSibling: (edge) -> findComponentByRect(edge.siblingRect(cr, ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX), nonSiblings)
+        findConstrainingSibling: (edge) -> findComponentByRect(activeScreen.rootComponent, edge.siblingRect(cr, ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX), nonSiblings)
 
         leftSibling:  findConstrainingSibling Edges.left
         rightSibling: findConstrainingSibling Edges.right
@@ -1554,12 +1497,12 @@ jQuery ($) ->
                 new ContainerDeterminedLayout(target)
             else
                 null
-        else if (target and target.type.name is 'toolbar') or (rect and (target: findComponentByTypeIntersectingRect(Types['toolbar'], rect, setOf [comp])))
+        else if (target and target.type.name is 'toolbar') or (rect and (target: findComponentByTypeIntersectingRect(activeScreen.rootComponent, Types['toolbar'], rect, setOf [comp])))
             new ContainerDeterminedLayout(target)
         else
             unless target
                 for possibleType in comp.type.allowedContainers || []
-                    if target: findComponentByTypeIntersectingRect Types[possibleType], rect, setOf [comp]
+                    if target: findComponentByTypeIntersectingRect activeScreen.rootComponent, Types[possibleType], rect, setOf [comp]
                         break
                 unless target
                     target: findBestTargetContainerForRect rect, [comp]
@@ -1569,7 +1512,7 @@ jQuery ($) ->
                 null
 
     computeDropEffect: (comp, rect, moveOptions) ->
-        if comp.type.name is 'image' and (target: findComponentByTypeIntersectingRect(Types['tab-bar-item'], rect, setOf [comp]))
+        if comp.type.name is 'image' and (target: findComponentByTypeIntersectingRect(activeScreen.rootComponent, Types['tab-bar-item'], rect, setOf [comp]))
             return { target, moves: [], isAnchored: yes, rect: centerSizeInRect(comp.effsize, rectOf target) }
 
         if layout: computeLayout comp, null, rect
@@ -2757,54 +2700,6 @@ jQuery ($) ->
         shouldProcessCopy: -> componentToActUpon() isnt null and !activeMode()?.isInsideTextField
         shouldProcessPaste: -> !activeMode()?.isInsideTextField
     }
-
-
-    ##########################################################################################################
-    ##  Specific Component Types
-
-    Types['segmented'].layoutChildren: (children, outerRect) ->
-        return [] if children.length is 0
-
-        remainingContainerW: outerRect.w
-        remainingChildrenCount: children.length
-
-        x: outerRect.x
-        for child in children
-            w: remainingContainerW / remainingChildrenCount
-            r: { x: x, y: outerRect.y, w, h: outerRect.h }
-            x += w
-            remainingContainerW -= w
-            remainingChildrenCount -= 1
-            r
-
-    Types['tabBar'].layoutChildren: (children, tabBarRect) ->
-        count: children.length
-        [hinset, hgap, vinset]: [5, 2, 3]
-        itemSize: { w: (tabBarRect.w - 2*hinset - hgap*(count-1)) / count
-                    h: Types['tab-bar-item'].heightPolicy.fixedSize }
-        pt: { x: tabBarRect.x + hinset, y: tabBarRect.y + vinset }
-        switch count
-            when 0 then []
-            when 1 then [rectFromPtAndSize(pt, itemSize)]
-            else
-                index: 0
-                while index++ < count
-                    r: rectFromPtAndSize(pt, itemSize)
-                    pt.x += itemSize.w + hgap
-                    r
-
-    Types['toolbar'].layoutChildren: (children, outerRect) ->
-        return [] if children.length is 0
-
-        totalW: _(children).reduce 0, (memo, child) -> memo + child.effsize.w
-        console.log "Toolbar: total child width is ${totalW}"
-        hgap = (outerRect.w - totalW) / (children.length + 1)
-
-        x: outerRect.x + hgap
-        for child in children
-            r: rectFromPtAndSize { x: x, y: outerRect.y + (outerRect.h-child.effsize.h)/2 }, child.effsize
-            x += child.effsize.w + hgap
-            r
 
 
     ##########################################################################################################
