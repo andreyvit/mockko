@@ -46,6 +46,17 @@ def simple_decorator(decorator):
     new_decorator.__dict__.update(decorator.__dict__)
     return new_decorator
 
+def create_account(user):
+    """
+    This function creates account for new user
+    """
+    account = Account(user=user)
+    account.put()
+    ig = ImageGroup(name='Custom Images', owner=account, priority=0)
+    ig.save()
+    notify_admins_about_new_user_signup(user)
+    return account
+
 @simple_decorator
 def auth(func):
     def _auth(self, *args, **kwargs):
@@ -54,9 +65,7 @@ def auth(func):
             return render_json_response({'error': 'signed-out'})
         account = Account.all().filter('user', user).get()
         if account is None:
-            account = Account(user=user)
-            account.put()
-            notify_admins_about_new_user_signup(user)
+            account = create_account(user)
         return func(self, user, account, *args, **kwargs)
     return _auth
 
