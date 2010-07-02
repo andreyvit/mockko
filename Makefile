@@ -36,6 +36,7 @@ JS_SRC = $(addprefix web/static/, \
 	designer-stacking-legacy.js \
 	designer-hover-panel.js \
 	designer-snapping.js \
+	designer-layouting.js \
 	jpicker.js \
 	designer.js)
 

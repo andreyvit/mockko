@@ -27,6 +27,8 @@ LINK_ARROW_INITIAL_MOUSEMOVE_MIN_SAFE_DISTANCE: 15
 # options.modeEngine
 # options.runTransaction
 # options.screens()
+# options.deleteComponent()
+# options.duplicateComponent()
 # options.activateResizingMode(comp, pt, { hmode, vmode })
 # options.hoveredComponentChanged()
 # options.componentActionChanged(comp)
@@ -105,12 +107,12 @@ Mockko.setupHoverPanel: (options) ->
     $('#hover-panel .delete-handle').click ->
         if hoveredComponent isnt null
             $('#hover-panel').hide()
-            deleteComponent hoveredComponent
+            options.deleteComponent hoveredComponent
             hoveredComponent = null
 
     $('#hover-panel .duplicate-handle').click ->
         if hoveredComponent isnt null
-            duplicateComponent hoveredComponent
+            options.duplicateComponent hoveredComponent
 
     _($('.hover-panel .resizing-handle')).each (handle, index) ->
         $(handle).mousedown (e) ->

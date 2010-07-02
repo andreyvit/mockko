@@ -44,6 +44,7 @@ jQuery ($) ->
     Types: Mockko.componentTypes
     ser: Mockko.serialization
     hover: null
+    layouting: Mockko.layouting
 
     {
         renderComponentNode
@@ -57,12 +58,8 @@ jQuery ($) ->
     {
         sizeOf, rectOf
         traverse, skipTraversingChildren
-        findChildByType, findBestTargetContainerForRect, findComponentByRect
-        findComponentByTypeIntersectingRect
-        compWithChildrenAndParents, isComponentOrDescendant, findComponentOccupyingRect
-        pickHorizontalPositionBetween, pickHorizontalRectAmong
+        compWithChildrenAndParents, isComponentOrDescendant
         moveComponent
-        newItemsForHorizontalStack, newItemsForHorizontalStackDuplication, computeDropEffectFromNewRects
     }: Mockko.model
 
     ##########################################################################################################
@@ -74,9 +71,7 @@ jQuery ($) ->
     application: null
     activeScreen: null
     mode: null
-    allowedArea: null
     componentBeingDoubleClickEdited: null
-    allStacks: null
     undo: null
 
 
@@ -137,7 +132,7 @@ jQuery ($) ->
 
         reassignZIndexes()
 
-        allStacks: Mockko.stacking.discoverStacks(activeScreen.rootComponent)
+        activeScreen.allStacks: Mockko.stacking.discoverStacks(activeScreen.rootComponent)
 
         updateInspector()
         updateScreenPreview(activeScreen)
@@ -243,8 +238,8 @@ jQuery ($) ->
     deleteComponentWithoutTransaction: (rootc, animated) ->
         return if rootc.type.unmovable
 
-        effect: computeDeletionEffect rootc
-        stacking: Mockko.stacking.handleStacking rootc, null, allStacks
+        effect: layouting.computeDeletionEffect activeScreen, rootc
+        stacking: Mockko.stacking.handleStacking rootc, null, activeScreen.allStacks
 
         liveMover: newLiveMover [rootc]
         liveMover.moveComponents stacking.moves.concat(effect.moves)
@@ -277,7 +272,7 @@ jQuery ($) ->
         updateEffectiveSizesInHierarchy newComp
         relayoutHierarchy newComp
 
-        effect: computeDuplicationEffect newComp, comp
+        effect: layouting.computeDuplicationEffect activeScreen, newComp, comp
         if effect is null
             $(newComp.node).remove()
             alert "Cannot duplicate the component because another copy does not fit into the designer"
@@ -310,7 +305,7 @@ jQuery ($) ->
 
     relayoutHierarchy: (c) ->
         traverse c, (child) ->
-            if effect: computeContainerLayout(child).relayout()
+            if effect: layouting.computeRelayoutEffect activeScreen, child
                 commitMovesImmediately effect.moves
                 containerChildrenChanged child
 
@@ -585,6 +580,7 @@ jQuery ($) ->
 
     startDragging: (comp, options, initialMoveOptions) ->
         origin: $('#design-area').offset()
+        allowedArea: activeScreen.allowedArea
 
         if comp.inDocument
             originalR: rectOf comp
@@ -631,13 +627,13 @@ jQuery ($) ->
             [rect, unsnappedRect, ok] = updateRectangleAndClipToArea(pt)
 
             if ok
-                if effect: computeDropEffect comp, rect, moveOptions
+                if effect: layouting.computeDropEffect activeScreen, comp, rect, moveOptions
                     { target, isAnchored, rect, moves }: effect
                 else
                     ok: no
                     moves: []
             else
-                { moves }: computeDeletionEffect comp
+                { moves }: layouting.computeDeletionEffect activeScreen, comp
 
             unless ok
                 rect: unsnappedRect
@@ -699,206 +695,6 @@ jQuery ($) ->
         moveTo(options.startPt, initialMoveOptions)
 
         { moveTo, dropAt, cancel }
-
-
-    ##########################################################################################################
-    ##  Layouts & Effects Computation
-
-    class Layout
-        constructor: (target) ->
-            @target: target
-
-    class PinnedLayout extends Layout
-
-        computeDropEffect: (comp, rect, moveOptions) ->
-            pin: comp.type.pin
-            rect: pin.computeRect allowedArea, comp, (otherPin) =>
-                for child in @target.children
-                    if child.type.pin is otherPin
-                        return rectOf(child)
-                null
-            moves: []
-            for dependantPin in pin.dependantPins
-                for child in @target.children
-                    if child.type.pin is dependantPin
-                        newRect: child.type.pin.computeRect allowedArea, child, (otherPin) =>
-                            return rect if otherPin is pin
-                            for otherChild in @target.children
-                                if otherChild.type.pin is otherPin
-                                    return rectOf(otherChild)
-                            null
-                        moves.push { comp: child, abspos: newRect }
-            { isAnchored: yes, rect, moves }
-
-        computeDuplicationEffect: (oldComp, newComp) ->
-            if oldComp is newComp
-                # this is a paste op
-                return { rect: rectOf(newComp), moves: [] }
-            null
-
-        computeDeletionEffect: (comp) ->
-            pin: comp.type.pin
-            moves: []
-            for dependantPin in pin.dependantPins
-                for child in @target.children
-                    if child.type.pin is dependantPin
-                        newRect: child.type.pin.computeRect allowedArea, child, (otherPin) =>
-                            return null if otherPin is pin
-                            for otherChild in @target.children
-                                if otherChild.type.pin is otherPin
-                                    return rectOf(otherChild)
-                            null
-                        moves.push { comp: child, abspos: newRect }
-            { moves }
-
-        relayout: -> throw "Unsupported operation: unreachable at the moment"
-
-    class ContainerDeterminedLayout extends Layout
-
-        computeDropEffect: (comp, rect, moveOptions) ->
-            newChildren: newItemsForHorizontalStack @target.children, comp, rect
-            itemRects: @target.type.layoutChildren newChildren, rectOf(@target)
-            { rect, moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
-            { isAnchored: yes, rect, moves }
-
-        computeDuplicationEffect: (oldComp, newComp) ->
-            newChildren: newItemsForHorizontalStackDuplication @target.children, oldComp, newComp
-            itemRects: @target.type.layoutChildren newChildren, rectOf(@target)
-            computeDropEffectFromNewRects newChildren, itemRects, newComp
-
-        computeDeletionEffect: (comp) ->
-            newChildren: newItemsForHorizontalStack @target.children, comp, null
-            itemRects: @target.type.layoutChildren newChildren, rectOf(@target)
-            { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
-
-        relayout: ->
-            children: _(@target.children).sortBy (child) -> child.abspos.x
-            itemRects: @target.type.layoutChildren children, rectOf(@target)
-            computeDropEffectFromNewRects children, itemRects, null
-
-    class RegularLayout extends Layout
-
-        computeDropEffect: (comp, rect, moveOptions) ->
-            stacking: Mockko.stacking.handleStacking comp, rect, allStacks
-            if stacking.targetRect?
-                { isAnchored: yes, rect: stacking.targetRect, moves: stacking.moves }
-            else
-                anchors: _(Mockko.snapping.computeInnerAnchors(@target, comp, allowedArea)).reject (a) -> comp == a.comp
-                magnets: Mockko.snapping.computeMagnets(comp, rect, allowedArea)
-                snappings: Mockko.snapping.computeSnappings(anchors, magnets)
-
-                unless moveOptions.disableSnapping
-                    snappings: Mockko.snapping.chooseSnappings snappings
-                    for snapping in snappings
-                        snapping.apply rect
-
-                { isAnchored: no, rect, moves: [] }
-
-        computeDuplicationEffect: (oldComp, newComp) ->
-            rect: rectOf(oldComp)
-            rect.y += rect.h
-            stacking: Mockko.stacking.handleStacking oldComp, rect, allStacks, 'duplicate'
-
-            if stacking.targetRect
-                return { rect: stacking.targetRect, moves: stacking.moves }
-            else
-                usableBounds: rectOf activeScreen.rootComponent
-
-                rect: rectOf(oldComp)
-                while rect.x+rect.w <= usableBounds.x+usableBounds.w - DUPLICATE_COMPONENT_MIN_EDGE_INSET_X
-                    found: findComponentOccupyingRect activeScreen.rootComponent, rect
-                    return { rect, moves: [] } unless found
-                    rect.x += found.effsize.w + DUPLICATE_COMPONENT_OFFSET_X
-
-                rect: rectOf(oldComp)
-                while rect.y+rect.h <= usableBounds.y+usableBounds.h - DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y
-                    found: findComponentOccupyingRect activeScreen.rootComponent, rect
-                    return { rect, moves: [] } unless found
-                    rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
-
-                # when everything else fails, just pick a position not occupied by exact duplicate
-                rect: rectOf(oldComp)
-                while rect.y+rect.h <= usableBounds.y+usableBounds.h
-                    found: no
-                    traverse activeScreen.rootComponent, (c) -> found: c if c.abspos.x == rect.x && c.abspos.y == rect.y
-                    # handle (0,0) case
-                    found: null if found is activeScreen.rootComponent
-                    return { rect, moves: [] } unless found
-                    rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
-                return null
-
-        computeDeletionEffect: (comp) ->
-            { moves: [] }
-
-        relayout: ->
-            #
-
-    class TableRowLayout extends RegularLayout
-        #
-
-    computeContainerLayout: (container) ->
-        if container.type.layoutChildren
-            new ContainerDeterminedLayout(container)
-        else
-            new RegularLayout(container)
-
-    # either target or rect is specified
-    computeLayout: (comp, target, rect) ->
-        return null unless target? or rect?
-
-        if pin: comp.type.pin
-            new PinnedLayout(activeScreen.rootComponent)
-        else if comp.type.isTableRow
-            new TableRowLayout(activeScreen.rootComponent)
-        else if comp.type.name is 'tab-bar-item'
-            if target: findChildByType(activeScreen.rootComponent, Types['tabBar'])
-                new ContainerDeterminedLayout(target)
-            else
-                null
-        else if (target and target.type.name is 'toolbar') or (rect and (target: findComponentByTypeIntersectingRect(activeScreen.rootComponent, Types['toolbar'], rect, setOf [comp])))
-            new ContainerDeterminedLayout(target)
-        else
-            unless target
-                for possibleType in comp.type.allowedContainers || []
-                    if target: findComponentByTypeIntersectingRect activeScreen.rootComponent, Types[possibleType], rect, setOf [comp]
-                        break
-                unless target
-                    target: findBestTargetContainerForRect activeScreen.rootComponent, rect, [comp]
-            if target
-                computeContainerLayout target
-            else
-                null
-
-    computeDropEffect: (comp, rect, moveOptions) ->
-        if comp.type.name is 'image' and (target: findComponentByTypeIntersectingRect(activeScreen.rootComponent, Types['tab-bar-item'], rect, setOf [comp]))
-            return { target, moves: [], isAnchored: yes, rect: centerSizeInRect(comp.effsize, rectOf target) }
-
-        if layout: computeLayout comp, null, rect
-            if comp.type.singleInstance
-                for child in layout.target.children
-                    if child.type is comp.type
-                        return null
-
-            eff: layout.computeDropEffect comp, rect, moveOptions
-            eff.target: layout.target
-            return eff
-        else
-            return null
-
-    computeDuplicationEffect: (newComp, oldComp) ->
-        oldComp ||= newComp
-        if layout: computeLayout(oldComp, oldComp.parent)
-            layout.computeDuplicationEffect oldComp, newComp
-        else
-            null
-
-    computeDeletionEffect: (comp) ->
-        return { moves: [] } unless comp.parent
-
-        if layout: computeLayout comp, comp.parent
-            layout.computeDeletionEffect comp
-        else
-            { moves: [] }
 
 
     ##########################################################################################################
@@ -1034,6 +830,7 @@ jQuery ($) ->
                 newSize: {}
                 console.log options
                 minimumSize: comp.type.minimumSize || { w: 4, h: 4 }
+                allowedArea: activeScreen.allowedArea
 
                 maxSizeDecrease: { x: baseSize.w - minimumSize.w; y : baseSize.h - minimumSize.h }
 
@@ -1318,7 +1115,7 @@ jQuery ($) ->
 
     addScreenWithoutTransaction: ->
         screen: ser.internalizeScreen {
-            rootComponent: DEFAULT_ROOT_COMPONENT
+            'rootComponent': DEFAULT_ROOT_COMPONENT
         }
         keepingScreenNamesNormalized ->
             application.screens.push screen
@@ -1434,12 +1231,6 @@ jQuery ($) ->
         activeScreen = screen
 
         devicePanel: $('#device-panel')[0]
-        allowedArea: {
-            x: 0
-            y: 0
-            w: 320
-            h: 480
-        }
 
         $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
         renderScreenRootComponentId screen
@@ -2030,7 +1821,7 @@ jQuery ($) ->
                 updateEffectiveSizesInHierarchy newComp
                 relayoutHierarchy newComp
 
-                effect: computeDuplicationEffect newComp
+                effect: layouting.computeDuplicationEffect activeScreen, newComp
                 if effect is null
                     alert "Cannot paste the components because they do not fit into the designer"
                     return
@@ -2205,6 +1996,8 @@ jQuery ($) ->
     hover: Mockko.setupHoverPanel {
         modeEngine
         componentActionChanged
+        deleteComponent
+        duplicateComponent
         runTransaction
         activateResizingMode
         screens: -> application.screens

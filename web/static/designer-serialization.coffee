@@ -162,6 +162,12 @@ internalizeScreen: (screen) ->
         rootComponent: rootComponent
         html: screen['html'] || ''
         name: screen['name'] || null
+        allowedArea: {
+            x: 0
+            y: 0
+            w: 320
+            h: 480
+        }
     }
     return screen
 
