@@ -10,6 +10,9 @@
 { traverse, skipTraversingChildren }: Mockko.model
 
 
+STACKED_COMP_TRANSITION_DURATION = 200
+
+
 newLiveDropEffectPreviewer: (screen, excluded, componentPositionChanged) ->
     excludedSet: setOf excluded
     traverse screen.rootComponent, (c) ->
@@ -94,4 +97,4 @@ commitMovesImmediately: (moves, componentPositionChanged) ->
                 child.size: m.size if m.size
                 componentPositionChanged child
 
-Mockko.applicator: { newLiveDropEffectPreviewer, commitMoves, commitMovesImmediately }
+Mockko.applicator: { newLiveDropEffectPreviewer, commitMoves, commitMovesImmediately, STACKED_COMP_TRANSITION_DURATION }

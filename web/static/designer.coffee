@@ -1,8 +1,5 @@
 jQuery ($) ->
 
-    CONF_DESIGNAREA_PUSHBACK_DISTANCE = 100
-    STACKED_COMP_TRANSITION_DURATION = 200
-
     MAX_IMAGE_UPLOAD_SIZE: 1024*1024
     MAX_IMAGE_UPLOAD_SIZE_DESCR: '1 Mb'
 
@@ -62,7 +59,7 @@ jQuery ($) ->
         moveComponent
     }: Mockko.model
 
-    { newLiveDropEffectPreviewer, commitMoves, commitMovesImmediately }: Mockko.applicator
+    { commitMoves, commitMovesImmediately, STACKED_COMP_TRANSITION_DURATION }: Mockko.applicator
 
     ##########################################################################################################
     ## global variables
@@ -141,7 +138,7 @@ jQuery ($) ->
 
     componentPositionChanged: (c) ->
         renderComponentPosition c
-        updateEffectiveSize c
+        updateEffectiveSizesAndRelayoutHierarchy c  # only needed if size has changed -- TODO check for this
         if c is hover.currentlyHovered()
             hover.updateHoverPanelPosition()
             updatePositionInspector()
@@ -243,8 +240,7 @@ jQuery ($) ->
         newComp: ser.internalizeComponent(ser.externalizeComponent(comp), comp.parent)
 
         $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
-        updateEffectiveSizesInHierarchy newComp
-        relayoutHierarchy newComp
+        updateEffectiveSizesAndRelayoutHierarchy newComp
 
         effect: layouting.computeDuplicationEffect activeScreen, newComp, comp
         if effect is null
@@ -273,15 +269,15 @@ jQuery ($) ->
     renderPaletteComponentHierarchy: (c) -> renderComponentHierarchy c, true, false
     renderInteractiveComponentHeirarchy: (c) -> renderComponentHierarchy c, true, true
 
-    updateEffectiveSizesInHierarchy: (c) ->
-        traverse c, (child) ->
-            updateEffectiveSize child
-
     relayoutHierarchy: (c) ->
         traverse c, (child) ->
             if effect: layouting.computeRelayoutEffect activeScreen, child
                 commitMovesImmediately effect.moves, componentPositionChanged
                 containerChildrenChanged child
+
+    updateEffectiveSizesAndRelayoutHierarchy: (c) ->
+        traverse c, (child) -> updateEffectiveSize child
+        relayoutHierarchy c
 
     reassignZIndexes: ->
         traverse activeScreen.rootComponent, (comp) ->
@@ -480,134 +476,17 @@ jQuery ($) ->
 
 
     ##########################################################################################################
-    ##  General Dragging
+    ##  Dragging
 
-    startDragging: (screen, comp, options, initialMoveOptions) ->
-        origin: $('#design-area').offset()
-        allowedArea: screen.allowedArea
+    computeDropAction: (comp, target, originalSize, originalEffSize) ->
+        if comp.type is Types['image'] and target.type.supportsImageReplacement
+            newSetImageAction target, comp
+        else
+            newDropOnTargetAction comp, target, originalSize, originalEffSize
 
-        if comp.inDocument
-            originalR: rectOf comp
-
-        computeHotSpot: (pt) ->
-            r: rectOf comp
-            {
-                x: if r.w then ((pt.x - origin.left) - r.x) / r.w else 0.5
-                y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
-            }
-        hotspot: options.hotspot || computeHotSpot(options.startPt)
-        liveMover: newLiveDropEffectPreviewer screen, [comp], componentPositionChanged
-        wasAnchored: no
-        anchoredTransitionChangeTimeout: new Timeout STACKED_COMP_TRANSITION_DURATION
-
-        $(comp.node).addClass 'dragging'
-
-        updateRectangleAndClipToArea: (pt) ->
-            r: sizeOf comp
-            r.x: pt.x - origin.left - r.w * hotspot.x
-            r.y: pt.y - origin.top  - r.h * hotspot.y
-            unsnappedRect: dupRect r
-
-            insideArea: {
-                x: (allowedArea.x <= r.x <= allowedArea.x+allowedArea.w-r.w)
-                y: allowedArea.y <= r.y <= allowedArea.y+allowedArea.h-r.h
-            }
-            snapToArea: {
-                left:   (allowedArea.x - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.x < allowedArea.x)
-                top:    (allowedArea.y - CONF_DESIGNAREA_PUSHBACK_DISTANCE <= r.y < allowedArea.y)
-                right:  (allowedArea.x+allowedArea.w-r.w < r.x <= allowedArea.x+allowedArea.w-r.w + CONF_DESIGNAREA_PUSHBACK_DISTANCE)
-                bottom: (allowedArea.y+allowedArea.h-r.h < r.y <= allowedArea.y+allowedArea.h-r.h + CONF_DESIGNAREA_PUSHBACK_DISTANCE)
-            }
-            if (insideArea.x or snapToArea.left or snapToArea.right) and (insideArea.y or snapToArea.top or snapToArea.bottom)
-                if snapToArea.left then r.x = allowedArea.x
-                if snapToArea.top  then r.y = allowedArea.y
-                if snapToArea.right then r.x = allowedArea.x+allowedArea.w - r.w
-                if snapToArea.bottom then r.y = allowedArea.y+allowedArea.h - r.h
-                insideArea.x = insideArea.y = yes
-
-            [r, unsnappedRect, insideArea.x && insideArea.y]
-
-        moveTo: (pt, moveOptions) ->
-            [rect, unsnappedRect, ok] = updateRectangleAndClipToArea(pt)
-
-            if ok
-                if effect: layouting.computeDropEffect screen, comp, rect, moveOptions
-                    { target, isAnchored, rect, moves }: effect
-                else
-                    ok: no
-                    moves: []
-            else
-                { moves }: layouting.computeDeletionEffect screen, comp
-
-            unless ok
-                rect: unsnappedRect
-
-            $(comp.node)[if ok then 'removeClass' else 'addClass']('cannot-drop')
-            liveMover.moveComponents moves
-
-            comp.dragpos = { x: rect.x, y: rect.y }
-            comp.dragsize: { w: rect.w, h: rect.h }
-            comp.dragParent: null
-
-            if wasAnchored and not isAnchored
-                anchoredTransitionChangeTimeout.set -> $(comp.node).removeClass 'anchored'
-            else if isAnchored and not wasAnchored
-                anchoredTransitionChangeTimeout.clear()
-                $(comp.node).addClass 'anchored'
-            wasAnchored = isAnchored
-
-            componentPositionChanged comp
-
-            if ok then { target: target } else null
-
-        dropAt: (pt, moveOptions) ->
-            $(comp.node).removeClass 'dragging'
-
-            if res: moveTo pt, moveOptions
-                effects: []
-                if comp.type is Types['image'] and res.target.type.supportsImageReplacement
-                    effects.push newSetImageEffect(res.target, comp)
-                else
-                    effects.push newDropOnTargetEffect(comp, res.target, originalSize, originalEffSize)
-                for e in effects
-                    e.apply()
-                liveMover.commit()
-                containerChildrenChanged comp.parent
-                true
-            else
-                comp.dragpos: null
-                comp.dragsize: null
-                comp.dragParent: null
-                liveMover.commit()
-                false
-
-        cancel: ->
-            $(comp.node).removeClass 'dragging cannot-drop'
-            liveMover.rollback()
-
-        if comp.node.parentNode
-            comp.node.parentNode.removeChild(comp.node)
-        screen.rootComponent.node.appendChild(comp.node)
-
-        # we might have just added a new component
-        updateEffectiveSizesInHierarchy comp
-        relayoutHierarchy comp
-
-        originalSize: comp.size
-        originalEffSize: comp.effsize
-
-        moveTo(options.startPt, initialMoveOptions)
-
-        { moveTo, dropAt, cancel }
-
-
-    ##########################################################################################################
-    ##  Dragging Specifics
-
-
-    newDropOnTargetEffect: (c, target, originalSize, originalEffSize) ->
+    newDropOnTargetAction: (c, target, originalSize, originalEffSize) ->
         {
-            apply: ->
+            execute: ->
                 if c.parent != target
                     _(c.parent.children).removeValue c  if c.parent
                     c.parent = target
@@ -633,9 +512,9 @@ jQuery ($) ->
                 componentPositionChanged c
         }
 
-    newSetImageEffect: (target, c) ->
+    newSetImageAction: (target, c) ->
         {
-            apply: ->
+            execute: ->
                 target.image: c.image
                 $(c.node).remove()
                 renderComponentVisualProperties target
@@ -660,7 +539,8 @@ jQuery ($) ->
                 if dragger is null
                     return if Math.abs(pt.x - startPt.x) <= 1 and Math.abs(pt.y - startPt.y) <= 1
                     undo.beginTransaction "movement of ${friendlyComponentName c}"
-                    dragger: startDragging activeScreen, c, { startPt: startPt }, computeMoveOptions(e)
+                    dragger: Mockko.startDragging activeScreen, c, { startPt: startPt }, computeMoveOptions(e),
+                            computeDropAction, componentPositionChanged, containerChildrenChanged, updateEffectiveSizesAndRelayoutHierarchy
                     $('#hover-panel').hide()
                 dragger.moveTo pt, computeMoveOptions(e)
                 true
@@ -692,7 +572,8 @@ jQuery ($) ->
         undo.beginTransaction "creation of ${friendlyComponentName c}"
         cn: renderInteractiveComponentHeirarchy c
 
-        dragger: startDragging activeScreen, c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }, computeMoveOptions(e)
+        dragger: Mockko.startDragging activeScreen, c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }, computeMoveOptions(e),
+                computeDropAction, componentPositionChanged, containerChildrenChanged, updateEffectiveSizesAndRelayoutHierarchy
 
         window.status = "Dragging a new component."
 
@@ -768,7 +649,6 @@ jQuery ($) ->
                 comp.dragParent: comp.parent
                 console.log "resizing to ${comp.size.w} x ${comp.size.h}"
                 componentPositionChanged comp
-                relayoutHierarchy comp
 
             dropAt: (pt) ->
                 @moveTo pt
@@ -893,8 +773,7 @@ jQuery ($) ->
             n: renderPaletteComponentHierarchy c
             $(n).attr('title', compTemplate.label || c.type.label)
             $(n).addClass('item').appendTo(items)
-            updateEffectiveSizesInHierarchy c
-            relayoutHierarchy c
+            updateEffectiveSizesAndRelayoutHierarchy c
             bindPaletteItem n, ser.externalizePaletteComponent(compTemplate)
             func compTemplate, n
 
@@ -1137,8 +1016,7 @@ jQuery ($) ->
         $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
         renderScreenRootComponentId screen
 
-        updateEffectiveSizesInHierarchy activeScreen.rootComponent
-        relayoutHierarchy activeScreen.rootComponent
+        updateEffectiveSizesAndRelayoutHierarchy activeScreen.rootComponent
         componentsChanged()
 
         deselectComponent()
@@ -1720,8 +1598,7 @@ jQuery ($) ->
                 newComp.parent: targetCont
                 targetCont.children.push newComp
                 $(targetCont.node).append renderInteractiveComponentHeirarchy newComp
-                updateEffectiveSizesInHierarchy newComp
-                relayoutHierarchy newComp
+                updateEffectiveSizesAndRelayoutHierarchy newComp
 
                 effect: layouting.computeDuplicationEffect activeScreen, newComp
                 if effect is null
