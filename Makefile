@@ -19,6 +19,15 @@ JS = $(patsubst %.coffee,%.js,${COFFEE})
 CSS = $(patsubst %.less,%.css,${LESS})
 HTML = $(patsubst %.haml,%.html,${HAML})
 
+# Minification
+JS_SRC = $(addprefix web/static/, \
+	geometry.js \
+	designer-jqueryaddons.js \
+	designer-components.js \
+	designer-templates.js \
+	jpicker.js \
+	designer.js)
+
 help:
 	@echo
 	@echo "Mockko"
@@ -99,7 +108,7 @@ SUM_FILES = .designerjs.sum .themecss.sum .iphonecss.sum \
 ${OPT_DIR}/designer.min.html: web/designer.html .designerjs.sum .themecss.sum .iphonecss.sum
 	@echo "  HTML SED" $@
 	@mkdir -p $(dir $@)
-	grep -v 'designer-.*\.js\|jpicker\.js\|lib/.*\.js\|animations.css\|theme-designer.css\|theme-dashboard.css' < $< | perl -pe "s/designer\.js/designer.min.js?"$$(cat .designerjs.sum)"/g; s/iphone.css/iphone.min.css?"$$(cat .iphonecss.sum)"/g; s/theme-common.css/theme.min.css?"$$(cat .themecss.sum)"/g" > $@ || (rm -f $@; false)
+	grep -v 'designer-.*\.js\|geometry\.js\|jpicker\.js\|lib/.*\.js\|animations.css\|theme-designer.css\|theme-dashboard.css' < $< | perl -pe "s/designer\.js/designer.min.js?"$$(cat .designerjs.sum)"/g; s/iphone.css/iphone.min.css?"$$(cat .iphonecss.sum)"/g; s/theme-common.css/theme.min.css?"$$(cat .themecss.sum)"/g" > $@ || (rm -f $@; false)
 
 ${OPT_DIR}/iphone.min.css: web/static/iphone/iphone.css .iphone-images.sum
 	@echo "  YUI " $<
@@ -135,13 +144,6 @@ ${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.closure.js
 %.premin.js: %.combined.js
 	@echo "  PREMIN" $^
 	${PREMIN} < $^ > $@ 2>/dev/null || (rm -f $@; false)
-
-JS_SRC = $(addprefix web/static/, \
-	designer-jqueryaddons.js \
-	designer-components.js \
-	designer-templates.js \
-	jpicker.js \
-	designer.js)
 
 ${OPT_DIR}/designer.combined.js: ${JS_SRC}
 	@echo "  CAT >" $@
