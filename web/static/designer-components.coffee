@@ -246,6 +246,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
     }
     'plain-header': {
         label: 'Header'
+        isTableRow: yes
         defaultText: "B"
         widthPolicy: { autoSize: 'fill' }
         heightPolicy: { fixedSize: 23 }
@@ -258,6 +259,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
     }
     'plain-row': {
         label: 'Edge-to-Edge Row'
+        isTableRow: yes
         container: yes
         widthPolicy: { autoSize: 'fill' }
         heightPolicy: { userSize: true, fixedSize: 44 }
@@ -265,6 +267,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
     }
     'roundrect-header': {
         label: 'Header'
+        isTableRow: yes
         defaultText: "Header"
         widthPolicy: { autoSize: 'fill' }
         heightPolicy: { userSize: true, fixedSize: 44 }
@@ -278,6 +281,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
     'roundrect-row': {
         group: 'roundrect-rows'
         label: 'Rounded Rect Row'
+        isTableRow: yes
         container: yes
         widthPolicy: { autoSize: 'fill' }
         heightPolicy: { userSize: true, fixedSize: 44 }

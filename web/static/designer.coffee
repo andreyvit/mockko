@@ -63,6 +63,9 @@ jQuery ($) ->
         findChildByType, findBestTargetContainerForRect, findComponentByRect
         findComponentByTypeIntersectingRect
         compWithChildrenAndParents, isComponentOrDescendant, findComponentOccupyingRect
+        pickHorizontalPositionBetween, pickHorizontalRectAmong
+        moveComponent
+        newItemsForHorizontalStack, newItemsForHorizontalStackDuplication, computeDropEffectFromNewRects
     }: Mockko.model
 
     ##########################################################################################################
@@ -137,7 +140,7 @@ jQuery ($) ->
 
         reassignZIndexes()
 
-        allStacks: discoverStacks()
+        allStacks: Mockko.stacking.discoverStacks(activeScreen.rootComponent)
 
         updateInspector()
         updateScreenPreview(activeScreen)
@@ -243,7 +246,7 @@ jQuery ($) ->
         return if rootc.type.unmovable
 
         effect: computeDeletionEffect rootc
-        stacking: handleStacking rootc, null, allStacks
+        stacking: Mockko.stacking.handleStacking rootc, null, allStacks
 
         liveMover: newLiveMover [rootc]
         liveMover.moveComponents stacking.moves.concat(effect.moves)
@@ -383,198 +386,6 @@ jQuery ($) ->
     # TODO: remove this hack for circular dependency on designer-rendering
     window.getImageUrl: getImageUrl
 
-
-    ##########################################################################################################
-    ##  Component Positioning
-
-    moveComponent: (comp, newPos) ->
-        delta: ptDiff(newPos, comp.abspos)
-        traverse comp, (child) -> child.abspos: ptSum(child.abspos, delta)
-
-
-    ##########################################################################################################
-    ##  stacking
-
-    TABLE_TYPES = setOf ['plain-row', 'plain-header', 'roundrect-row', 'roundrect-header']
-
-    areVerticallyAdjacent: (c1, c2) ->
-        r1: rectOf c1
-        r2: rectOf c2
-        r1.y + r1.h == r2.y
-
-    midy: (r) -> r.y + r.h / 2
-
-    rectWith: (pos, size) -> { x: pos.x, y: pos.y, w: size.w, h: size.h }
-
-    discoverStacks: ->
-        returning [], (stacks) ->
-            traverse activeScreen.rootComponent, (c) ->
-                c.stack = null; c.previousStackSibling = null; c.nextStackSibling = null
-
-            traverse activeScreen.rootComponent, (c) ->
-                if c.type.container
-                    discoverStacksInComponent c, stacks
-
-            $('.component').removeClass('in-stack first-in-stack last-in-stack odd-in-stack even-in-stack first-in-group last-in-group odd-in-group even-in-group')
-            for stack in stacks
-                prev: null
-                index: 1
-                indexInGroup: 1
-                prevGroupName: null
-                $(stack.items[0].node).addClass('first-in-stack')
-                for cur in stack.items
-                    groupName: cur.type.group || 'default'
-                    if groupName != prevGroupName
-                        $(cur.node).addClass('first-in-group')
-                        $(prev.node).addClass('last-in-group') if prev
-                        indexInGroup: 1
-                    prevGroupName: groupName
-
-                    $(cur.node).addClass("in-stack ${if index % 2 is 0 then 'even' else 'odd'}-in-stack")
-                    $(cur.node).addClass("${if indexInGroup % 2 is 0 then 'even' else 'odd'}-in-group")
-                    index += 1
-                    indexInGroup += 1
-
-                    cur.stack = stack
-                    if prev
-                        prev.nextStackSibling = cur
-                        cur.previousStackSibling = prev
-                    prev = cur
-                $(prev.node).addClass('last-in-group') if prev
-                $(prev.node).addClass('last-in-stack') if prev
-
-    discoverStacksInComponent: (container, stacks) ->
-        peers: _(container.children).select (c) -> c.type.name of TABLE_TYPES
-        peers: _(peers).sortBy (c) -> c.abspos.y
-
-        contentSoFar: []
-        lastStackItem: null
-        stackMinX: INF
-        stackMaxX: -INF
-
-        canBeStacked: (c) ->
-            minX: c.abspos.x
-            maxX: c.abspos.x + c.effsize.w
-            return no if maxX < stackMinX or minX > stackMaxX
-            return no unless lastStackItem.abspos.y + lastStackItem.effsize.h == c.abspos.y
-            yes
-
-        flush: ->
-            rect: { x: stackMinX, w: stackMaxX - stackMinX, y: contentSoFar[0].abspos.y }
-            rect.h = lastStackItem.abspos.y + lastStackItem.effsize.h - rect.y
-            stacks.push { type: 'vertical', items: contentSoFar, rect: rect }
-
-            contentSoFar: []
-            lastStackItem: null
-            stackMinX: INF
-            stackMaxX: -INF
-
-        for peer in peers
-            flush() if lastStackItem isnt null and not canBeStacked(peer)
-            contentSoFar.push peer
-            lastStackItem = peer
-            stackMinX: Math.min(stackMinX, peer.abspos.x)
-            stackMaxX: Math.max(stackMaxX, peer.abspos.x + peer.effsize.w)
-        flush() if lastStackItem isnt null
-
-    # stackSlice(from, inclFrom?, [to, inclTo?])
-    stackSlice: (from, inclFrom, to, inclTo) ->
-        res: []
-        res.push from if inclFrom
-        item: from.nextStackSibling
-        while item? and item isnt to
-            res.push item
-            item: item.nextStackSibling
-        res.push to if inclTo
-        return res
-
-    findStackByProximity: (rect, stacks) ->
-        _(stacks).find (s) -> proximityOfRectToRect(rect, s.rect) < 20 * 20
-
-    handleStacking: (comp, rect, stacks, action) ->
-        return { moves: [] } unless comp.type.name of TABLE_TYPES
-
-        sourceStack: if action == 'duplicate' then null else comp.stack
-        targetStack: if rect? then findStackByProximity(rect, stacks) else null
-
-        handleVerticalStacking comp, rect, sourceStack, targetStack
-
-    pickHorizontalPositionBetween: (rect, items) ->
-        throw "cannot work with empty list of items" if items.length is 0
-        [prevItem, prevItemRect]: [null, null]
-        index: 0
-        positions: for item in items.concat(null)
-            itemRect: if item then rectOf(item) else null
-            coord: switch
-                when itemRect && prevItemRect then (prevItemRect.x+prevItemRect.w + itemRect.x) / 2
-                when itemRect then itemRect.x
-                when prevItemRect then prevItemRect.x+prevItemRect.w
-                else throw "impossible case"
-            [after, before] : [prevItem, item]
-            [prevItem, prevItemRect] : [item, itemRect]
-            { coord, after, before, index:index++ }
-
-        center: rect.x + rect.w / 2
-        _(positions).min (pos) -> Math.abs(center - pos.coord)
-
-    pickHorizontalRectAmong: (rect, items) ->
-        throw "cannot work with empty list of items" if items.length is 0
-        index: 0
-        positions: for item in items
-            { rect:(if item.abspos then rectOf(item) else item), item, index:index++ }
-
-        center: rect.x + rect.w / 2
-        _(positions).min (pos) -> Math.abs(pos.rect.x+pos.rect.w/2 - center)
-
-    handleVerticalStacking: (comp, rect, sourceStack, targetStack) ->
-        if sourceStack && sourceStack.items.length == 1
-            if targetStack is sourceStack
-                targetStack: null
-            sourceStack: null
-
-        return { moves: [] } unless sourceStack? or targetStack?
-
-        if sourceStack == targetStack
-          target: _(targetStack.items).min (c) -> proximityOfRectToRect rectOf(c), rect
-          if target is comp
-            return { targetRect: rectOf(comp), moves: [] }
-          else if rect.y > comp.abspos.y
-            # moving down
-            return {
-              targetRect: rectWith target.abspos, comp.effsize
-              moves: [
-                { comps: stackSlice(comp, no, target, yes), offset: { x: 0, y: -comp.effsize.h } }
-              ]
-            }
-          else
-            # moving up
-            return {
-                targetRect: rectWith target.abspos, comp.effsize
-                moves: [
-                    { comps: stackSlice(target, yes, comp, no), offset: { x: 0, y: comp.effsize.h } }
-                ]
-            }
-        else
-            res: { moves: [] }
-            if targetStack?
-                firstItem: _(targetStack.items).first()
-                lastItem: _(targetStack.items).last()
-                # fake components serving as placeholders
-                bofItem: {
-                    abspos: { x: firstItem.abspos.x, y: firstItem.abspos.y - comp.effsize.h }
-                    effsize: { w: comp.effsize.w, h: comp.effsize.h }
-                }
-                eofItem: {
-                    abspos: { x: lastItem.abspos.x, y: lastItem.abspos.y + lastItem.effsize.h }
-                    effsize: { w: comp.effsize.w, h: comp.effsize.h }
-                }
-                target: _(targetStack.items.concat([bofItem, eofItem])).min (c) -> proximityOfRectToRect rectOf(c), rect
-                res.targetRect = rectWith target.abspos, comp.effsize
-                if target isnt eofItem and target isnt bofItem
-                    res.moves.push { comps: stackSlice(target, yes), offset: { x: 0, y: comp.effsize.h } }
-            if sourceStack?
-                res.moves.push { comps: stackSlice(comp, no), offset: { x: 0, y: -comp.effsize.h } }
-            return res
 
     ##########################################################################################################
     ##  hover panel
@@ -1092,40 +903,6 @@ jQuery ($) ->
                 if delay? then setTimeout(cleanup, delay) else cleanup()
         }
 
-    newItemsForHorizontalStack: (items, comp, rect) ->
-        if _(items).include(comp)
-            filteredItems: _(_(items).without(comp)).sortBy (child) -> child.abspos.x
-            if rect
-                sortedItems: _(items).sortBy (child) -> child.abspos.x
-                index: pickHorizontalRectAmong(rect, sortedItems).index
-                filteredItems.slice(0, index).concat([comp]).concat(filteredItems.slice(index))
-            else
-                filteredItems
-        else if items.length is 0
-            [comp]
-        else
-            sortedItems: _(items).sortBy (child) -> child.abspos.x
-            index: pickHorizontalPositionBetween(rect, sortedItems).index
-            sortedItems.slice(0, index).concat([comp]).concat(sortedItems.slice(index))
-
-    newItemsForHorizontalStackDuplication: (items, oldComp, newComp) ->
-        items: _(items).sortBy (child) -> child.abspos.x
-        index: _(items).indexOf oldComp
-        if index < 0
-            items.concat([newComp])
-        else
-            items.slice(0, index).concat([newComp]).concat(items.slice(index))
-
-    computeDropEffectFromNewRects: (items, newRects, comp) ->
-        throw "lengths do not match" unless items.length == newRects.length
-        effect: { moves: [], rect: null }
-        for [item, rect] in _.zip(items, newRects)
-            if comp? and item is comp
-                effect.rect: rect
-            else
-                effect.moves.push { comp: item, abspos: { x:rect.x, y:rect.y }, size: { w:rect.w, h:rect.h } }
-        effect
-
     startDragging: (comp, options, initialMoveOptions) ->
         origin: $('#design-area').offset()
 
@@ -1322,7 +1099,7 @@ jQuery ($) ->
     class RegularLayout extends Layout
 
         computeDropEffect: (comp, rect, moveOptions) ->
-            stacking: handleStacking comp, rect, allStacks
+            stacking: Mockko.stacking.handleStacking comp, rect, allStacks
             if stacking.targetRect?
                 { isAnchored: yes, rect: stacking.targetRect, moves: stacking.moves }
             else
@@ -1340,7 +1117,7 @@ jQuery ($) ->
         computeDuplicationEffect: (oldComp, newComp) ->
             rect: rectOf(oldComp)
             rect.y += rect.h
-            stacking: handleStacking oldComp, rect, allStacks, 'duplicate'
+            stacking: Mockko.stacking.handleStacking oldComp, rect, allStacks, 'duplicate'
 
             if stacking.targetRect
                 return { rect: stacking.targetRect, moves: stacking.moves }
@@ -1377,8 +1154,7 @@ jQuery ($) ->
             #
 
     class TableRowLayout extends RegularLayout
-
-        computeDropTarget: (target, comp, rect, moveOptions) ->
+        #
 
     computeContainerLayout: (container) ->
         if container.type.layoutChildren
@@ -1392,7 +1168,7 @@ jQuery ($) ->
 
         if pin: comp.type.pin
             new PinnedLayout(activeScreen.rootComponent)
-        else if comp.type.name of TABLE_TYPES
+        else if comp.type.isTableRow
             new TableRowLayout(activeScreen.rootComponent)
         else if comp.type.name is 'tab-bar-item'
             if target: findChildByType(activeScreen.rootComponent, Types['tabBar'])
@@ -1516,7 +1292,7 @@ jQuery ($) ->
                         componentsChanged()
                         $('#hover-panel').show()
                     else
-                        undo.rollbackTransaction()
+                        undo.abandonTransaction()
                         deleteComponent c
                 deactivateMode()
 
@@ -1977,16 +1753,6 @@ jQuery ($) ->
 
         activeScreen = screen
 
-        $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
-        renderScreenRootComponentId screen
-
-        # HACK WTF: without this timeout, effective sizes of inner components will be computed as 0x0
-        setTimeout (->
-            updateEffectiveSizesInHierarchy activeScreen.rootComponent
-            relayoutHierarchy activeScreen.rootComponent
-            componentsChanged()
-        ), 0
-
         devicePanel: $('#device-panel')[0]
         allowedArea: {
             x: 0
@@ -1994,6 +1760,13 @@ jQuery ($) ->
             w: 320
             h: 480
         }
+
+        $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
+        renderScreenRootComponentId screen
+
+        updateEffectiveSizesInHierarchy activeScreen.rootComponent
+        relayoutHierarchy activeScreen.rootComponent
+        componentsChanged()
 
         deselectComponent()
         componentUnhovered()
@@ -2632,6 +2405,7 @@ jQuery ($) ->
             names[Math.floor(Math.random() * names.length)]
 
     createNewApplication: ->
+        $('#design-screen').show()
         loadApplication ser.internalizeApplication(MakeApp.appTemplates.basic), null
         switchToDesign()
 
@@ -2639,6 +2413,7 @@ jQuery ($) ->
         app.node: an
         $(an).bindContextMenu '#application-context-menu', app
         $('.content', an).click ->
+            $('#design-screen').show()
             loadApplication app.content, app.id
             switchToDesign()
         $('.caption', an).click ->
@@ -2684,8 +2459,7 @@ jQuery ($) ->
         $(".screen").hide()
         $('#design-screen').show()
         initPalette()
-        # if any
-        deactivateMode()
+        deactivateMode() # if any
         adjustDeviceImagePosition()
         updateCustomImages()
 
@@ -2708,6 +2482,7 @@ jQuery ($) ->
         console.log serverMode
         serverMode.adjustUI userData
         serverMode.startDesigner userData, switchToDashboard, (app) ->
+            $('#design-screen').show()
             loadApplication ser.internalizeApplication(app), null
             switchToDesign()
             

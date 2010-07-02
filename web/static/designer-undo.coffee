@@ -31,6 +31,9 @@
         revertToMemento lastChange.memento
         lastChange: null
 
+    abandonTransaction: ->
+        lastChange: null
+
     undoStackChanged: ->
         if undoStack.length != 0
             lastCommandChanged "Undo ${undoStack[undoStack.length-1].name}"
@@ -47,5 +50,6 @@
     undoStackChanged()
     
     {
-        beginTransaction, endTransaction, rollbackTransaction, setCurrentChangeName, undoLastChange
+        beginTransaction, endTransaction, rollbackTransaction, abandonTransaction
+        setCurrentChangeName, undoLastChange
     }

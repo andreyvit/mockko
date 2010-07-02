@@ -120,10 +120,78 @@ isComponentOrDescendant: (candidate, possibleAncestor) ->
         match: yes if child is candidate
     match
 
+pickHorizontalPositionBetween: (rect, items) ->
+    throw "cannot work with empty list of items" if items.length is 0
+    [prevItem, prevItemRect]: [null, null]
+    index: 0
+    positions: for item in items.concat(null)
+        itemRect: if item then rectOf(item) else null
+        coord: switch
+            when itemRect && prevItemRect then (prevItemRect.x+prevItemRect.w + itemRect.x) / 2
+            when itemRect then itemRect.x
+            when prevItemRect then prevItemRect.x+prevItemRect.w
+            else throw "impossible case"
+        [after, before] : [prevItem, item]
+        [prevItem, prevItemRect] : [item, itemRect]
+        { coord, after, before, index:index++ }
+
+    center: rect.x + rect.w / 2
+    _(positions).min (pos) -> Math.abs(center - pos.coord)
+
+pickHorizontalRectAmong: (rect, items) ->
+    throw "cannot work with empty list of items" if items.length is 0
+    index: 0
+    positions: for item in items
+        { rect:(if item.abspos then rectOf(item) else item), item, index:index++ }
+
+    center: rect.x + rect.w / 2
+    _(positions).min (pos) -> Math.abs(pos.rect.x+pos.rect.w/2 - center)
+
+moveComponent: (comp, newPos) ->
+    delta: ptDiff(newPos, comp.abspos)
+    traverse comp, (child) -> child.abspos: ptSum(child.abspos, delta)
+
+newItemsForHorizontalStack: (items, comp, rect) ->
+    if _(items).include(comp)
+        filteredItems: _(_(items).without(comp)).sortBy (child) -> child.abspos.x
+        if rect
+            sortedItems: _(items).sortBy (child) -> child.abspos.x
+            index: pickHorizontalRectAmong(rect, sortedItems).index
+            filteredItems.slice(0, index).concat([comp]).concat(filteredItems.slice(index))
+        else
+            filteredItems
+    else if items.length is 0
+        [comp]
+    else
+        sortedItems: _(items).sortBy (child) -> child.abspos.x
+        index: pickHorizontalPositionBetween(rect, sortedItems).index
+        sortedItems.slice(0, index).concat([comp]).concat(sortedItems.slice(index))
+
+newItemsForHorizontalStackDuplication: (items, oldComp, newComp) ->
+    items: _(items).sortBy (child) -> child.abspos.x
+    index: _(items).indexOf oldComp
+    if index < 0
+        items.concat([newComp])
+    else
+        items.slice(0, index).concat([newComp]).concat(items.slice(index))
+
+computeDropEffectFromNewRects: (items, newRects, comp) ->
+    throw "lengths do not match" unless items.length == newRects.length
+    effect: { moves: [], rect: null }
+    for [item, rect] in _.zip(items, newRects)
+        if comp? and item is comp
+            effect.rect: rect
+        else
+            effect.moves.push { comp: item, abspos: { x:rect.x, y:rect.y }, size: { w:rect.w, h:rect.h } }
+    effect
+
 
 (window.Mockko ||= {}).model: {
     sizeOf, rectOf
     traverse, skipTraversingChildren
     findChildByType, findBestTargetContainerForRect, findComponentByRect, findComponentByTypeIntersectingRect
     compWithChildrenAndParents, isComponentOrDescendant, findComponentOccupyingRect
+    pickHorizontalPositionBetween, pickHorizontalRectAmong
+    moveComponent
+    newItemsForHorizontalStack, newItemsForHorizontalStackDuplication, computeDropEffectFromNewRects
 }
