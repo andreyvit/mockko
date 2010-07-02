@@ -110,7 +110,7 @@ class SaveAppHandler(RequestHandler):
             if account.key() not in app.editors:
                 return render_json_response({ 'error': 'access-denied' })
         app.name = body['name']
-        app.body = db.Text(body_json)
+        app.body = db.Text(body_json.decode('utf-8'))
         app.put()
         return render_json_response({ 'id': app.key().id()    })
 
