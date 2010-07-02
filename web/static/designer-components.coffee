@@ -665,6 +665,7 @@ window.MakeApp.paletteDefinition: [
             {
                 type: 'segmented'
                 size: { w: 200 }
+                styleName: 'plain'
                 children: [
                     {
                         type: 'segment'
@@ -686,6 +687,35 @@ window.MakeApp.paletteDefinition: [
             {
                 type: 'segment'
                 text: 'C'
+                styleName: 'plain'
+                size: { w: 100 }
+            }
+            {
+                type: 'segmented'
+                size: { w: 200 }
+                styleName: 'bordered'
+                children: [
+                    {
+                        type: 'segment'
+                        text: 'None'
+                        location: { x: 0, y: 0 }
+                    }
+                    {
+                        type: 'segment'
+                        text: 'A'
+                        location: { x: 1, y: 0 }
+                    }
+                    {
+                        type: 'segment'
+                        text: 'B'
+                        location: { x: 2, y: 0 }
+                    }
+                ]
+            }
+            {
+                type: 'segment'
+                text: 'C'
+                styleName: 'bordered'
                 size: { w: 100 }
             }
         ]

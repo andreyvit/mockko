@@ -793,7 +793,7 @@ jQuery ($) ->
         ct: c.type
         movability: if ct.unmovable then "unmovable" else "movable"
         tagName: c.type.tagName || "div"
-        $(ct.html || "<${tagName} />").addClass("component c-${c.type.name} c-${c.type.name}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c).addClass(movability)[0]
+        $(ct.html || "<${tagName} />").addClass("component c-${c.type.name} ${c.styleName || ''} c-${c.type.name}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c).addClass(movability)[0]
 
     _renderComponentHierarchy: (c, storeFunc) ->
         n: storeFunc c, createNodeForComponent(c)
