@@ -306,7 +306,7 @@ window.newModeEngine: (options) ->
             cancelMode()
             false
 
-    [activateMode, deactivateMode, cancelMode, dispatchToMode, getActiveMode]
+    { activateMode, deactivateMode, cancelMode, dispatchToMode, getActiveMode }
 
 jQuery.fn.scrollToBottom: -> this.scrollTop(this[0].scrollHeight)
 
