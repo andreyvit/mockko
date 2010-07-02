@@ -32,6 +32,7 @@ JS_SRC = $(addprefix web/static/, \
 	designer-rendering.js \
 	designer-undo.js \
 	designer-model.js \
+	designer-alignment-detection.js \
 	jpicker.js \
 	designer.js)
 
