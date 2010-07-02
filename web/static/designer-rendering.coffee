@@ -9,6 +9,15 @@
 rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
 
 
+##  DOM node
+
+renderComponentNode: (c) ->
+    ct: c.type
+    movability: if ct.unmovable then "unmovable" else "movable"
+    tagName: c.type.tagName || "div"
+    $(ct.html || "<${tagName} />").addClass("component c-${c.type.name} ${c.styleName || ''} c-${c.type.name}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c).addClass(movability)[0]
+
+
 ##  position
 
 renderComponentPosition: (c, cn) ->
@@ -137,13 +146,31 @@ renderComponentVisualProperties: (c, cn) ->
 
 renderComponentProperties: (c, cn) -> renderComponentPosition(c, cn); renderComponentVisualProperties(c, cn)
 
+_renderComponentHierarchy: (c, storeFunc) ->
+    n: storeFunc c, renderComponentNode(c)
+    for child in c.children || []
+        childNode: _renderComponentHierarchy(child, storeFunc)
+        $(n).append(childNode)
+    n
+
+renderComponentHierarchy: (c, saveNodes, positionRoot) ->
+    n: _renderComponentHierarchy c, (ch, n) ->
+        ch.node: n if saveNodes
+        renderComponentVisualProperties ch, n
+        renderComponentPosition ch, n if ch != c
+        n
+    renderComponentPosition c if positionRoot
+    n
+
 
 ##########################################################################################################
 ##  exports
 
 (window.Mockko ||= {}).renderer: {
+    renderComponentNode
     renderComponentSize, updateEffectiveSize, updateComponentTooltip
     renderComponentPosition
     renderComponentStyle, textNodeOfComponent
     renderComponentVisualProperties, renderComponentProperties
+    renderComponentHierarchy
 }

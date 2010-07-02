@@ -49,10 +49,12 @@ jQuery ($) ->
     ser: Mockko.serialization
 
     {
+        renderComponentNode
         renderComponentSize, updateEffectiveSize, updateComponentTooltip
         renderComponentPosition
         renderComponentStyle, textNodeOfComponent
         renderComponentVisualProperties, renderComponentProperties
+        renderComponentHierarchy
     }: Mockko.renderer
 
 
@@ -133,6 +135,37 @@ jQuery ($) ->
         updateInspector()
         updateScreenPreview(activeScreen)
 
+    componentPositionChangedWhileDragging: (c) ->
+        renderComponentPosition c
+        renderComponentSize c
+        if c is hoveredComponent
+            updateHoverPanelPosition()
+            updatePositionInspector()
+
+    componentPositionChangedPernamently: (c) ->
+        renderComponentPosition c
+        updateEffectiveSize c
+        if c is hoveredComponent
+            updateHoverPanelPosition()
+            updatePositionInspector()
+
+    componentStyleChanged: (c) ->
+        renderComponentStyle c
+
+    componentActionChanged: (c) ->
+        renderComponentStyle c
+        if c is componentToActUpon()
+            updateActionInspector()
+        if c is hoveredComponent
+            updateHoverPanelPosition()
+
+    containerChildrenChanged: (container) ->
+        sorted: _(container.children).sortBy (child) -> child.abspos.x
+        if _(_(sorted).zip(container.children)).any((a, b) -> a isnt b)
+            for node in (n for n in container.node.childNodes)
+                container.node.removeChild node
+            for node in (child.node for child in sorted)
+                container.node.appendChild node
 
 
     ##########################################################################################################
@@ -141,8 +174,77 @@ jQuery ($) ->
     sizeOf: (c) -> { w: c.effsize.w, h: c.effsize.h }
     rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
 
+    skipTraversingChildren: {}
+    # traverse(comp-or-array-of-comps, [parent], func)
+    traverse: (comp, parent, func) ->
+        return if not comp?
+        if not func
+            func = parent; parent = null
+        if _.isArray comp
+            for child in comp
+                traverse child, parent, func
+        else
+            r: func(comp, parent)
+            if r isnt skipTraversingChildren
+                for child in comp.children || []
+                    traverse child, comp, func
+        null
+
     findChildByType: (parent, type) ->
         _(parent.children).detect (child) -> child.type is type
+
+    findComponentAt: (pt) ->
+        if activeLinkOverlay && activeLinkOverlay.justAdded
+            pagePt: addPtPt(pt, ptFromNode('#design-area'))
+            if (d: distanceToLinkOverlay(pagePt)) < activeLinkOverlay.safeDistance
+                return activeLinkOverlay.comp
+
+        result: null
+        visitor: (child) ->
+            rect: rectOf(child)
+            hitRect: if o: child.type.hitAreaOutset then insetRect rect, { l: -o, r: -o, t: -o, b: -o } else rect
+            unless ptInRect(pt, hitRect)
+                return skipTraversingChildren
+            result: child
+            if o: child.type.hitAreaInset
+                # hit the container instead of children if the mouse is within o px from its border
+                hitRect: insetRect rect, { l: o, r: o, t: o, b: o }
+                unless ptInRect(pt, hitRect)
+                    return skipTraversingChildren
+
+        if hoveredComponent
+            rect: insetRect rectOf(hoveredComponent), { l: -7, r: -7, t: -20, b: -7 }
+            if ptInRect(pt, rect)
+                result: hoveredComponent
+                traverse hoveredComponent, visitor
+                return result
+
+        traverse activeScreen.rootComponent, visitor
+        result
+
+    findComponentByEvent: (e) ->
+        origin: ptFromLT $('#design-area').offset()
+        findComponentAt subPtPt({ x: e.pageX, y: e.pageY }, origin)
+
+    findBestTargetContainerForRect: (r, excluded) ->
+        trav: (comp) ->
+            return null if _.include excluded, comp
+
+            bestHere: null
+            for child in comp.children
+                if res: trav(child)
+                    if bestHere == null or res.area > bestHere.area
+                        bestHere = res
+
+            if bestHere is null
+                rc: rectOf comp
+                if isRectInsideRect r, rc
+                    if (area: areaOfIntersection r, rc) > 0
+                        bestHere: { comp: comp, area: area }
+            else
+                bestHere
+
+        trav(activeScreen.rootComponent)?.comp || activeScreen.rootComponent
 
     commitMoves: (moves, exclusions, delay) ->
         if moves.length > 0
@@ -161,28 +263,6 @@ jQuery ($) ->
 
     ##########################################################################################################
     ##  component management
-
-    storeAndBindComponentNode: (c, cn) ->
-        c.node = cn
-        $(cn).dblclick ->
-            return if componentBeingDoubleClickEdited is c
-            handleComponentDoubleClick c; false
-
-    skipTraversingChildren: {}
-    # traverse(comp-or-array-of-comps, [parent], func)
-    traverse: (comp, parent, func) ->
-        return if not comp?
-        if not func
-            func = parent; parent = null
-        if _.isArray comp
-            for child in comp
-                traverse child, parent, func
-        else
-            r: func(comp, parent)
-            if r isnt skipTraversingChildren
-                for child in comp.children || []
-                    traverse child, comp, func
-        null
 
     cloneTemplateComponent: (compTemplate) ->
         c: ser.internalizeComponent compTemplate, null
@@ -223,7 +303,8 @@ jQuery ($) ->
         newComp: ser.internalizeComponent(ser.externalizeComponent(comp), comp.parent)
 
         $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
-        traverse newComp, (c) -> updateEffectiveSize c
+        updateEffectiveSizesInHierarchy newComp
+        relayoutHierarchy newComp
 
         effect: computeDuplicationEffect newComp, comp
         if effect is null
@@ -244,69 +325,13 @@ jQuery ($) ->
 
             containerChildrenChanged comp.parent
 
-    # findParent: (c) -> c.parent
-    #     # a parent is a covering component of minimal area
-    #     r: rectOf c
-    #     _(pc for pc in components when pc != c && isRectInsideRect(r, rectOf(pc))).min (pc) -> r: rectOf(pc); r.w*r.h
-
-    findBestTargetContainerForRect: (r, excluded) ->
-        trav: (comp) ->
-            return null if _.include excluded, comp
-
-            bestHere: null
-            for child in comp.children
-                if res: trav(child)
-                    if bestHere == null or res.area > bestHere.area
-                        bestHere = res
-
-            if bestHere is null
-                rc: rectOf comp
-                if isRectInsideRect r, rc
-                    if (area: areaOfIntersection r, rc) > 0
-                        bestHere: { comp: comp, area: area }
-            else
-                bestHere
-
-        trav(activeScreen.rootComponent)?.comp || activeScreen.rootComponent
-
-    containerChildrenChanged: (container) ->
-        sorted: _(container.children).sortBy (child) -> child.abspos.x
-        if _(_(sorted).zip(container.children)).any((a, b) -> a isnt b)
-            for node in (n for n in container.node.childNodes)
-                container.node.removeChild node
-            for node in (child.node for child in sorted)
-                container.node.appendChild node
 
     ##########################################################################################################
     ##  DOM rendering
 
-    createNodeForComponent: (c) ->
-        ct: c.type
-        movability: if ct.unmovable then "unmovable" else "movable"
-        tagName: c.type.tagName || "div"
-        $(ct.html || "<${tagName} />").addClass("component c-${c.type.name} ${c.styleName || ''} c-${c.type.name}-${c.styleName || 'nostyle'}").addClass(if ct.container then 'container' else 'leaf').setdata('moa-comp', c).addClass(movability)[0]
-
-    _renderComponentHierarchy: (c, storeFunc) ->
-        n: storeFunc c, createNodeForComponent(c)
-
-        for child in c.children || []
-            childNode: _renderComponentHierarchy(child, storeFunc)
-            $(n).append(childNode)
-
-        return n
-
-    renderStaticComponentHierarchy: (c) ->
-        _renderComponentHierarchy c, (ch, n) ->
-            renderComponentVisualProperties ch, n
-            renderComponentPosition ch, n if ch != c
-            n
-
-    renderPaletteComponentHierarchy: (c) ->
-        _renderComponentHierarchy c, (ch, n) ->
-            ch.node: n
-            renderComponentVisualProperties ch
-            renderComponentPosition ch if ch != c
-            n
+    renderStaticComponentHierarchy: (c) -> renderComponentHierarchy c, false, false
+    renderPaletteComponentHierarchy: (c) -> renderComponentHierarchy c, true, false
+    renderInteractiveComponentHeirarchy: (c) -> renderComponentHierarchy c, true, true
 
     updateEffectiveSizesInHierarchy: (c) ->
         traverse c, (child) ->
@@ -318,53 +343,14 @@ jQuery ($) ->
                 commitMovesImmediately effect.moves
                 containerChildrenChanged child
 
-    renderInteractiveComponentHeirarchy: (c) ->
-        rootNode: _renderComponentHierarchy c, (ch, n) ->
-            storeAndBindComponentNode ch, n
-            renderComponentProperties ch
-            n
-        traverse c, (child) ->
-            if effect: computeContainerLayout(child).relayout()
-                commitMovesImmediately effect.moves
-        rootNode
-
-    findComponentAt: (pt) ->
-        if activeLinkOverlay && activeLinkOverlay.justAdded
-            pagePt: addPtPt(pt, ptFromNode('#design-area'))
-            if (d: distanceToLinkOverlay(pagePt)) < activeLinkOverlay.safeDistance
-                return activeLinkOverlay.comp
-
-        result: null
-        visitor: (child) ->
-            rect: rectOf(child)
-            hitRect: if o: child.type.hitAreaOutset then insetRect rect, { l: -o, r: -o, t: -o, b: -o } else rect
-            unless ptInRect(pt, hitRect)
-                return skipTraversingChildren
-            result: child
-            if o: child.type.hitAreaInset
-                # hit the container instead of children if the mouse is within o px from its border
-                hitRect: insetRect rect, { l: o, r: o, t: o, b: o }
-                unless ptInRect(pt, hitRect)
-                    return skipTraversingChildren
-
-        if hoveredComponent
-            rect: insetRect rectOf(hoveredComponent), { l: -7, r: -7, t: -20, b: -7 }
-            if ptInRect(pt, rect)
-                result: hoveredComponent
-                traverse hoveredComponent, visitor
-                return result
-
-        traverse activeScreen.rootComponent, visitor
-        result
-
-    findComponentByEvent: (e) ->
-        origin: ptFromLT $('#design-area').offset()
-        findComponentAt subPtPt({ x: e.pageX, y: e.pageY }, origin)
-
     reassignZIndexes: ->
         traverse activeScreen.rootComponent, (comp) ->
             ordered: _(comp.children).sortBy (c) -> r: rectOf c; -r.w * r.h
             _.each ordered, (c, i) -> $(c.node).css('z-index', i)
+
+
+    ##########################################################################################################
+    ##  Images
 
     imageSizeForImage: (image, effect) ->
         return image.size unless serverMode.supportsImageEffects
@@ -427,29 +413,6 @@ jQuery ($) ->
     # TODO: remove this hack for circular dependency on designer-rendering
     window.getImageUrl: getImageUrl
 
-    componentPositionChangedWhileDragging: (c) ->
-        renderComponentPosition c
-        renderComponentSize c
-        if c is hoveredComponent
-            updateHoverPanelPosition()
-            updatePositionInspector()
-
-    componentPositionChangedPernamently: (c) ->
-        renderComponentPosition c
-        updateEffectiveSize c
-        if c is hoveredComponent
-            updateHoverPanelPosition()
-            updatePositionInspector()
-
-    componentStyleChanged: (c) ->
-        renderComponentStyle c
-
-    componentActionChanged: (c) ->
-        renderComponentStyle c
-        if c is componentToActUpon()
-            updateActionInspector()
-        if c is hoveredComponent
-            updateHoverPanelPosition()
 
     ##########################################################################################################
     ##  Alignment Detection
@@ -1423,8 +1386,11 @@ jQuery ($) ->
         if comp.node.parentNode
             comp.node.parentNode.removeChild(comp.node)
         activeScreen.rootComponent.node.appendChild(comp.node)
+
         # we might have just added a new component
-        traverse comp, (child) -> updateEffectiveSize child
+        updateEffectiveSizesInHierarchy comp
+        relayoutHierarchy comp
+
         originalSize: comp.size
         originalEffSize: comp.effsize
 
@@ -1883,6 +1849,12 @@ jQuery ($) ->
                 e.preventDefault() if handled
             undefined
 
+        'dblclick': (e) ->
+            comp: findComponentByEvent(e)
+            if comp
+                return if componentBeingDoubleClickEdited is comp
+                handleComponentDoubleClick comp; false
+
         'contextmenu': (e) ->
             return if e.shiftKey
             comp: findComponentByEvent(e)
@@ -2162,10 +2134,13 @@ jQuery ($) ->
 
         $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
         renderScreenRootComponentId screen
-        updateSizes: ->
-            traverse activeScreen.rootComponent, (c) -> updateEffectiveSize c
-        setTimeout updateSizes, 10
 
+        # HACK WTF: without this timeout, effective sizes of inner components will be computed as 0x0
+        setTimeout (->
+            updateEffectiveSizesInHierarchy activeScreen.rootComponent
+            relayoutHierarchy activeScreen.rootComponent
+            componentsChanged()
+        ), 10
 
         devicePanel: $('#device-panel')[0]
         allowedArea: {
@@ -2175,7 +2150,6 @@ jQuery ($) ->
             h: 480
         }
 
-        componentsChanged()
         deselectComponent()
         componentUnhovered()
 
@@ -2754,6 +2728,8 @@ jQuery ($) ->
                 newComp.parent: targetCont
                 targetCont.children.push newComp
                 $(targetCont.node).append renderInteractiveComponentHeirarchy newComp
+                updateEffectiveSizesInHierarchy newComp
+                relayoutHierarchy newComp
 
                 effect: computeDuplicationEffect newComp
                 if effect is null
