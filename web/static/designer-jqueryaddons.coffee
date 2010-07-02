@@ -329,3 +329,5 @@ $.fn.livechange: (handler) ->
 
 
 window.encodeNameForId: (name) -> encodeURIComponent(name).replace('%', '_')
+
+window.aOrAn: (s) -> if s[0] of {'a': yes, 'e': yes, 'i': yes, 'o': yes, 'u': yes} then "an ${s}" else "a ${s}"

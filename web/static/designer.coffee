@@ -48,6 +48,13 @@ jQuery ($) ->
     Types: Mockko.componentTypes
     ser: Mockko.serialization
 
+    {
+        renderComponentSize, updateEffectiveSize, updateComponentTooltip
+        renderComponentPosition
+        renderComponentStyle, textNodeOfComponent
+        renderComponentVisualProperties, renderComponentProperties
+    }: Mockko.renderer
+
 
     ##########################################################################################################
     ## global variables
@@ -61,6 +68,44 @@ jQuery ($) ->
     allowedArea: null
     componentBeingDoubleClickEdited: null
     allStacks: null
+    undo: null
+
+
+    ##########################################################################################################
+    ##  undo support
+
+    friendlyComponentName: (c) ->
+        if c.type is Types['text']
+            "“${c.text}”"
+        else
+            label: (c.type.genericLabel || c.type.label).toLowerCase()
+            if c.text then "the “${c.text}” ${label}" else aOrAn label
+
+    runTransaction: (changeName, change) ->
+        undo.beginTransaction changeName
+        change()
+        undo.endTransaction()
+        componentsChanged()
+
+    setupUndoSystem: ->
+        createApplicationMemento: ->
+            JSON.stringify(ser.externalizeApplication(application))
+        revertToMemento: (memento) ->
+            screenIndex: _(application.screens).indexOf activeScreen
+            reloadApplication ser.internalizeApplication(JSON.parse(memento))
+            saveApplicationChanges()
+            if application.screens.length > 0
+                screenIndex: Math.max(0, Math.min(application.screens.length - 1, screenIndex))
+                switchToScreen application.screens[screenIndex]
+        lastUndoCommandChanged: (lastChangeDescription) ->
+            $('#undo-button').alterClass('disabled', lastChangeDescription is null)
+            if lastChangeDescription
+                $('#undo-hint span').html lastChangeDescription
+        undo: Mockko.newUndoManager createApplicationMemento, revertToMemento, saveApplicationChanges, lastUndoCommandChanged
+
+    $('#undo-button').click (e) ->
+        e.preventDefault(); e.stopPropagation()
+        undo.undoLastChange()
 
 
     ##########################################################################################################
@@ -73,79 +118,11 @@ jQuery ($) ->
     domTemplate: (id) ->
         domTemplates[id].cloneNode(true)
 
-    ##########################################################################################################
-    ##  utilities
-
-    aOrAn: (s) ->
-        if s[0] of {'a': yes, 'e': yes, 'i': yes, 'o': yes, 'u': yes} then "an ${s}" else "a ${s}"
-
-    ##########################################################################################################
-    ##  undokey
-
-    undoStack: []
-    lastChange: null
-
-    friendlyComponentName: (c) ->
-        if c.type is Types['text']
-            "“${c.text}”"
-        else
-            label: (c.type.genericLabel || c.type.label).toLowerCase()
-            if c.text then "the “${c.text}” ${label}" else aOrAn label
-
-    beginUndoTransaction: (changeName) ->
-        if lastChange isnt null
-            console.log "Make-App Internal Warning: implicitly closing an unclosed undo change: ${lastChange.name}"
-        lastChange: { memento: createApplicationMemento(), name: changeName }
-
-    runTransaction: (changeName, change) ->
-        beginUndoTransaction changeName
-        change()
-        componentsChanged()
-
-    setCurrentChangeName: (changeName) -> lastChange.name: changeName
-
-    endUndoTransaction: ->
-        return if lastChange is null
-        snapshotForSimulation activeScreen
-        if lastChange.memento != createApplicationMemento()
-            console.log "Change: ${lastChange.name}"
-            undoStack.push lastChange
-            undoStackChanged()
-            saveApplicationChanges()
-        lastChange = null
-
-    undoStackChanged: ->
-        if undoStack.length != 0
-            $('#undo-hint span').html "Undo ${undoStack[undoStack.length-1].name}"
-        $('#undo-button').alterClass('disabled', undoStack.length == 0)
-
-    undoLastChange: ->
-        return if undoStack.length == 0
-        screenIndex: _(application.screens).indexOf activeScreen
-        change: undoStack.pop()
-        console.log "Undoing: ${change.name}"
-        revertToMemento change.memento
-        undoStackChanged()
-        saveApplicationChanges()
-        if screenIndex >= 0 && screenIndex < application.screens.length
-            switchToScreen application.screens[screenIndex]
-
-    createApplicationMemento: -> JSON.stringify(ser.externalizeApplication(application))
-
-    revertToMemento: (memento) -> loadApplication ser.internalizeApplication(JSON.parse(memento)), applicationId
-
-    $('#undo-button').click (e) ->
-        e.preventDefault(); e.stopPropagation()
-        undoLastChange()
-
-    undoStackChanged()
 
     ##########################################################################################################
     ##  global events
 
     componentsChanged: ->
-        endUndoTransaction()
-
         if $('#share-popover').is(':visible')
             updateSharePopover()
 
@@ -232,19 +209,16 @@ jQuery ($) ->
         componentUnhovered() if isComponentOrDescendant hoveredComponent, rootc
 
     deleteComponent: (rootc) ->
-        beginUndoTransaction "deletion of ${friendlyComponentName rootc}"
-        deleteComponentWithoutTransaction rootc, true
-        componentsChanged()
+        runTransaction "deletion of ${friendlyComponentName rootc}", ->
+            deleteComponentWithoutTransaction rootc, true
 
     moveComponentBy: (comp, offset) ->
-        beginUndoTransaction "keyboard moving of ${friendlyComponentName comp}"
-        traverse comp, (c) -> c.abspos: ptSum(c.abspos, offset)
-        traverse comp, componentPositionChangedPernamently
-        componentsChanged()
+        runTransaction "keyboard moving of ${friendlyComponentName comp}", ->
+            traverse comp, (c) -> c.abspos: ptSum(c.abspos, offset)
+            traverse comp, componentPositionChangedPernamently
 
     duplicateComponent: (comp) ->
         return if comp.type.unmovable || comp.type.singleInstance
-        beginUndoTransaction "duplicate ${friendlyComponentName comp}"
 
         newComp: ser.internalizeComponent(ser.externalizeComponent(comp), comp.parent)
 
@@ -257,18 +231,18 @@ jQuery ($) ->
             alert "Cannot duplicate the component because another copy does not fit into the designer"
             return
 
-        comp.parent.children.push newComp
+        runTransaction "duplicate ${friendlyComponentName comp}", ->
+            comp.parent.children.push newComp
 
-        newRect: effect.rect
-        if newRect.w != comp.effsize.w or newRect.h != comp.effsize.h
-            newComp.size: { w: newRect.w, h: newRect.h }
-        moveComponent newComp, newRect
-        componentPositionChangedPernamently newComp
+            newRect: effect.rect
+            if newRect.w != comp.effsize.w or newRect.h != comp.effsize.h
+                newComp.size: { w: newRect.w, h: newRect.h }
+            moveComponent newComp, newRect
+            componentPositionChangedPernamently newComp
 
-        commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION
+            commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION
 
-        containerChildrenChanged comp.parent
-        componentsChanged()
+            containerChildrenChanged comp.parent
 
     # findParent: (c) -> c.parent
     #     # a parent is a covering component of minimal area
@@ -387,38 +361,10 @@ jQuery ($) ->
         origin: ptFromLT $('#design-area').offset()
         findComponentAt subPtPt({ x: e.pageX, y: e.pageY }, origin)
 
-    renderComponentPosition: (c, cn) ->
-        ct: c.type
-        relpos: switch
-            when c.dragpos
-                {
-                    'x': c.dragpos.x - ((c.dragParent?.dragpos || c.dragParent?.abspos)?.x || 0)
-                    'y': c.dragpos.y - ((c.dragParent?.dragpos || c.dragParent?.abspos)?.y || 0)
-                }
-            else
-                {
-                    'x': c.abspos.x - ((c.parent?.dragpos && false || c.parent?.abspos)?.x || 0)
-                    'y': c.abspos.y - ((c.parent?.dragpos && false || c.parent?.abspos)?.y || 0)
-                }
-        $(cn || c.node).css({
-            left:   "${relpos.x}px"
-            top:    "${relpos.y}px"
-        })
-
     reassignZIndexes: ->
         traverse activeScreen.rootComponent, (comp) ->
             ordered: _(comp.children).sortBy (c) -> r: rectOf c; -r.w * r.h
             _.each ordered, (c, i) -> $(c.node).css('z-index', i)
-
-    textNodeOfComponent: (c, cn) ->
-        cn ||= c.node
-        return null unless c.type.supportsText
-        if c.type.textSelector then $(c.type.textSelector, cn)[0] else cn
-
-    imageNodeOfComponent: (c, cn) ->
-        cn ||= c.node
-        return null unless c.type.supportsImage
-        if c.type.imageSelector then $(c.type.imageSelector, cn)[0] else cn
 
     imageSizeForImage: (image, effect) ->
         return image.size unless serverMode.supportsImageEffects
@@ -448,8 +394,9 @@ jQuery ($) ->
     pending: {}
 
     _returnImageUrl: (image, effect, cb) ->
+        throw "image group URLs not cached: ${image.group}" unless image.group of groups
         digest: groups[image.group][image.name]
-        if effect and serverMode.supportsImageEffects
+        if effect
             cb "images/${encodeURIComponent image.group}/${encodeURIComponent (_imageEffectName image.name, effect)}?${digest}"
         else
             cb "images/${encodeURIComponent image.group}/${encodeURIComponent image.name}?${digest}"
@@ -460,78 +407,25 @@ jQuery ($) ->
             info[imginfo['fileName']]: imginfo['digest']
         groups[groupName]: info
 
-    getImageUrl: (image, effect, callback) ->
-        if not(image.group of groups)
-            if image.group of pending
-                pending[image.group].push([image, effect, callback])
-            else
-                pending[image.group]: [[image, effect, callback]]
-                serverMode.loadImageGroup image.group, (info) ->
-                    _updateGroup image.group, info['images']
-                    for [image, effect, callback] in pending[image.group]
+    ensureImageGroupLoaded: (group) ->
+        unless group of groups
+            unless group of pending
+                pending[group]: []
+                serverMode.loadImageGroup group, (info) ->
+                    _updateGroup group, info['images']
+                    for [image, effect, callback] in pending[group]
                         _returnImageUrl image, effect, callback
-                    delete pending[image.group]
+                    delete pending[group]
+
+    getImageUrl: (image, effect, callback) ->
+        throw "image group not loaded and not loading: ${image.group}" unless image.group of groups or image.group of pending
+        if image.group of pending
+            pending[image.group].push([image, effect, callback])
         else
             _returnImageUrl image, effect, callback
 
-    renderImageDefault: (comp, node, imageUrl) ->
-        $(imageNodeOfComponent comp, node).css { backgroundImage: "url(${imageUrl})"}
-
-    encodeActionAsURL: (comp) ->
-        if comp.action?
-            comp.action.action.encodeActionAsURL(comp.action)
-        else
-            ""
-
-    renderComponentStyle: (c, cn) ->
-        cn ||= c.node
-
-        dynamicStyle: if c.type.dynamicStyle then c.type.dynamicStyle(c) else {}
-        style: $.extend({}, dynamicStyle, c.stylePreview || c.style)
-        css: {}
-        css.fontSize: style.fontSize if style.fontSize?
-        if c.type.canHazColor
-            css.color: style.textColor if style.textColor?
-        css.fontWeight: (if style.fontBold then 'bold' else 'normal') if style.fontBold?
-        css.fontStyle: (if style.fontItalic then 'italic' else 'normal') if style.fontItalic?
-
-        if style.textShadowStyleName?
-            for k, v of Mockko.textShadowStyles[style.textShadowStyleName].css
-                css[k] = v
-
-        $(textNodeOfComponent c, cn).css css
-
-        if style.background?
-            if not (Mockko.backgroundStylesByName[style.background])
-                console.log "!! Unknown backgrond style ${style.background} for ${c.type.name}"
-            bgn: cn || c.node
-            if bgsel: c.type.backgroundSelector
-                bgn: $(bgn).find(bgsel)[0]
-            bgn.className: _((bgn.className || '').trim().split(/\s+/)).reject((n) -> n.match(/^bg-/)).
-                concat(["bg-${style.background}"]).join(" ")
-
-        if c.state?
-            $(cn).removeClass('state-on state-off').addClass("state-${c.state && 'on' || 'off'}")
-        if c.text? and not c.dirtyText
-            $(textNodeOfComponent c, cn).html(c.text)
-        if c.image?
-            getImageUrl c.image, (style.imageEffect || null), (imageUrl) ->
-                (c.type.renderImage || renderImageDefault)(c, cn, imageUrl)
-        actionURL: encodeActionAsURL(c)
-        $(cn).attr('action', actionURL)
-        $(cn).alterClass('has-action', actionURL != '')
-
-        if c is activeScreen?.rootComponent
-            renderScreenRootComponentId activeScreen
-
-    renderComponentVisualProperties: (c, cn) ->
-        renderComponentStyle c, cn
-        if cn?
-            renderComponentSize c, cn
-        else
-            updateEffectiveSize c
-
-    renderComponentProperties: (c, cn) -> renderComponentPosition(c, cn); renderComponentVisualProperties(c, cn)
+    # TODO: remove this hack for circular dependency on designer-rendering
+    window.getImageUrl: getImageUrl
 
     componentPositionChangedWhileDragging: (c) ->
         renderComponentPosition c
@@ -686,43 +580,6 @@ jQuery ($) ->
         traverse possibleAncestor, (child) ->
             match: yes if child is candidate
         match
-
-
-    ##########################################################################################################
-    ##  sizing
-
-    recomputeEffectiveSizeInDimension: (userSize, policy, fullSize) ->
-        userSize || policy.fixedSize?.portrait || policy.fixedSize || switch policy.autoSize
-            when 'fill'    then fullSize
-            when 'browser' then null
-
-    sizeToPx: (v) ->
-        if v then "${v}px" else 'auto'
-
-    renderComponentSize: (c, cn) ->
-        ct: c.type
-        size: c.dragsize || c.size
-        effsize: {
-            w: recomputeEffectiveSizeInDimension size.w, ct.widthPolicy, 320
-            h: recomputeEffectiveSizeInDimension size.h, ct.heightPolicy, 480
-        }
-        $(cn || c.node).css('width', sizeToPx(effsize.w))
-        $(cn || c.node).css('height', sizeToPx(effsize.h))
-        return effsize
-
-    updateEffectiveSize: (c) ->
-        if c.dragsize
-            renderComponentSize c
-            return
-        c.effsize: renderComponentSize c
-        # get browser-computed size if needed
-        if c.effsize.w is null then c.effsize.w = c.node.offsetWidth
-        if c.effsize.h is null then c.effsize.h = c.node.offsetHeight
-        updateComponentTooltip c
-
-    updateComponentTooltip: (c) ->
-        r: rectOf c
-        $(c.node).attr('title', "${c.type.label} — (${r.x}, ${r.y}) ${r.w}x${r.h}")
 
 
     ##########################################################################################################
@@ -1157,20 +1014,18 @@ jQuery ($) ->
     handleComponentDoubleClick: (c) ->
         switch c.type.name
             when 'tab-bar-item'
-                beginUndoTransaction "activation of ${friendlyComponentName c}"
-                _(c.parent.children).each (child) ->
-                    newState: if c is child then on else off
-                    if child.state isnt newState
-                        child.state: newState
-                        renderComponentStyle child
-                componentsChanged()
+                runTransaction "activation of ${friendlyComponentName c}", ->
+                    _(c.parent.children).each (child) ->
+                        newState: if c is child then on else off
+                        if child.state isnt newState
+                            child.state: newState
+                            renderComponentStyle child
             when 'switch'
                 c.state: c.type.state unless c.state?
                 newStateDesc: if c.state then 'off' else 'on'
-                beginUndoTransaction "undo turning ${friendlyComponentName c} ${newStateDesc}"
-                c.state: !c.state
-                renderComponentStyle c
-                componentsChanged()
+                runTransaction "turning ${friendlyComponentName c} ${newStateDesc}", ->
+                    c.state: !c.state
+                    renderComponentStyle c
         startComponentTextInPlaceEditing c
 
     startComponentTextInPlaceEditing: (c) ->
@@ -1817,7 +1672,6 @@ jQuery ($) ->
                 target.image: c.image
                 $(c.node).remove()
                 renderComponentVisualProperties target
-                componentsChanged()
         }
 
     computeMoveOptions: (e) ->
@@ -1838,7 +1692,7 @@ jQuery ($) ->
                 pt: { x: e.pageX, y: e.pageY }
                 if dragger is null
                     return if Math.abs(pt.x - startPt.x) <= 1 and Math.abs(pt.y - startPt.y) <= 1
-                    beginUndoTransaction "movement of ${friendlyComponentName c}"
+                    undo.beginTransaction "movement of ${friendlyComponentName c}"
                     dragger: startDragging c, { startPt: startPt }, computeMoveOptions(e)
                     $('#hover-panel').hide()
                 dragger.moveTo pt, computeMoveOptions(e)
@@ -1847,9 +1701,11 @@ jQuery ($) ->
             mouseup: (e) ->
                 if dragger isnt null
                     if dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
+                        undo.endTransaction()
                         componentsChanged()
                         $('#hover-panel').show()
                     else
+                        undo.rollbackTransaction()
                         deleteComponent c
                 deactivateMode()
 
@@ -1858,6 +1714,7 @@ jQuery ($) ->
             cancel: ->
                 if dragger isnt null
                     dragger.cancel()
+                    undo.rollbackTransaction()
                 c.dragsize: null
                 c.dragpos: null
                 c.dragParent: null
@@ -1865,7 +1722,7 @@ jQuery ($) ->
         }
 
     activateNewComponentDragging: (startPt, c, e) ->
-        beginUndoTransaction "creation of ${friendlyComponentName c}"
+        undo.beginTransaction "creation of ${friendlyComponentName c}"
         cn: renderInteractiveComponentHeirarchy c
 
         dragger: startDragging c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }, computeMoveOptions(e)
@@ -1882,16 +1739,19 @@ jQuery ($) ->
             mouseup: (e) ->
                 ok: dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
                 if ok
+                    undo.endTransaction()
                     componentsChanged()
                 else
                     $(c.node).fadeOut 250, ->
                         $(c.node).remove()
+                    undo.rollbackTransaction()
                 deactivateMode()
                 true
 
             cancel: ->
                 $(c.node).fadeOut 250, ->
                     $(c.node).remove()
+                    undo.rollbackTransaction()
         }
 
     startResizing: (comp, startPt, options) ->
@@ -1946,13 +1806,13 @@ jQuery ($) ->
 
             dropAt: (pt) ->
                 @moveTo pt
-                runTransaction "resizing of ${friendlyComponentName comp}", ->
-                    comp.abspos: comp.dragpos
-                    comp.dragpos: null
-                    comp.dragParent: null
+                comp.abspos: comp.dragpos
+                comp.dragpos: null
+                comp.dragParent: null
         }
 
     activateResizingMode: (comp, startPt, options) ->
+        undo.beginTransaction "resizing of ${friendlyComponentName comp}"
         console.log "activating resizing mode for ${friendlyComponentName comp}"
         resizer: startResizing comp, startPt, options
         activateMode {
@@ -1963,8 +1823,12 @@ jQuery ($) ->
                 true
             mouseup: (e) ->
                 resizer.dropAt { x:e.pageX, y:e.pageY }
+                undo.endTransaction()
+                componentsChanged()
                 deactivateMode()
                 true
+            cancel: ->
+                undo.rollbackTransaction()
         }
 
 
@@ -2083,6 +1947,7 @@ jQuery ($) ->
     updateCustomImagesPalette: ->
         $('.transient-group').remove()
         for group_id, group of customImages
+            ensureImageGroupLoaded group_id
             group.items: []
             for image in group.images
                 i: {
@@ -2188,9 +2053,8 @@ jQuery ($) ->
         switchToScreen screen
 
     addScreen: ->
-        beginUndoTransaction "creation of a new screen"
-        addScreenWithoutTransaction()
-        endUndoTransaction()
+        runTransaction "creation of a new screen", ->
+            addScreenWithoutTransaction()
 
     startRenamingScreen: (screen) ->
         return if activeMode()?.screenBeingRenamed is screen
@@ -2221,16 +2085,15 @@ jQuery ($) ->
         pos: application.screens.indexOf(screen)
         return if pos < 0
 
-        beginUndoTransaction "deletion of a screen"
-        keepingScreenNamesNormalized ->
-            application.screens.splice(pos, 1)
-        $(screen.node).fadeOut 250, ->
-            $(screen.node).remove()
-        if application.screens.length is 0
-            addScreenWithoutTransaction()
-        else
-            switchToScreen(application.screens[pos] || application.screens[pos-1])
-        endUndoTransaction()
+        runTransaction "deletion of a screen", ->
+            keepingScreenNamesNormalized ->
+                application.screens.splice(pos, 1)
+            $(screen.node).fadeOut 250, ->
+                $(screen.node).remove()
+            if application.screens.length is 0
+                addScreenWithoutTransaction()
+            else
+                switchToScreen(application.screens[pos] || application.screens[pos-1])
 
     duplicateScreen: (oldScreen) ->
         pos: application.screens.indexOf(oldScreen)
@@ -2239,11 +2102,10 @@ jQuery ($) ->
         screen: ser.internalizeScreen ser.externalizeScreen oldScreen
         screen.name: null
 
-        beginUndoTransaction "duplication of a screen"
-        keepingScreenNamesNormalized ->
-            application.screens.splice pos+1, 0, screen
-        appendRenderedScreenFor screen, oldScreen.node
-        endUndoTransaction()
+        runTransaction "duplication of a screen", ->
+            keepingScreenNamesNormalized ->
+                application.screens.splice pos+1, 0, screen
+            appendRenderedScreenFor screen, oldScreen.node
         updateScreenList()
         switchToScreen screen
 
@@ -2299,6 +2161,7 @@ jQuery ($) ->
         activeScreen = screen
 
         $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
+        renderScreenRootComponentId screen
         updateSizes: ->
             traverse activeScreen.rootComponent, (c) -> updateEffectiveSize c
         setTimeout updateSizes, 10
@@ -2316,16 +2179,29 @@ jQuery ($) ->
         deselectComponent()
         componentUnhovered()
 
+    loadImageGroupsUsedInApplication: (app) ->
+        # load all used image groups
+        for screen in app.screens
+            traverse screen.rootComponent, (c) ->
+                if c.image?
+                    ensureImageGroupLoaded c.image.group
 
     loadApplication: (app, appId) ->
-        app.name = createNewApplicationName() unless app.name
-        application = app
-        applicationId = appId
-        renderApplicationName()
-        updateScreenList()
+        app.name: createNewApplicationName() unless app.name
+        applicationId: appId
+        application: app
+        setupUndoSystem()
+        reloadApplication app
         switchToScreen application.screens[0]
 
+    reloadApplication: (app) ->
+        application: app
+        renderApplicationName()
+        loadImageGroupsUsedInApplication app
+        updateScreenList()
+
     saveApplicationChanges: (callback) ->
+        snapshotForSimulation activeScreen
         serverMode.saveApplicationChanges ser.externalizeApplication(application), applicationId, (newId) ->
             applicationId: newId
             if callback then callback()
@@ -2629,12 +2505,11 @@ jQuery ($) ->
                 return if $(button).is('.disabled')
                 if c: componentToActUpon()
                     c.stylePreview: null
-                    beginUndoTransaction "changing style of ${friendlyComponentName c}"
-                    s: func(c, c.style)
-                    if s && s.constructor == String
-                        setCurrentChangeName s.replace(/\bcomp\b/, friendlyComponentName(c))
-                    componentStyleChanged c
-                    componentsChanged()
+                    runTransaction "changing style of ${friendlyComponentName c}", ->
+                        s: func(c, c.style)
+                        if s && s.constructor == String
+                            undo.setCurrentChangeName s.replace(/\bcomp\b/, friendlyComponentName(c))
+                        componentStyleChanged c
         }
 
     bindStyleChangeButton $('#make-size-smaller'), (c, style) ->
@@ -2785,7 +2660,7 @@ jQuery ($) ->
                 when $.KEY_ARROWLEFT  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.left  if act
                 when $.KEY_ARROWRIGHT then moveComponentByKeyboard act, e, KB_MOVE_DIRS.right if act
                 when 'D'.charCodeAt(0) then duplicateComponent(act) if act and (e.ctrlKey or e.metaKey)
-                when 'Z'.charCodeAt(0) then undoLastChange() if (e.ctrlKey or e.metaKey)
+                when 'Z'.charCodeAt(0) then undo.undoLastChange() if (e.ctrlKey or e.metaKey)
 
     ##########################################################################################################
     ##  Simulation (Run)
@@ -3011,6 +2886,7 @@ jQuery ($) ->
         appId: appData['id']
         app: JSON.parse(appData['body'])
         app: ser.internalizeApplication(app)
+        loadImageGroupsUsedInApplication app
         an: domTemplate('app-template')
         $('.caption', $(an)).html(if show_name then app.name + ' (' + appData['nickname'] + ')' else app.name)
         renderScreenComponents(app.screens[0], $('.content .rendered', an))
