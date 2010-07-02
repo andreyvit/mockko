@@ -36,6 +36,8 @@ jQuery ($) ->
         distancePtSegment
     }: Mockko.geom
 
+    Types: Mockko.componentTypes
+
 
     ##########################################################################################################
     ## constants
@@ -53,8 +55,6 @@ jQuery ($) ->
     # our very own idea of infinity
     INF: 100000
 
-    Types: MakeApp.componentTypes
-
     DEFAULT_TEXT_STYLES: {
         fontSize: 17
         textColor: '#fff'
@@ -67,34 +67,6 @@ jQuery ($) ->
         size: { w: 320, h: 480 }
         abspos: { x: 0, y: 0 }
         id: "root"
-    }
-
-
-    ##########################################################################################################
-    ##  various stuff
-
-    BACKGROUND_STYLES: {}
-    (->
-        for bg in MakeApp.backgroundStyles
-            BACKGROUND_STYLES[bg.name]: bg
-    )()
-
-    encodeNameForId: (name) ->
-        encodeURIComponent(name).replace('%', '_')
-
-    ACTIONS: {
-        switchScreen: {
-            extname: 'switch-screen'
-            describe: (act) ->
-                "${act.screenName}"
-            create: (screen) ->
-                {
-                    action: this
-                    screenName: screen.name
-                }
-            encodeActionAsURL: (act) ->
-                "screen:${encodeNameForId(act.screenName)}"
-        }
     }
 
 
@@ -120,9 +92,9 @@ jQuery ($) ->
     externalizeAction: (action) ->
         return null unless action?
         switch action.action
-            when ACTIONS.switchScreen
+            when Mockko.actions.switchScreen
                 {
-                    'action': ACTIONS.switchScreen.extname
+                    'action': Mockko.actions.switchScreen.extname
                     'screenName': action.screenName
                 }
             else throw "unknown action: ${action.action}"
@@ -130,9 +102,9 @@ jQuery ($) ->
     internalizeAction: (action) ->
         return null unless action?
         switch action['action']
-            when ACTIONS.switchScreen.extname
+            when Mockko.actions.switchScreen.extname
                 {
-                    action: ACTIONS.switchScreen
+                    action: Mockko.actions.switchScreen
                     screenName: action['screenName']
                 }
             else throw "error loading app: invalid action ${action['action']}"
@@ -262,14 +234,12 @@ jQuery ($) ->
         }
 
     internalizeScreen: (screen) ->
-        rootComponent: internalizeComponent(screen['rootComponent'] || DEFAULT_ROOT_COMPONENT, null)
+        rootComponent: internalizeComponent(screen['rootComponent'], null)
         screen: {
             rootComponent: rootComponent
             html: screen['html'] || ''
             name: screen['name'] || null
-            nextId: 1
         }
-        traverse rootComponent, (c) -> assignNameIfStillUnnamed c, screen
         return screen
 
     externalizeApplication: (app) ->
@@ -289,13 +259,13 @@ jQuery ($) ->
 
 
     ##########################################################################################################
-    ##  undo
+    ##  undokey
 
     undoStack: []
     lastChange: null
 
     friendlyComponentName: (c) ->
-        if c.type is Types.text
+        if c.type is Types['text']
             "“${c.text}”"
         else
             label: (c.type.genericLabel || c.type.label).toLowerCase()
@@ -394,8 +364,6 @@ jQuery ($) ->
     ##########################################################################################################
     ##  component management
 
-    assignNameIfStillUnnamed: (c, screen) -> c.id ||= "c${screen.nextId++}"
-
     storeAndBindComponentNode: (c, cn) ->
         c.node = cn
         $(cn).dblclick ->
@@ -458,8 +426,6 @@ jQuery ($) ->
         beginUndoTransaction "duplicate ${friendlyComponentName comp}"
 
         newComp: internalizeComponent(externalizeComponent(comp), comp.parent)
-        # make sure all ids are reassigned
-        traverse newComp, (c) -> c.id: null
 
         $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
         traverse newComp, (c) -> updateEffectiveSize c
@@ -709,13 +675,13 @@ jQuery ($) ->
         css.fontStyle: (if style.fontItalic then 'italic' else 'normal') if style.fontItalic?
 
         if style.textShadowStyleName?
-            for k, v of MakeApp.textShadowStyles[style.textShadowStyleName].css
+            for k, v of Mockko.textShadowStyles[style.textShadowStyleName].css
                 css[k] = v
 
         $(textNodeOfComponent c, cn).css css
 
         if style.background?
-            if not (BACKGROUND_STYLES[style.background])
+            if not (Mockko.backgroundStylesByName[style.background])
                 console.log "!! Unknown backgrond style ${style.background} for ${c.type.name}"
             bgn: cn || c.node
             if bgsel: c.type.backgroundSelector
@@ -1281,7 +1247,7 @@ jQuery ($) ->
         distancePtSegment pt, lineFromPtPt(activeLinkOverlay.start, activeLinkOverlay.end)
 
     renderActionOverlay: (comp) ->
-        if comp.action && comp.action.action is ACTIONS.switchScreen
+        if comp.action && comp.action.action is Mockko.actions.switchScreen
             screenName: comp.action.screenName
             screen: _(application.screens).detect (s) -> s.name is screenName
             if screen
@@ -1320,7 +1286,7 @@ jQuery ($) ->
             pt: { x: e.pageX, y: e.pageY }
             onmousemove(e)
             if lastCandidate
-                sourceComp.action: ACTIONS.switchScreen.create(lastCandidate.screen)
+                sourceComp.action: Mockko.actions.switchScreen.create(lastCandidate.screen)
                 componentActionChanged sourceComp
                 animateLinkOverlaySet()
                 activeLinkOverlay.safeDistance: Math.max(LINK_ARROW_MOUSEMOVE_SAFE_DISTANCE, distanceToLinkOverlay(pt) + LINK_ARROW_INITIAL_MOUSEMOVE_MIN_SAFE_DISTANCE)
@@ -1587,7 +1553,7 @@ jQuery ($) ->
                         m.comps: [m.comp]
                     for c in m.comps
                         if inSet c, excludedSet
-                            throw "Component ${c.id} cannot be moved because it has been excluded!"
+                            throw "Component ${c.type.name} cannot be moved because it has been excluded!"
                 componentSet: setOf _.flatten(m.comps for m in moves)
 
                 traverse activeScreen.rootComponent, (c) ->
@@ -1879,7 +1845,6 @@ jQuery ($) ->
 
                 unless moveOptions.disableSnapping
                     snappings: chooseSnappings snappings
-                    # console.log "(${rect.x}, ${rect.y}, w ${rect.w}, h ${rect.h}), target ${target?.id}, best snapping horz: ${best.horz?.dist} at ${best.horz?.coord}, vert: ${best.vert?.dist} at ${best.vert?.coord}"
                     for snapping in snappings
                         snapping.apply rect
 
@@ -2021,7 +1986,6 @@ jQuery ($) ->
                 c.dragParent: null
 
                 traverse c, (child) -> child.inDocument: yes
-                traverse c, (child) -> assignNameIfStillUnnamed child, activeScreen
 
                 componentPositionChangedPernamently c
         }
@@ -2327,7 +2291,7 @@ jQuery ($) ->
         return if paletteInitialized
         paletteInitialized: yes
 
-        for ctg in MakeApp.paletteDefinition
+        for ctg in Mockko.paletteDefinition
             renderPaletteGroup ctg, true
         updateCustomImagesPalette()
 
@@ -2375,7 +2339,7 @@ jQuery ($) ->
     updateActionsDueToScreenRenames: (renames) ->
         for screen in application.screens
             traverse screen.rootComponent, (comp) ->
-                if comp.action && comp.action.action is ACTIONS.switchScreen
+                if comp.action && comp.action.action is Mockko.actions.switchScreen
                         if newName: renames[comp.action.screenName]
                             comp.action.screenName: newName
                             componentActionChanged comp
@@ -2512,7 +2476,6 @@ jQuery ($) ->
         $('#design-area .component').remove()
 
         activeScreen = screen
-        activeScreen.nextId ||= 1
 
         $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
         updateSizes: ->
@@ -2631,7 +2594,7 @@ jQuery ($) ->
 
     fillBackgroundsInspector: ->
         $pal: $('#backgrounds-palette')
-        for bg in MakeApp.backgroundStyles
+        for bg in Mockko.backgroundStyles
             node: domTemplate('background-swatch-template')
             $(node).attr({'id': "bg-${bg.name}", 'title': bg.label}).addClass("bg-${bg.name}").appendTo($pal)
             bindBackground node, bg
@@ -2794,7 +2757,7 @@ jQuery ($) ->
         activateMode {
             screenclick: (screen) ->
                 runTransaction "action change", ->
-                    c.action: ACTIONS.switchScreen.create(screen)
+                    c.action: Mockko.actions.switchScreen.create(screen)
                     componentActionChanged c
                     deactivateMode()
                     updateActionInspector()
@@ -2878,7 +2841,7 @@ jQuery ($) ->
 
     updateShadowStyle: (shadowStyleName, c, style) ->
         style.textShadowStyleName: shadowStyleName
-        "changing text shadow of comp to ${MakeApp.textShadowStyles[shadowStyleName].label}"
+        "changing text shadow of comp to ${Mockko.textShadowStyles[shadowStyleName].label}"
 
     bindStyleChangeButton $('#shadow-none'), (c, style) -> updateShadowStyle 'none', c, style
     bindStyleChangeButton $('#shadow-dark-above'), (c, style) -> updateShadowStyle 'dark-above', c, style
@@ -3089,9 +3052,6 @@ jQuery ($) ->
 
     pasteComponents: (targetCont, newComps) ->
         return if newComps.length is 0
-        for newComp in newComps
-            # make sure all ids are reassigned
-            traverse newComp, (child) -> child.id: null
         friendlyName: if newComps.length > 1 then "${newComps.length} objects" else friendlyComponentName(newComps[0])
         runTransaction "pasting ${friendlyName}", ->
             for newComp in newComps
@@ -3110,7 +3070,6 @@ jQuery ($) ->
                 if newRect.w != newComp.effsize.w or newRect.h != newComp.effsize.h
                     newComp.size: { w: newRect.w, h: newRect.h }
                 traverse newComp, (child) -> renderComponentPosition child; updateEffectiveSize child
-                traverse newComp, (child) -> assignNameIfStillUnnamed child, activeScreen
 
     cutComponents: (comps) ->
         comps: _((if c.type is Types.background then c.children else c) for c in comps).flatten()

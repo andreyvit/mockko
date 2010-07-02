@@ -34,7 +34,7 @@ window.Pins: {
 Pins.top.dependantPins.push Pins.secondTop
 Pins.bottom.dependantPins.push Pins.secondBottom
 
-(window.MakeApp ||= {}).componentTypes: {
+(window.Mockko ||= {}).componentTypes: {
     'background': {
         type: 'background'
         label: 'Background'
@@ -354,8 +354,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
     }
 }
 
-window.MakeApp: {} unless window.MakeApp?
-window.MakeApp.paletteDefinition: [
+(window.Mockko ||= {}).paletteDefinition: [
     {
         name: "Text"
         items: [
@@ -886,7 +885,7 @@ window.MakeApp.paletteDefinition: [
     }
 ]
 
-MakeApp.textShadowStyles: {
+(window.Mockko ||= {}).textShadowStyles: {
     'none': {
         label: 'none'
         css: {
@@ -914,7 +913,7 @@ MakeApp.textShadowStyles: {
 
 }
 
-MakeApp.backgroundStyles: [
+(window.Mockko ||= {}).backgroundStyles: [
     {
         name: 'transparent'
         label: 'Transparent'
@@ -944,3 +943,9 @@ MakeApp.backgroundStyles: [
         label: "Dark"
     }
 ]
+(window.Mockko ||= {}).backgroundStylesByName: (->
+    result: {}
+    for bg in Mockko.backgroundStyles
+        result[bg.name]: bg
+    result
+)()

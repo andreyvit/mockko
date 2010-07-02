@@ -1,4 +1,7 @@
 
+# This has long grown past being just for jQuery addons.
+# Now this file contains all self-contained widgets and functions.
+
 jQuery.fn.runWebKitAnimation: (animationClass, classesToAdd, classesToRemove) ->
     this.one 'webkitAnimationEnd', => this.removeClass("${animationClass} ${classesToRemove || ''}")
     this.addClass "${animationClass} ${classesToAdd || ''}"
@@ -324,3 +327,5 @@ $.fn.livechange: (handler) ->
         for event in ['change', 'blur', 'keydown', 'keyup', 'keypress', 'focus', 'mouseover', 'mouseout', 'paste', 'input']
             $self.bind "${event}.livechange", checkForChanges
 
+
+window.encodeNameForId: (name) -> encodeURIComponent(name).replace('%', '_')
