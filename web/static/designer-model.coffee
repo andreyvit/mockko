@@ -185,9 +185,16 @@ computeDropEffectFromNewRects: (items, newRects, comp) ->
             effect.moves.push { comp: item, abspos: { x:rect.x, y:rect.y }, size: { w:rect.w, h:rect.h } }
     effect
 
+friendlyComponentName: (c) ->
+    if c.type is Mockko.componentTypes['text']
+        "“${c.text}”"
+    else
+        label: (c.type.genericLabel || c.type.label).toLowerCase()
+        if c.text then "the “${c.text}” ${label}" else aOrAn label
+
 
 (window.Mockko ||= {}).model: {
-    sizeOf, rectOf
+    sizeOf, rectOf, friendlyComponentName
     traverse, skipTraversingChildren
     findChildByType, findBestTargetContainerForRect, findComponentByRect, findComponentByTypeIntersectingRect
     compWithChildrenAndParents, isComponentOrDescendant, findComponentOccupyingRect

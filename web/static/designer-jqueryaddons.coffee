@@ -306,7 +306,7 @@ window.newModeEngine: (options) ->
             cancelMode()
             false
 
-    { activateMode, deactivateMode, cancelMode, dispatchToMode, getActiveMode }
+    { activateMode, deactivateMode, cancelMode, dispatchToMode, activeMode: getActiveMode }
 
 jQuery.fn.scrollToBottom: -> this.scrollTop(this[0].scrollHeight)
 
@@ -330,3 +330,12 @@ $.fn.livechange: (handler) ->
 window.encodeNameForId: (name) -> encodeURIComponent(name).replace('%', '_')
 
 window.aOrAn: (s) -> if s[0] of {'a': yes, 'e': yes, 'i': yes, 'o': yes, 'u': yes} then "an ${s}" else "a ${s}"
+
+window.domTemplate: (->
+    domTemplates: {}
+    $ ->
+        $('.template').each ->
+            domTemplates[this.id]: this
+            $(this).removeClass('template').remove()
+    domTemplate: (id) -> domTemplates[id].cloneNode(true)
+)()

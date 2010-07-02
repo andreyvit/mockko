@@ -40,6 +40,7 @@ JS_SRC = $(addprefix web/static/, \
 	designer-effect-live-applicator.js \
 	designer-dragging.js \
 	designer-resizing.js \
+	designer-inspector.js \
 	jpicker.js \
 	designer.js)
 
