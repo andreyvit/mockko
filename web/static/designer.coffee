@@ -62,6 +62,8 @@ jQuery ($) ->
         moveComponent
     }: Mockko.model
 
+    { newLiveDropEffectPreviewer, commitMoves, commitMovesImmediately }: Mockko.applicator
+
     ##########################################################################################################
     ## global variables
 
@@ -164,25 +166,6 @@ jQuery ($) ->
 
 
     ##########################################################################################################
-    ##  Component Utilities
-
-    commitMoves: (moves, exclusions, delay) ->
-        if moves.length > 0
-            liveMover: newLiveMover activeScreen, exclusions
-            liveMover.moveComponents moves
-            liveMover.commit(delay)
-
-    commitMovesImmediately: (moves) ->
-        for m in moves
-            for c in m.comps || [m.comp]
-                offset: m.offset || subPtPt(m.abspos, c.abspos)
-                traverse c, (child) ->
-                    child.abspos: { x: child.abspos.x + offset.x; y: child.abspos.y + offset.y }
-                    child.size: m.size if m.size
-                    componentPositionChanged child
-
-
-    ##########################################################################################################
     ##  Hit Testing
 
     findComponentAt: (pt) ->
@@ -234,9 +217,7 @@ jQuery ($) ->
         effect: layouting.computeDeletionEffect activeScreen, rootc
         stacking: Mockko.stacking.handleStacking rootc, null, activeScreen.allStacks
 
-        liveMover: newLiveMover activeScreen, [rootc]
-        liveMover.moveComponents stacking.moves.concat(effect.moves)
-        liveMover.commit(animated && STACKED_COMP_TRANSITION_DURATION)
+        commitMoves stacking.moves.concat(effect.moves), [rootc], animated && STACKED_COMP_TRANSITION_DURATION, activeScreen, componentPositionChanged
 
         _(rootc.parent.children).removeValue rootc
         if animated
@@ -280,7 +261,7 @@ jQuery ($) ->
             moveComponent newComp, newRect
             componentPositionChanged newComp
 
-            commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION
+            commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION, activeScreen, componentPositionChanged
 
             containerChildrenChanged comp.parent
 
@@ -299,7 +280,7 @@ jQuery ($) ->
     relayoutHierarchy: (c) ->
         traverse c, (child) ->
             if effect: layouting.computeRelayoutEffect activeScreen, child
-                commitMovesImmediately effect.moves
+                commitMovesImmediately effect.moves, componentPositionChanged
                 containerChildrenChanged child
 
     reassignZIndexes: ->
@@ -501,75 +482,6 @@ jQuery ($) ->
     ##########################################################################################################
     ##  General Dragging
 
-    newLiveMover: (screen, excluded) ->
-        excludedSet: setOf excluded
-        traverse screen.rootComponent, (c) ->
-            if inSet c, excludedSet
-                return skipTraversingChildren
-            $(c.node).addClass 'stackable'
-
-        {
-            moveComponents: (moves) ->
-                for m in moves
-                    if m.comp
-                        m.comps: [m.comp]
-                    for c in m.comps
-                        if inSet c, excludedSet
-                            throw "Component ${c.type.name} cannot be moved because it has been excluded!"
-                componentSet: setOf _.flatten(m.comps for m in moves)
-
-                traverse screen.rootComponent, (c) ->
-                    if inSet c, excludedSet
-                        return skipTraversingChildren
-                    if inSet c, componentSet
-                        return skipTraversingChildren
-                    if c.dragpos
-                        c.dragpos: null
-                        c.dragsize: null
-                        c.dragParent: null
-                        $(c.node).removeClass 'stacked'
-                        componentPositionChanged c
-
-                for m in moves
-                    for c in m.comps
-                        $(c.node).addClass 'stacked'
-                        offset: m.offset || subPtPt(m.abspos, c.abspos)
-                        traverse c, (child) ->
-                            child.dragpos: { x: child.abspos.x + offset.x; y: child.abspos.y + offset.y }
-                            child.dragsize: m.size || null
-                            child.dragParent: child.parent
-                            componentPositionChanged child
-
-            rollback: ->
-                traverse screen.rootComponent, (c) ->
-                    if inSet c, excludedSet
-                        return skipTraversingChildren
-                    $(c.node).removeClass 'stackable'
-                traverse screen.rootComponent, (c) ->
-                    if inSet c, excludedSet
-                        return skipTraversingChildren
-                    if c.dragpos
-                        c.dragpos: null
-                        c.dragsize: null
-                        c.dragParent: null
-                        $(c.node).removeClass 'stacked'
-                        componentPositionChanged c
-
-            commit: (delay) ->
-                traverse screen.rootComponent, (c) ->
-                    if c.dragpos
-                        c.abspos = c.dragpos
-                        if c.dragsize
-                            c.size: c.dragsize
-                        c.dragpos: null
-                        c.dragsize: null
-                        c.dragParent: null
-                        componentPositionChanged c
-
-                cleanup: -> $('.component').removeClass 'stackable'
-                if delay? then setTimeout(cleanup, delay) else cleanup()
-        }
-
     startDragging: (screen, comp, options, initialMoveOptions) ->
         origin: $('#design-area').offset()
         allowedArea: screen.allowedArea
@@ -584,7 +496,7 @@ jQuery ($) ->
                 y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
             }
         hotspot: options.hotspot || computeHotSpot(options.startPt)
-        liveMover: newLiveMover screen, [comp]
+        liveMover: newLiveDropEffectPreviewer screen, [comp], componentPositionChanged
         wasAnchored: no
         anchoredTransitionChangeTimeout: new Timeout STACKED_COMP_TRANSITION_DURATION
 
@@ -1815,7 +1727,7 @@ jQuery ($) ->
                 if effect is null
                     alert "Cannot paste the components because they do not fit into the designer"
                     return
-                commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION
+                commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION, activeScreen, componentPositionChanged
                 newRect: effect.rect
 
                 moveComponent newComp, newRect
