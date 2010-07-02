@@ -15,6 +15,15 @@ jQuery ($) ->
     LINK_ARROW_MOUSEMOVE_SAFE_DISTANCE: 20
     LINK_ARROW_INITIAL_MOUSEMOVE_MIN_SAFE_DISTANCE: 15
 
+    INF: 100000  # our very own idea of infinity
+
+    DEFAULT_ROOT_COMPONENT: {
+        type: "background"
+        size: { w: 320, h: 480 }
+        abspos: { x: 0, y: 0 }
+        id: "root"
+    }
+
 
     ##########################################################################################################
     ## imports
@@ -37,10 +46,11 @@ jQuery ($) ->
     }: Mockko.geom
 
     Types: Mockko.componentTypes
+    ser: Mockko.serialization
 
 
     ##########################################################################################################
-    ## constants
+    ## global variables
 
     applicationList: null
     serverMode: null
@@ -51,23 +61,6 @@ jQuery ($) ->
     allowedArea: null
     componentBeingDoubleClickEdited: null
     allStacks: null
-
-    # our very own idea of infinity
-    INF: 100000
-
-    DEFAULT_TEXT_STYLES: {
-        fontSize: 17
-        textColor: '#fff'
-        fontBold: no
-        fontItalic: no
-    }
-
-    DEFAULT_ROOT_COMPONENT: {
-        type: "background"
-        size: { w: 320, h: 480 }
-        abspos: { x: 0, y: 0 }
-        id: "root"
-    }
 
 
     ##########################################################################################################
@@ -85,178 +78,6 @@ jQuery ($) ->
 
     aOrAn: (s) ->
         if s[0] of {'a': yes, 'e': yes, 'i': yes, 'o': yes, 'u': yes} then "an ${s}" else "a ${s}"
-
-    ##########################################################################################################
-    ##  external representation
-
-    externalizeAction: (action) ->
-        return null unless action?
-        switch action.action
-            when Mockko.actions.switchScreen
-                {
-                    'action': Mockko.actions.switchScreen.extname
-                    'screenName': action.screenName
-                }
-            else throw "unknown action: ${action.action}"
-
-    internalizeAction: (action) ->
-        return null unless action?
-        switch action['action']
-            when Mockko.actions.switchScreen.extname
-                {
-                    action: Mockko.actions.switchScreen
-                    screenName: action['screenName']
-                }
-            else throw "error loading app: invalid action ${action['action']}"
-
-    internalizeLocation: (location, parent) ->
-        location ||= {}
-        {
-            x: (location['x'] || 0) + (parent?.abspos?.x || 0)
-            y: (location['y'] || 0) + (parent?.abspos?.y || 0)
-        }
-
-    externalizeLocation: (abspos, parent) ->
-        {
-            'x': abspos.x - (parent?.abspos?.x || 0)
-            'y': abspos.y - (parent?.abspos?.y || 0)
-        }
-
-    externalizeSize: (size) ->
-        {
-            'w': size.w
-            'h': size.h
-        }
-
-    internalizeSize: (size) ->
-        {
-            w: if size then size['w'] || size['width']  else null
-            h: if size then size['h'] || size['height'] else null
-        }
-
-    internalizeStyle: (style) ->
-        {
-            fontSize: style['fontSize']
-            textColor: style['textColor']
-            fontBold: style['fontBold']
-            fontItalic: style['fontItalic']
-            textShadowStyleName: style['textShadowStyleName']
-            background: style['background']
-            imageEffect: style['imageEffect']
-        }
-
-    externalizeStyle: (style) ->
-        {
-            'fontSize': style.fontSize
-            'textColor': style.textColor
-            'fontBold': style.fontBold
-            'fontItalic': style.fontItalic
-            'textShadowStyleName': style.textShadowStyleName
-            'background': style.background
-            'imageEffect': style.imageEffect
-        }
-
-    externalizeImage: (image) ->
-        {
-            'group': image.group
-            'name': image.name
-        }
-
-    internalizeImage: (image) ->
-        {
-            group: image['group']
-            name: image['name']
-        }
-
-    externalizeComponent: (c) ->
-        rc: {
-            'type': c.type.name || c.type
-            'location': externalizeLocation c.abspos, c.parent
-            # 'effsize': externalizeSize c.effsize
-            'size': externalizeSize c.size
-            'styleName': c.styleName
-            'style': externalizeStyle c.style
-            'text': c.text
-            'action': externalizeAction c.action
-            'children': (externalizeComponent(child) for child in c.children || [])
-        }
-        rc['state']: c.state if c.state?
-        rc['image']: externalizeImage(c.image) if c.image?
-        rc
-
-    externalizePaletteComponent: (c) ->
-        rc: {
-            'type': c.type
-            'location': externalizeLocation(c.location || { x: 0, y: 0 }, null)
-            'size': externalizeSize(c.size || { w: null, h: null })
-            'styleName': c.styleName
-            'style': externalizeStyle(c.style || {})
-            'text': c.text
-            'action': externalizeAction c.action
-            'children': (externalizePaletteComponent(child) for child in c.children || [])
-        }
-        rc['state']: c.state if c.state?
-        rc['image']: externalizeImage(c.image) if c.image?
-        rc
-
-    internalizeComponent: (c, parent) ->
-        rc: {
-            type: Types[c['type']]
-            abspos: internalizeLocation c['location'], parent
-            size: internalizeSize c['size']
-            styleName: c['styleName']
-            action: internalizeAction c['action']
-            inDocument: yes
-            parent: parent
-        }
-        rc.children: (internalizeComponent(child, rc) for child in c['children'] || [])
-        if not rc.type
-            console.log "Missing type for component:"
-            console.log c
-            throw "Missing type: ${c['type']}"
-        rc.state: c['state']
-        rc.image: internalizeImage(c['image']) if c['image']?
-        if rc.image?.constructor is String
-            if rc.image.substr(0, 'images/'.length) == 'images/'
-                encodedId: rc.image.substr('images/'.length)
-                rc.image: { id: decodeURIComponent encodedId }
-            else
-                throw "Invalid image reference: ${rc.image}"
-        rc.style: $.extend({}, (if rc.type.textStyleEditable then DEFAULT_TEXT_STYLES else {}), rc.type.style || {}, internalizeStyle(c['style'] || {}))
-        rc.text: c['text'] || rc.type.defaultText if rc.type.supportsText
-        rc
-
-    externalizeScreen: (screen) ->
-        {
-            'rootComponent': externalizeComponent(screen.rootComponent)
-            'name': screen.name
-            'html': screen.html || ''
-        }
-
-    internalizeScreen: (screen) ->
-        rootComponent: internalizeComponent(screen['rootComponent'], null)
-        screen: {
-            rootComponent: rootComponent
-            html: screen['html'] || ''
-            name: screen['name'] || null
-        }
-        return screen
-
-    externalizeApplication: (app) ->
-        {
-            'name': app.name
-            'screens': (externalizeScreen(s) for s in app.screens)
-        }
-
-    internalizeApplication: (app) ->
-        screens: (internalizeScreen(s) for s in app['screens'])
-        _(screens).each (screen, index) ->
-            screen.name ||= "Screen ${index+1}"
-        {
-            name: app['name']
-            screens: screens
-        }
-
 
     ##########################################################################################################
     ##  undokey
@@ -309,9 +130,9 @@ jQuery ($) ->
         if screenIndex >= 0 && screenIndex < application.screens.length
             switchToScreen application.screens[screenIndex]
 
-    createApplicationMemento: -> JSON.stringify(externalizeApplication(application))
+    createApplicationMemento: -> JSON.stringify(ser.externalizeApplication(application))
 
-    revertToMemento: (memento) -> loadApplication internalizeApplication(JSON.parse(memento)), applicationId
+    revertToMemento: (memento) -> loadApplication ser.internalizeApplication(JSON.parse(memento)), applicationId
 
     $('#undo-button').click (e) ->
         e.preventDefault(); e.stopPropagation()
@@ -387,7 +208,7 @@ jQuery ($) ->
         null
 
     cloneTemplateComponent: (compTemplate) ->
-        c: internalizeComponent compTemplate, null
+        c: ser.internalizeComponent compTemplate, null
         traverse c, (comp) -> comp.inDocument: no
         return c
 
@@ -425,7 +246,7 @@ jQuery ($) ->
         return if comp.type.unmovable || comp.type.singleInstance
         beginUndoTransaction "duplicate ${friendlyComponentName comp}"
 
-        newComp: internalizeComponent(externalizeComponent(comp), comp.parent)
+        newComp: ser.internalizeComponent(ser.externalizeComponent(comp), comp.parent)
 
         $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
         traverse newComp, (c) -> updateEffectiveSize c
@@ -2232,13 +2053,13 @@ jQuery ($) ->
         ctg.itemsNode: items: $('<div />').addClass('items').appendTo(group)
         func ||= ((ct, n) ->)
         for compTemplate in ctg.items
-            c: cloneTemplateComponent(externalizePaletteComponent(compTemplate))
+            c: cloneTemplateComponent(ser.externalizePaletteComponent(compTemplate))
             n: renderPaletteComponentHierarchy c
             $(n).attr('title', compTemplate.label || c.type.label)
             $(n).addClass('item').appendTo(items)
             updateEffectiveSizesInHierarchy c
             relayoutHierarchy c
-            bindPaletteItem n, externalizePaletteComponent(compTemplate)
+            bindPaletteItem n, ser.externalizePaletteComponent(compTemplate)
             func compTemplate, n
 
     renderPaletteGroup: (ctg, permanent) ->
@@ -2358,7 +2179,7 @@ jQuery ($) ->
         updateActionsDueToScreenRenames renames
 
     addScreenWithoutTransaction: ->
-        screen: internalizeScreen {
+        screen: ser.internalizeScreen {
             rootComponent: DEFAULT_ROOT_COMPONENT
         }
         keepingScreenNamesNormalized ->
@@ -2415,7 +2236,7 @@ jQuery ($) ->
         pos: application.screens.indexOf(oldScreen)
         return if pos < 0
 
-        screen: internalizeScreen externalizeScreen oldScreen
+        screen: ser.internalizeScreen ser.externalizeScreen oldScreen
         screen.name: null
 
         beginUndoTransaction "duplication of a screen"
@@ -2505,7 +2326,7 @@ jQuery ($) ->
         switchToScreen application.screens[0]
 
     saveApplicationChanges: (callback) ->
-        serverMode.saveApplicationChanges externalizeApplication(application), applicationId, (newId) ->
+        serverMode.saveApplicationChanges ser.externalizeApplication(application), applicationId, (newId) ->
             applicationId: newId
             if callback then callback()
 
@@ -2536,7 +2357,7 @@ jQuery ($) ->
     ##  Share (stub implementation)
 
     updateSharePopover: ->
-        s: JSON.stringify(externalizeApplication(application))
+        s: JSON.stringify(ser.externalizeApplication(application))
         $('#share-popover textarea').val(s)
 
     toggleSharePopover: ->
@@ -2548,7 +2369,7 @@ jQuery ($) ->
 
     checkApplicationLoading: ->
         v: $('#share-popover textarea').val()
-        s: JSON.stringify(externalizeApplication(application))
+        s: JSON.stringify(ser.externalizeApplication(application))
 
         good: yes
         if v != s && v != ''
@@ -2556,7 +2377,7 @@ jQuery ($) ->
                 app: JSON.parse(v)
             catch e
                 good: no
-            loadApplication internalizeApplication(app), applicationId if app
+            loadApplication ser.internalizeApplication(app), applicationId if app
         $('#share-popover textarea').css('background-color', if good then 'white' else '#ffeeee')
         undefined
 
@@ -3014,12 +2835,12 @@ jQuery ($) ->
                 deactivateMode()
             accept: (newText) ->
                 app.content.name: newText
-                serverMode.saveApplicationChanges externalizeApplication(app.content), app.id, (newId) ->
+                serverMode.saveApplicationChanges ser.externalizeApplication(app.content), app.id, (newId) ->
                     refreshApplicationList()
         }
 
     duplicateApplication: (app) ->
-        content: externalizeApplication(app.content)
+        content: ser.externalizeApplication(app.content)
         content.name: "${content.name} Copy"
         serverMode.saveApplicationChanges content, null, (newId) ->
             refreshApplicationList (newApps) ->
@@ -3046,7 +2867,7 @@ jQuery ($) ->
         targetCont: activeScreen.rootComponent
         data: JSON.parse(json)
         if data.type then data: [data]
-        newComps: (internalizeComponent(c, targetCont) for c in data)
+        newComps: (ser.internalizeComponent(c, targetCont) for c in data)
         newComps: _((if c.type is Types.background then c.children else c) for c in newComps).flatten()
         pasteComponents targetCont, newComps
 
@@ -3079,7 +2900,7 @@ jQuery ($) ->
                 deleteComponentWithoutTransaction comp, false
 
     $(document).copiableAsText {
-        gettext: -> JSON.stringify(externalizeComponent(comp)) if comp: componentToActUpon()
+        gettext: -> JSON.stringify(ser.externalizeComponent(comp)) if comp: componentToActUpon()
         aftercut: -> cutComponents [comp] if comp: componentToActUpon()
         paste: (text) -> pasteJSON text
         shouldProcessCopy: -> componentToActUpon() isnt null and !activeMode()?.isInsideTextField
@@ -3163,7 +2984,7 @@ jQuery ($) ->
             names[Math.floor(Math.random() * names.length)]
 
     createNewApplication: ->
-        loadApplication internalizeApplication(MakeApp.appTemplates.basic), null
+        loadApplication ser.internalizeApplication(MakeApp.appTemplates.basic), null
         switchToDesign()
 
     bindApplication: (app, an) ->
@@ -3189,7 +3010,7 @@ jQuery ($) ->
     renderApplication: (appData, destination, show_name) ->
         appId: appData['id']
         app: JSON.parse(appData['body'])
-        app: internalizeApplication(app)
+        app: ser.internalizeApplication(app)
         an: domTemplate('app-template')
         $('.caption', $(an)).html(if show_name then app.name + ' (' + appData['nickname'] + ')' else app.name)
         renderScreenComponents(app.screens[0], $('.content .rendered', an))
@@ -3238,7 +3059,7 @@ jQuery ($) ->
         console.log serverMode
         serverMode.adjustUI userData
         serverMode.startDesigner userData, switchToDashboard, (app) ->
-            loadApplication internalizeApplication(app), null
+            loadApplication ser.internalizeApplication(app), null
             switchToDesign()
             
         console.log "done"

@@ -28,6 +28,7 @@ JS_SRC = $(addprefix web/static/, \
 	designer-online.js \
 	designer-offline.js \
 	designer-actions.js \
+	designer-serialization.js \
 	jpicker.js \
 	designer.js)
 
