@@ -69,190 +69,6 @@ jQuery ($) ->
         id: "root"
     }
 
-    SAMPLE_APPS: ( { 'body': body, 'sample': yes } for body in MakeApp.sampleApplications )
-
-
-    ##########################################################################################################
-    ##  Server Communication
-
-    handleHttpError: (failedActivity, status, e) ->
-        if status and status isnt 'error'
-            alert "${failedActivity} because there was an error communicating with the server: ${status} Please try again in a few minutes."
-        else
-            alert "${failedActivity} because there was an error communicating with the server. Please try again in a few minutes."
-
-    handleServerError: (failedActivity, err) ->
-        switch err
-            when 'signed-out'
-                alert "${failedActivity} because you were logged out. Please sign in again."
-            else
-                alert "${failedActivity} because server reported an error: ${err}"
-
-    processPossibleErrorResponse: (failedActivity, response) ->
-        if not response?
-            alert "${failedActivity} because the server is not responding. Please try again in a few minutes."
-            true
-        else if response['error']
-            handleServerError failedActivity, response['error']
-            true
-        else
-            false
-
-    SERVER_MODES = {
-        'online': {
-            supportsImageEffects: yes
-
-            adjustUI: (userData) ->
-                $('.logout-button').attr 'href', userData['logout_url']
-
-            getUserInfo: (callback) ->
-                $.ajax {
-                    url: '/user-info.json'
-                    dataType: 'json'
-                    success: (userData) -> callback userData
-                    error: (xhr, status, e) ->
-                        alert "Failed to load the application: ${status} - ${e}"
-                        # TODO ERROR HANDLING!
-                }
-
-            startDesigner: (userData) ->
-                switchToDashboard()
-
-            saveApplicationChanges: (app, appId, callback) ->
-                failedActivity: "Failed to save application changes"
-                $.ajax {
-                    url: '/apps/' + (if appId then "${appId}/" else "")
-                    type: 'POST'
-                    data: JSON.stringify(app)
-                    contentType: 'application/json'
-                    dataType: 'json'
-                    success: (r) ->
-                        return if processPossibleErrorResponse(failedActivity, r)
-                        callback(r['id'])
-                    error: (xhr, status, e) ->
-                        handleHttpError failedActivity, status, e
-                }
-
-            loadApplications: (callback) ->
-                failedActivity: "Failed to get a list of applications"
-                $.ajax {
-                    url: '/apps/'
-                    dataType: 'json'
-                    success: (r) ->
-                        return if processPossibleErrorResponse(failedActivity, r)
-                        callback(r)
-                    error: (xhr, status, e) ->
-                        handleHttpError failedActivity, status, e
-                }
-
-            uploadImage: (groupName, fileName, file, callback) ->
-                failedActivity: "Could not upload your image"
-                $.ajax {
-                    type: 'POST'
-                    url: '/images/${encodeURIComponent groupName}'
-                    data: file
-                    processData: no
-                    beforeSend: (xhr) -> xhr.setRequestHeader("X-File-Name", fileName)
-                    contentType: 'application/octet-stream'
-                    dataType: 'json'
-                    success: (r) ->
-                        return if processPossibleErrorResponse(failedActivity, r)
-                        callback()
-                    error: (xhr, status, e) ->
-                        handleHttpError failedActivity, status, e
-                }
-
-            loadImages: (callback) ->
-                failedActivity: "Could not load the list of your images"
-                $.ajax {
-                    type: 'GET'
-                    url: '/images/'
-                    dataType: 'json'
-                    success: (r) ->
-                        return if processPossibleErrorResponse(failedActivity, r)
-                        callback(r)
-                    error: (xhr, status, e) ->
-                        handleHttpError failedActivity, status, e
-                }
-
-            deleteImage: (groupName, imageId, callback) ->
-                failedActivity: "Could not delete the image"
-                $.ajax {
-                    type: 'DELETE'
-                    url: "/images/${encodeURIComponent groupName}/${encodeURIComponent imageId}"
-                    dataType: 'json'
-                    success: (r) ->
-                        return if processPossibleErrorResponse(failedActivity, r)
-                        callback()
-                    error: (xhr, status, e) ->
-                        handleHttpError failedActivity, status, e
-                }
-
-            loadImageGroup: (imageGroupId, callback) ->
-                console.log "Requesting /images/$imageGroupId"
-                failedActivity: "Could not load image group info"
-                $.ajax {
-                    type: 'GET'
-                    url: "/images/$imageGroupId"
-                    dataType: 'json'
-                    success: (r) ->
-                        console.log "Finished requesting /images/$imageGroupId"
-                        return if processPossibleErrorResponse(failedActivity, r)
-                        callback(r)
-                    error: (xhr, status, e) ->
-                        handleHttpError failedActivity, status, e
-                }
-
-            deleteApplication: (appId, callback) ->
-                failedActivity: "Could not delete the application"
-                $.ajax {
-                    type: 'DELETE'
-                    url: "/apps/${encodeURIComponent appId}/"
-                    dataType: 'json'
-                    success: (r) ->
-                        return if processPossibleErrorResponse(failedActivity, r)
-                        callback()
-                    error: (xhr, status, e) ->
-                        handleHttpError failedActivity, status, e
-                }
-        }
-
-        'offline': {
-            supportsImageEffects: no
-
-            adjustUI: (userData) ->
-                #
-
-            getUserInfo: (callback) ->
-                callback { 'status': 'offline' }
-
-            startDesigner: (userData) ->
-                loadApplication internalizeApplication(JSON.parse(SAMPLE_APPS[0]['body'])), null
-                switchToDesign()
-
-            saveApplicationChanges: (app, appId, callback) ->
-                #
-
-            loadApplications: (callback) ->
-                callback [
-                    # { 'id': 42, 'body': JSON.stringify(MakeApp.appTemplates.basic) }
-                    # { 'id': 43, 'body': JSON.stringify(MakeApp.appTemplates.basic) }
-                ]
-
-            uploadImage: (groupName, fileName, file, callback) ->
-                #
-
-            loadImages: (callback) ->
-                #
-
-            deleteImage: (groupName, imageId, callback) ->
-                #
-
-            loadImageGroup: (imageGroupId, callback) ->
-                #
-        }
-    }
-
 
     ##########################################################################################################
     ##  various stuff
@@ -3430,7 +3246,7 @@ jQuery ($) ->
                 renderApplication appData, '#apps-list-container',
                     apps['current_user'] != appData['created_by']
             $('#sample-apps-separator').detach().appendTo('#apps-list-container')
-            for appData in apps['apps'].concat(SAMPLE_APPS) when appData['sample']
+            for appData in apps['apps'].concat(Mockko.sampleApplications) when appData['sample']
                 renderApplication appData, '#apps-list-container', false
             updateApplicationListWidth()
             callback(applicationList) if callback
@@ -3462,7 +3278,10 @@ jQuery ($) ->
         $("body").removeClass("offline-user online-user").addClass("${userData['status']}-user")
         console.log serverMode
         serverMode.adjustUI userData
-        serverMode.startDesigner userData
+        serverMode.startDesigner userData, switchToDashboard, (app) ->
+            loadApplication internalizeApplication(app), null
+            switchToDesign()
+            
         console.log "done"
 
     $('#welcome-continue-link').click ->
@@ -3499,9 +3318,9 @@ jQuery ($) ->
         adjustDeviceImagePosition()
 
     if window.location.href.match /^file:/
-        serverMode: SERVER_MODES['offline']
+        serverMode: Mockko.fakeServer
     else
-        serverMode: SERVER_MODES['online']
+        serverMode: Mockko.server
 
     initComponentTypes()
     hookKeyboardShortcuts()

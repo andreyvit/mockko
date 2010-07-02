@@ -79,14 +79,9 @@ handlers:
   upload: designer.html
   login: admin
 
-- url: /static/designer((?:-.*)?)\.js
-  static_files: static/designer\1.js
-  upload: static/designer(-.*)?\.js
-  login: admin
-
-- url: /static/jpicker.js
-  static_files: static/jpicker.js
-  upload: static/jpicker.js
+- url: /static/(.*\.js)
+  static_files: static/\1
+  upload: static/.*\.js
   login: admin
 
 - url: /static/theme/theme(-.*).css
