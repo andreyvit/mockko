@@ -144,7 +144,7 @@ class RegularLayout extends Layout
     computeDuplicationEffect: (oldComp, newComp) ->
         rect: rectOf(oldComp)
         rect.y += rect.h
-        stacking: Mockko.stacking.handleStacking oldComp, rect, allStacks, 'duplicate'
+        stacking: Mockko.stacking.handleStacking oldComp, rect, @screen.allStacks, 'duplicate'
 
         if stacking.targetRect
             return { rect: stacking.targetRect, moves: stacking.moves }
