@@ -175,7 +175,7 @@ jQuery ($) ->
 
     commitMoves: (moves, exclusions, delay) ->
         if moves.length > 0
-            liveMover: newLiveMover exclusions
+            liveMover: newLiveMover activeScreen, exclusions
             liveMover.moveComponents moves
             liveMover.commit(delay)
 
@@ -241,7 +241,7 @@ jQuery ($) ->
         effect: layouting.computeDeletionEffect activeScreen, rootc
         stacking: Mockko.stacking.handleStacking rootc, null, activeScreen.allStacks
 
-        liveMover: newLiveMover [rootc]
+        liveMover: newLiveMover activeScreen, [rootc]
         liveMover.moveComponents stacking.moves.concat(effect.moves)
         liveMover.commit(animated && STACKED_COMP_TRANSITION_DURATION)
 
@@ -509,9 +509,9 @@ jQuery ($) ->
     ##########################################################################################################
     ##  General Dragging
 
-    newLiveMover: (excluded) ->
+    newLiveMover: (screen, excluded) ->
         excludedSet: setOf excluded
-        traverse activeScreen.rootComponent, (c) ->
+        traverse screen.rootComponent, (c) ->
             if inSet c, excludedSet
                 return skipTraversingChildren
             $(c.node).addClass 'stackable'
@@ -526,7 +526,7 @@ jQuery ($) ->
                             throw "Component ${c.type.name} cannot be moved because it has been excluded!"
                 componentSet: setOf _.flatten(m.comps for m in moves)
 
-                traverse activeScreen.rootComponent, (c) ->
+                traverse screen.rootComponent, (c) ->
                     if inSet c, excludedSet
                         return skipTraversingChildren
                     if inSet c, componentSet
@@ -549,11 +549,11 @@ jQuery ($) ->
                             componentPositionChangedWhileDragging child
 
             rollback: ->
-                traverse activeScreen.rootComponent, (c) ->
+                traverse screen.rootComponent, (c) ->
                     if inSet c, excludedSet
                         return skipTraversingChildren
                     $(c.node).removeClass 'stackable'
-                traverse activeScreen.rootComponent, (c) ->
+                traverse screen.rootComponent, (c) ->
                     if inSet c, excludedSet
                         return skipTraversingChildren
                     if c.dragpos
@@ -564,7 +564,7 @@ jQuery ($) ->
                         componentPositionChangedWhileDragging c
 
             commit: (delay) ->
-                traverse activeScreen.rootComponent, (c) ->
+                traverse screen.rootComponent, (c) ->
                     if c.dragpos
                         c.abspos = c.dragpos
                         if c.dragsize
@@ -578,9 +578,9 @@ jQuery ($) ->
                 if delay? then setTimeout(cleanup, delay) else cleanup()
         }
 
-    startDragging: (comp, options, initialMoveOptions) ->
+    startDragging: (screen, comp, options, initialMoveOptions) ->
         origin: $('#design-area').offset()
-        allowedArea: activeScreen.allowedArea
+        allowedArea: screen.allowedArea
 
         if comp.inDocument
             originalR: rectOf comp
@@ -592,7 +592,7 @@ jQuery ($) ->
                 y: if r.h then ((pt.y - origin.top)  - r.y) / r.h else 0.5
             }
         hotspot: options.hotspot || computeHotSpot(options.startPt)
-        liveMover: newLiveMover [comp]
+        liveMover: newLiveMover screen, [comp]
         wasAnchored: no
         anchoredTransitionChangeTimeout: new Timeout STACKED_COMP_TRANSITION_DURATION
 
@@ -627,13 +627,13 @@ jQuery ($) ->
             [rect, unsnappedRect, ok] = updateRectangleAndClipToArea(pt)
 
             if ok
-                if effect: layouting.computeDropEffect activeScreen, comp, rect, moveOptions
+                if effect: layouting.computeDropEffect screen, comp, rect, moveOptions
                     { target, isAnchored, rect, moves }: effect
                 else
                     ok: no
                     moves: []
             else
-                { moves }: layouting.computeDeletionEffect activeScreen, comp
+                { moves }: layouting.computeDeletionEffect screen, comp
 
             unless ok
                 rect: unsnappedRect
@@ -683,7 +683,7 @@ jQuery ($) ->
 
         if comp.node.parentNode
             comp.node.parentNode.removeChild(comp.node)
-        activeScreen.rootComponent.node.appendChild(comp.node)
+        screen.rootComponent.node.appendChild(comp.node)
 
         # we might have just added a new component
         updateEffectiveSizesInHierarchy comp
@@ -756,7 +756,7 @@ jQuery ($) ->
                 if dragger is null
                     return if Math.abs(pt.x - startPt.x) <= 1 and Math.abs(pt.y - startPt.y) <= 1
                     undo.beginTransaction "movement of ${friendlyComponentName c}"
-                    dragger: startDragging c, { startPt: startPt }, computeMoveOptions(e)
+                    dragger: startDragging activeScreen, c, { startPt: startPt }, computeMoveOptions(e)
                     $('#hover-panel').hide()
                 dragger.moveTo pt, computeMoveOptions(e)
                 true
@@ -788,7 +788,7 @@ jQuery ($) ->
         undo.beginTransaction "creation of ${friendlyComponentName c}"
         cn: renderInteractiveComponentHeirarchy c
 
-        dragger: startDragging c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }, computeMoveOptions(e)
+        dragger: startDragging activeScreen, c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }, computeMoveOptions(e)
 
         window.status = "Dragging a new component."
 
@@ -817,7 +817,7 @@ jQuery ($) ->
                     undo.rollbackTransaction()
         }
 
-    startResizing: (comp, startPt, options) ->
+    startResizing: (screen, comp, startPt, options) ->
         originalSize: comp.size
         baseSize: comp.effsize
         console.log "base size:"
@@ -830,7 +830,7 @@ jQuery ($) ->
                 newSize: {}
                 console.log options
                 minimumSize: comp.type.minimumSize || { w: 4, h: 4 }
-                allowedArea: activeScreen.allowedArea
+                allowedArea: screen.allowedArea
 
                 maxSizeDecrease: { x: baseSize.w - minimumSize.w; y : baseSize.h - minimumSize.h }
 
@@ -878,7 +878,7 @@ jQuery ($) ->
     activateResizingMode: (comp, startPt, options) ->
         undo.beginTransaction "resizing of ${friendlyComponentName comp}"
         console.log "activating resizing mode for ${friendlyComponentName comp}"
-        resizer: startResizing comp, startPt, options
+        resizer: startResizing activeScreen, comp, startPt, options
         activateMode {
             debugname: "Resizing"
             cancelOnMouseUp: yes
