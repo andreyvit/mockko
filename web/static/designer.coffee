@@ -62,7 +62,7 @@ jQuery ($) ->
         traverse, skipTraversingChildren
         findChildByType, findBestTargetContainerForRect, findComponentByRect
         findComponentByTypeIntersectingRect
-        compWithChildrenAndParents
+        compWithChildrenAndParents, isComponentOrDescendant, findComponentOccupyingRect
     }: Mockko.model
 
     ##########################################################################################################
@@ -391,34 +391,11 @@ jQuery ($) ->
         delta: ptDiff(newPos, comp.abspos)
         traverse comp, (child) -> child.abspos: ptSum(child.abspos, delta)
 
-    findComponentOccupyingRect: (r, exclusionSet) ->
-        match: null
-        traverse activeScreen.rootComponent, (comp) ->
-            if not exclusionSet? or not inSet comp, exclusionSet
-                candidate: not isContainer
-                if !candidate and (comp isnt activeScreen.rootComponent)
-                    rect: rectOf comp
-                    if rect.x == r.x && rect.y == r.y && rect.w == r.w && rect.h == r.h
-                        candidate: yes
-                if candidate
-                    if doesRectIntersectRect r, rectOf comp
-                        # don't return yet to find the innermost match
-                        match: comp
-        match
-
-    isComponentOrDescendant: (candidate, possibleAncestor) ->
-        match: no
-        traverse possibleAncestor, (child) ->
-            match: yes if child is candidate
-        match
-
 
     ##########################################################################################################
     ##  stacking
 
     TABLE_TYPES = setOf ['plain-row', 'plain-header', 'roundrect-row', 'roundrect-header']
-
-    isContainer: (c) -> c.type.container
 
     areVerticallyAdjacent: (c1, c2) ->
         r1: rectOf c1
@@ -435,7 +412,7 @@ jQuery ($) ->
                 c.stack = null; c.previousStackSibling = null; c.nextStackSibling = null
 
             traverse activeScreen.rootComponent, (c) ->
-                if isContainer c
+                if c.type.container
                     discoverStacksInComponent c, stacks
 
             $('.component').removeClass('in-stack first-in-stack last-in-stack odd-in-stack even-in-stack first-in-group last-in-group odd-in-group even-in-group')
@@ -1372,13 +1349,13 @@ jQuery ($) ->
 
                 rect: rectOf(oldComp)
                 while rect.x+rect.w <= usableBounds.x+usableBounds.w - DUPLICATE_COMPONENT_MIN_EDGE_INSET_X
-                    found: findComponentOccupyingRect rect
+                    found: findComponentOccupyingRect activeScreen.rootComponent, rect
                     return { rect, moves: [] } unless found
                     rect.x += found.effsize.w + DUPLICATE_COMPONENT_OFFSET_X
 
                 rect: rectOf(oldComp)
                 while rect.y+rect.h <= usableBounds.y+usableBounds.h - DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y
-                    found: findComponentOccupyingRect rect
+                    found: findComponentOccupyingRect activeScreen.rootComponent, rect
                     return { rect, moves: [] } unless found
                     rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
 
