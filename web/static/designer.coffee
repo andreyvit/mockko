@@ -2140,7 +2140,7 @@ jQuery ($) ->
             updateEffectiveSizesInHierarchy activeScreen.rootComponent
             relayoutHierarchy activeScreen.rootComponent
             componentsChanged()
-        ), 10
+        ), 0
 
         devicePanel: $('#device-panel')[0]
         allowedArea: {
