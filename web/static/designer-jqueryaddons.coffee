@@ -267,7 +267,6 @@ jQuery.fn.startInPlaceEditing: (->
                 data: options.gettext(this)
                 hiddenCopyTextArea.val(data || '').show().focus()
                 hiddenCopyTextArea[0].select()
-                console.log "Preparing to copy text: ${data}"
             this['oncopy']: (e) ->
                 return if options.shouldProcessCopy && !options.shouldProcessCopy()
                 setTimeout hideTextArea, 10
