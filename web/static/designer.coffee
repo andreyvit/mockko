@@ -137,14 +137,7 @@ jQuery ($) ->
         updateInspector()
         updateScreenPreview(activeScreen)
 
-    componentPositionChangedWhileDragging: (c) ->
-        renderComponentPosition c
-        renderComponentSize c
-        if c is hover.currentlyHovered()
-            hover.updateHoverPanelPosition()
-            updatePositionInspector()
-
-    componentPositionChangedPernamently: (c) ->
+    componentPositionChanged: (c) ->
         renderComponentPosition c
         updateEffectiveSize c
         if c is hover.currentlyHovered()
@@ -186,7 +179,7 @@ jQuery ($) ->
                 traverse c, (child) ->
                     child.abspos: { x: child.abspos.x + offset.x; y: child.abspos.y + offset.y }
                     child.size: m.size if m.size
-                    componentPositionChangedPernamently child
+                    componentPositionChanged child
 
 
     ##########################################################################################################
@@ -261,7 +254,7 @@ jQuery ($) ->
     moveComponentBy: (comp, offset) ->
         runTransaction "keyboard moving of ${friendlyComponentName comp}", ->
             traverse comp, (c) -> c.abspos: ptSum(c.abspos, offset)
-            traverse comp, componentPositionChangedPernamently
+            traverse comp, componentPositionChanged
 
     duplicateComponent: (comp) ->
         return if comp.type.unmovable || comp.type.singleInstance
@@ -285,7 +278,7 @@ jQuery ($) ->
             if newRect.w != comp.effsize.w or newRect.h != comp.effsize.h
                 newComp.size: { w: newRect.w, h: newRect.h }
             moveComponent newComp, newRect
-            componentPositionChangedPernamently newComp
+            componentPositionChanged newComp
 
             commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION
 
@@ -412,13 +405,13 @@ jQuery ($) ->
                         newState: if c is child then on else off
                         if child.state isnt newState
                             child.state: newState
-                            renderComponentStyle child
+                            componentStyleChanged child
             when 'switch'
                 c.state: c.type.state unless c.state?
                 newStateDesc: if c.state then 'off' else 'on'
                 runTransaction "turning ${friendlyComponentName c} ${newStateDesc}", ->
                     c.state: !c.state
-                    renderComponentStyle c
+                    componentStyleChanged c
         startComponentTextInPlaceEditing c
 
     startComponentTextInPlaceEditing: (c) ->
@@ -433,8 +426,7 @@ jQuery ($) ->
                 updateEffectiveSize c
                 if newPos: alignment.adjustedPosition(originalRect, c.effsize)
                     c.abspos: newPos
-                    renderComponentPosition c
-                    hover.updateHoverPanelPosition()
+                    componentPositionChanged c
 
         $(textNodeOfComponent c).startInPlaceEditing {
             before: ->
@@ -536,7 +528,7 @@ jQuery ($) ->
                         c.dragsize: null
                         c.dragParent: null
                         $(c.node).removeClass 'stacked'
-                        componentPositionChangedWhileDragging c
+                        componentPositionChanged c
 
                 for m in moves
                     for c in m.comps
@@ -546,7 +538,7 @@ jQuery ($) ->
                             child.dragpos: { x: child.abspos.x + offset.x; y: child.abspos.y + offset.y }
                             child.dragsize: m.size || null
                             child.dragParent: child.parent
-                            componentPositionChangedWhileDragging child
+                            componentPositionChanged child
 
             rollback: ->
                 traverse screen.rootComponent, (c) ->
@@ -561,7 +553,7 @@ jQuery ($) ->
                         c.dragsize: null
                         c.dragParent: null
                         $(c.node).removeClass 'stacked'
-                        componentPositionChangedWhileDragging c
+                        componentPositionChanged c
 
             commit: (delay) ->
                 traverse screen.rootComponent, (c) ->
@@ -572,7 +564,7 @@ jQuery ($) ->
                         c.dragpos: null
                         c.dragsize: null
                         c.dragParent: null
-                        componentPositionChangedPernamently c
+                        componentPositionChanged c
 
                 cleanup: -> $('.component').removeClass 'stackable'
                 if delay? then setTimeout(cleanup, delay) else cleanup()
@@ -652,7 +644,7 @@ jQuery ($) ->
                 $(comp.node).addClass 'anchored'
             wasAnchored = isAnchored
 
-            componentPositionChangedWhileDragging comp
+            componentPositionChanged comp
 
             if ok then { target: target } else null
 
@@ -726,7 +718,7 @@ jQuery ($) ->
 
                 traverse c, (child) -> child.inDocument: yes
 
-                componentPositionChangedPernamently c
+                componentPositionChanged c
         }
 
     newSetImageEffect: (target, c) ->
@@ -781,7 +773,7 @@ jQuery ($) ->
                 c.dragsize: null
                 c.dragpos: null
                 c.dragParent: null
-                componentPositionChangedWhileDragging c
+                componentPositionChanged c
         }
 
     activateNewComponentDragging: (startPt, c, e) ->
@@ -863,9 +855,7 @@ jQuery ($) ->
                 comp.dragpos: newPos
                 comp.dragParent: comp.parent
                 console.log "resizing to ${comp.size.w} x ${comp.size.h}"
-                updateEffectiveSize comp
-                renderComponentPosition comp
-                hover.updateHoverPanelPosition()
+                componentPositionChanged comp
                 relayoutHierarchy comp
 
             dropAt: (pt) ->
@@ -1452,7 +1442,7 @@ jQuery ($) ->
             if color and color isnt c.style.textColor
                 runTransaction "color change", ->
                     c.style.textColor: '#' + color
-                renderComponentStyle c
+                componentStyleChanged c
 
             if fromPicker and color and color isnt originalColor
                 $('#text-color-input').val(color)
@@ -1831,7 +1821,7 @@ jQuery ($) ->
                 moveComponent newComp, newRect
                 if newRect.w != newComp.effsize.w or newRect.h != newComp.effsize.h
                     newComp.size: { w: newRect.w, h: newRect.h }
-                traverse newComp, (child) -> renderComponentPosition child; updateEffectiveSize child
+                traverse newComp, (child) -> componentPositionChanged child
 
     cutComponents: (comps) ->
         comps: _((if c.type is Types.background then c.children else c) for c in comps).flatten()
