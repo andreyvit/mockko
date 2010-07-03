@@ -122,7 +122,7 @@ SUM_FILES = .designerjs.sum .themecss.sum .iphonecss.sum \
 # --> Optimization
 
 ${OPT_DIR}/designer.min.html: web/designer.html .designerjs.sum .themecss.sum .iphonecss.sum
-	@echo "  HTML SED" $@
+	@echo "  HTML PERL" $@
 	@mkdir -p $(dir $@)
 	grep -v 'designer-.*\.js\|geometry\.js\|jpicker\.js\|lib/.*\.js\|animations.css\|theme-designer.css\|theme-dashboard.css' < $< | perl -pe "s/designer\.js/designer.min.js?"$$(cat .designerjs.sum)"/g; s/iphone.css/iphone.min.css?"$$(cat .iphonecss.sum)"/g; s/theme-common.css/theme.min.css?"$$(cat .themecss.sum)"/g" > $@ || (rm -f $@; false)
 
