@@ -22,6 +22,9 @@
 
 LINK_ARROW_MOUSEMOVE_SAFE_DISTANCE: 20
 LINK_ARROW_INITIAL_MOUSEMOVE_MIN_SAFE_DISTANCE: 15
+FIRST_HOVER_BUTTON_OFFSET: -8
+HOVER_BUTTON_WIDTH: 16
+MIN_DISTANCE_FROM_LAST_HOVER_BUTTON_TO_TOP_CENTER_HANDLE: 10
 
 
 # options.modeEngine
@@ -62,17 +65,25 @@ Mockko.setupHoverPanel: (options) ->
         yenable: { 't': yes, 'c': (hoveredComponent.effsize.h >= 23), 'b': yes }
         # hoveredComponent.effsize.w < 63 or hoveredComponent.effsize.h <= 25
         controlsOutside: not (hoveredComponent.parent?.type?.hitAreaInset)
+        topCenterHandleVisible: yes
+        linkButtonVisible: hoveredComponent.type.canHazLink
+        unlinkButtonVisible: hoveredComponent.type.canHazLink and hoveredComponent.action?
+        numberOfButtons: 2 + linkButtonVisible + unlinkButtonVisible
+        if (not controlsOutside) and r.w/2 < FIRST_HOVER_BUTTON_OFFSET + numberOfButtons*HOVER_BUTTON_WIDTH + MIN_DISTANCE_FROM_LAST_HOVER_BUTTON_TO_TOP_CENTER_HANDLE
+            topCenterHandleVisible: no
         _($('#hover-panel .resizing-handle')).each (handle, index) ->
             [vmode, hmode]: [RESIZING_HANDLES[index][0], RESIZING_HANDLES[index][1]]
             pos: { x: xpos[hmode], y: ypos[vmode] }
             [vmode, hmode]: [adjustVerticalSizingMode(hoveredComponent, vmode), adjustHorizontalSizingMode(hoveredComponent, hmode)]
             disabled: (vmode is 'c' and hmode is 'c')
             visible: xenable[RESIZING_HANDLES[index][1]] and yenable[RESIZING_HANDLES[index][0]] and (controlsOutside or index isnt 0)
+            if index is 1 and not topCenterHandleVisible
+                visible: no
             $(handle).css({ left: pos.x, top: pos.y }).alterClass('disabled', disabled).alterClass('hidden', not visible)
         $('#hover-panel .duplicate-handle').alterClass('disabled', hoveredComponent.type.singleInstance)
         $('#hover-panel').alterClass('controls-outside', controlsOutside)
-        $('.link-handle').alterClass('disabled', not hoveredComponent.type.canHazLink)
-        $('.unlink-handle').alterClass('disabled', not (hoveredComponent.type.canHazLink and hoveredComponent.action?))
+        $('.link-handle').alterClass('disabled', not linkButtonVisible)
+        $('.unlink-handle').alterClass('disabled', not unlinkButtonVisible)
         if hoveredComponent.action?
             renderActionOverlay(hoveredComponent)
         else
