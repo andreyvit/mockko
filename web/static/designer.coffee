@@ -311,9 +311,13 @@ jQuery ($) ->
             unless group of pending
                 pending[group]: []
                 serverMode.loadImageGroup group, (info) ->
-                    _updateGroup group, info['images']
-                    for [image, effect, callback] in pending[group]
-                        _returnImageUrl image, effect, callback
+                    if info
+                        _updateGroup group, info['images']
+                        for [image, effect, callback] in pending[group]
+                            _returnImageUrl image, effect, callback
+                    else
+                        for [image, effect, callback] in pending[group]
+                            callback null
                     delete pending[group]
 
     getImageUrl: (image, effect, callback) ->
@@ -1371,7 +1375,7 @@ jQuery ($) ->
             $('#design-screen').show()
             loadApplication ser.internalizeApplication(app), null
             switchToDesign()
-            
+
         console.log "done"
 
     $('#welcome-continue-link').click ->

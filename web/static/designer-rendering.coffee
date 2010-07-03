@@ -94,7 +94,8 @@ textNodeOfComponent: (c, cn) ->
     if c.type.textSelector then $(c.type.textSelector, cn)[0] else cn
 
 renderImageDefault: (comp, node, imageUrl) ->
-    $(imageNodeOfComponent comp, node).css { backgroundImage: "url(${imageUrl})"}
+    if imageUrl
+        $(imageNodeOfComponent comp, node).css { backgroundImage: "url(${imageUrl})"}
 
 renderComponentStyle: (c, cn) ->
     cn ||= c.node

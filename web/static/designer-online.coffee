@@ -130,7 +130,8 @@ processPossibleErrorResponse: (failedActivity, response) ->
                 return if processPossibleErrorResponse(failedActivity, r)
                 callback(r)
             error: (xhr, status, e) ->
-                handleHttpError failedActivity, status, e
+                console.log "Unable to load image group ${imageGroupId}: ${status}"
+                callback null
         }
 
     deleteApplication: (appId, callback) ->
