@@ -172,16 +172,16 @@ ${OPT_DIR}/designer.combined.js: ${JS_SRC}
 
 # Run
 
-run:
+run: all
 	dev_appserver.py ${DEVAPPSERVER_ARGS} web
 
-run-opt: optimize
+run-opt: all optimize
 	dev_appserver.py ${DEVAPPSERVER_ARGS} web
 
 # Deployment
 
 deploy: VER_ARG=$(if $(APP_VERSION),-V $(APP_VERSION))
-deploy: optimize deploy-$(shell id -un)
+deploy: all optimize deploy-$(shell id -un)
 
 deploy-andreyvit:
 	appcfg.py $(VER_ARG) -e andreyvit@gmail.com --passin update web < ~/.andreyvit_passwd
