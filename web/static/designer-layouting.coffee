@@ -50,6 +50,12 @@
 }: Mockko.model
 
 
+DUPLICATE_COMPONENT_OFFSET_X: 5
+DUPLICATE_COMPONENT_OFFSET_Y: 5
+DUPLICATE_COMPONENT_MIN_EDGE_INSET_X: 5
+DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y: 5
+
+
 class Layout
     constructor: (screen, target) ->
         @screen: screen
