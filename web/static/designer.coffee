@@ -321,7 +321,9 @@ jQuery ($) ->
                     delete pending[group]
 
     getImageUrl: (image, effect, callback) ->
-        throw "image group not loaded and not loading: ${image.group}" unless image.group of groups or image.group of pending
+        unless image.group of groups or image.group of pending
+            console.error "getImageUrl - image group not loaded and not loading: ${image.group}"
+            return
         if image.group of pending
             pending[image.group].push([image, effect, callback])
         else
