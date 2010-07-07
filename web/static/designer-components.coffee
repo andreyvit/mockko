@@ -893,7 +893,6 @@ Pins.bottom.dependantPins.push Pins.secondBottom
             }
             {
                 type: 'roundrect-row'
-                backgroundSelector: '.inner'
                 children: [
                     {
                         type: 'text'
@@ -906,6 +905,93 @@ Pins.bottom.dependantPins.push Pins.secondBottom
                             fontBold: yes
                             textColor: '#000'
                         }
+                    }
+                ]
+            }
+            {
+                type: 'roundrect-row'
+                children: [
+                    {
+                        type: 'text'
+                        styleName: 'row-roundrect-white'
+                        text: "phone"
+                        location: { x: 54, y: 13 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 17
+                            fontBold: no
+                            textColor: '#0000bf'
+                        }
+                    }
+                    {
+                        type: 'text'
+                        styleName: 'row-roundrect-white'
+                        text: "+1 (234) 567 89 10"
+                        location: { x: 107, y: 13 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 17
+                            fontBold: yes
+                            textColor: '#000000'
+                        }
+                    }
+                ]
+            }
+            {
+                type: 'roundrect-row'
+                children: [
+                    {
+                        type: 'text'
+                        styleName: 'row-roundrect-white'
+                        text: "Airplane Mode"
+                        location: { x: 20, y: 13 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 17
+                            fontBold: yes
+                            textColor: '#000000'
+                        }
+                    }
+                    {
+                        type: 'switch'
+                        styleName: 'row-roundrect-white'
+                        text: "+1 (234) 567 89 10"
+                        location: { x: 206, y: 8.5 }
+                        size: { width: null, height: null }
+                        state: on
+                    }
+                ]
+            }
+            {
+                type: 'roundrect-row'
+                children: [
+                    {
+                        type: 'text'
+                        text: "Show Preview"
+                        location: { x: 20, y: 12 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 17
+                            fontBold: yes
+                            textColor: '#000000'
+                        }
+                    }
+                    {
+                        type: 'text'
+                        text: "2 lines"
+                        location: { x: 233, y: 12 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 17
+                            fontBold: no
+                            textColor: '#000000'
+                        }
+                    }
+                    {
+                        type: 'image'
+                        location: { x: 292, y: 15 }
+                        size: { w: 8, h: 14 }
+                        image: { group: "iphone-accessories", name: "10-disclosure-indicator.png" }
                     }
                 ]
             }
