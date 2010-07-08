@@ -818,6 +818,178 @@ Pins.bottom.dependantPins.push Pins.secondBottom
             }
             {
                 type: 'plain-row'
+                style: {
+                    background: 'white'
+                }
+                children: [
+                    {
+                        type: 'text'
+                        text: "John Appleseed"
+                        location: { x: 8, y: 10.5 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 20
+                            fontBold: yes
+                            textColor: '#000000'
+                        }
+                    }
+                    {
+                        type: 'text'
+                        text: "mobile"
+                        location: { x: 237, y: 13 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 16
+                            fontBold: no
+                            textColor: '#666666'
+                        }
+                    }
+                    {
+                        type: 'image'
+                        location: { x: 295, y: 9 }
+                        size: { w: 25, h: 26 }
+                        image: { group: "iphone-accessories", name: "20-detail-disclosure-button.png" }
+                    }
+                ]
+            }
+            {
+                type: 'plain-row'
+                style: {
+                    background: 'white'
+                }
+                children: [
+                    {
+                        type: 'text'
+                        text: "John Appleseed"
+                        location: { x: 8, y: 5 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 17
+                            fontBold: yes
+                            textColor: '#000000'
+                        }
+                    }
+                    {
+                        type: 'text'
+                        text: "mobile"
+                        location: { x: 8, y: 25 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 12
+                            fontBold: no
+                            textColor: '#666666'
+                        }
+                    }
+                    {
+                        type: 'text'
+                        text: "Yesterday"
+                        location: { x: 221, y: 14 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 14
+                            fontBold: no
+                            textColor: '#007fff'
+                        }
+                    }
+                    {
+                        type: 'image'
+                        location: { x: 295, y: 9 }
+                        size: { w: 25, h: 26 }
+                        image: { group: "iphone-accessories", name: "20-detail-disclosure-button.png" }
+                    }
+                ]
+            }
+            {
+                type: 'plain-row'
+                style: {
+                    background: 'white'
+                }
+                children: [
+                    {
+                        type: 'text'
+                        text: "Two Of Us"
+                        location: { x: 8, y: 5 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 17
+                            fontBold: yes
+                            textColor: '#000000'
+                        }
+                    }
+                    {
+                        type: 'text'
+                        text: "The Beatles"
+                        location: { x: 8, y: 25 }
+                        size: { width: null, height: null }
+                        style: {
+                            fontSize: 12
+                            fontBold: no
+                            textColor: '#666666'
+                        }
+                    }
+                ]
+            }
+            {
+                type: 'plain-row'
+                size: { h: 79 }
+                style: {
+                    background: 'white'
+                }
+                children: [
+                    {
+                        type: "image"
+                        location: { x: 0, y: 0 }
+                        size: { w: 73, h: 78 }
+                        style: {
+                            imageEffect: "iphone-tabbar-active"
+                        }
+                        image: { group: "glyphish-icons", name: "16-line-chart.png" }
+                    }
+                    {
+                        type: "text"
+                        text: "David Pogue",
+                        location: { x: 90, y: 13 }
+                        size: { w: null, h: null }
+                        style: {
+                            fontSize: 17
+                            textColor: "#000000"
+                            fontBold: true
+                        }
+                    }
+                    {
+                        type: "text"
+                        text: "When it comes to tech, sim…"
+                        location: { x: 90, y: 35 }
+                        style: {
+                            fontSize: 14
+                            textColor: "#000000"
+                            fontBold: true
+                        }
+                    }
+                    {
+                        type: "text"
+                        text: "21:57"
+                        location: { x: 90, y: 53 }
+                        style: {
+                            fontSize: 14
+                            textColor: "#7f7f7f"
+                            fontBold: true
+                        }
+                    }
+                    {
+                        type: "text"
+                        text: "6/27/06"
+                        location: { x: 257, y: 53 }
+                        style: {
+                            fontSize: 14
+                            textColor: "#7f7f7f"
+                            fontBold: true
+                        }
+                    }
+                ]
+            }
+            {
+                type: 'plain-row'
                 styleName: 'dark'
                 label: 'Dark Edge-To-Edge'
                 style: {
@@ -857,6 +1029,122 @@ Pins.bottom.dependantPins.push Pins.secondBottom
                             fontBold: yes
                             textColor: '#fff'
                             textShadowStyleName: 'dark-above'
+                        }
+                    }
+                ]
+            }
+            {
+                type: "plain-row"
+                size: {
+                    h: 54
+                }
+                styleName: 'metal'
+                style: {
+                    background: 'metal'
+                }
+                children: [
+                    {
+                        type: 'image'
+                        location: {
+                            x: 6
+                            y: 2.5
+                        }
+                        size: {
+                            w: 51
+                            h: 46
+                        }
+                        style: {
+                            imageEffect: "iphone-tabbar-active"
+                        }
+                        image: {
+                            group: "glyphish-icons"
+                            name: "21-skull.png"
+                        }
+                    }
+                    {
+                        type: 'text'
+                        location: {
+                            x: 57
+                            y: 5.5
+                        }
+                        style: {
+                            fontSize: 11
+                            textColor: "#7f7f7f"
+                            fontBold: true
+                            textShadowStyleName: "light-below"
+                        }
+                        text: "Clickgamer.com"
+                    }
+                    {
+                        type: 'text'
+                        location: {
+                            x: 57
+                            y: 18.5
+                        }
+                        style: {
+                            fontSize: 14
+                            textColor: "#000000"
+                            fontBold: true
+                            textShadowStyleName: "light-below"
+                        }
+                        text: "Angry Birds"
+                    }
+                    {
+                        type: 'text'
+                        location: {
+                            x: 95
+                            y: 35.5
+                        }
+                        style: {
+                            fontSize: 11
+                            textColor: "#7f7f7f"
+                            fontBold: false
+                            textShadowStyleName: "light-below"
+                        }
+                        text: "194 Ratings"
+                    }
+                    {
+                        type: 'text'
+                        location: {
+                            x: 57
+                            y: 35.5
+                        }
+                        style: {
+                            fontSize: 11
+                            textColor: "#7f7f7f"
+                            fontBold: true
+                            textShadowStyleName: "light-below"
+                        }
+                        text: "* * * * *"
+                    }
+                    {
+                        type: 'text'
+                        location: {
+                            x: 267
+                            y: 19
+                        }
+                        style: {
+                            fontSize: 11
+                            textColor: "#7f7f7f"
+                            fontBold: true
+                            fontItalic: false
+                            textShadowStyleName: "light-below"
+                        }
+                        text: "$0.99"
+                    }
+                    {
+                        type: 'image'
+                        location: {
+                            x: 304
+                            y: 17.5
+                        }
+                        size: {
+                            w: 8
+                            h: 14
+                        }
+                        image: {
+                            group: "iphone-accessories"
+                            name: "10-disclosure-indicator.png"
                         }
                     }
                 ]
