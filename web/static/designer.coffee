@@ -1286,8 +1286,8 @@ jQuery ($) ->
 
     $('#profile-submit-link').click ->
         serverMode.setUserInfo {
-            'full-name': $('#profile-full-name')[0].value
-            'newsletter': $('#profile-newsletter')[0].checked
+            'full-name': $('#profile-full-name').val()
+            'newsletter': $('#profile-newsletter').checked()
         }
         $('#profile-screen').fadeOut(100)
         false
