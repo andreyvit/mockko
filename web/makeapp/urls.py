@@ -3,7 +3,7 @@ from tipfy import Rule
 def get_rules():
     return [
         Rule('/', endpoint='home', methods=['GET'], handler='makeapp.handlers:HomeHandler'),
-        Rule('/user-info.json', endpoint='api/get-user-data', methods=['GET'], handler='makeapp.handlers:GetUserDataHandler'),
+        Rule('/user/', endpoint='api/get-user-data', methods=['GET'], handler='makeapp.handlers:GetUserDataHandler'),
 
         Rule('/apps/', endpoint='api/get-app-list', methods=['GET'], handler='makeapp.handlers:GetAppListHandler'),
         Rule('/R<int:app_id>/', endpoint='api/run-app', methods=['GET'], handler='makeapp.handlers:RunAppHandler'),

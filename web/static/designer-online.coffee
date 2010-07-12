@@ -37,7 +37,7 @@ processPossibleErrorResponse: (failedActivity, response) ->
 
     getUserInfo: (callback) ->
         $.ajax {
-            url: '/user-info.json'
+            url: '/user/'
             dataType: 'json'
             success: (userData) ->
                 userData['status']: 'online'
