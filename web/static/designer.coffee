@@ -1278,10 +1278,10 @@ jQuery ($) ->
         console.log $('#profile-full-name'), $('#profile-newsletter')
 
     showUserProfileScreen: ->
-        $('#profile-screen').fadeIn()
+        $('#profile-screen').fadeIn(100)
 
     $('#profile-close-link').click ->
-        $('#profile-screen').fadeOut()
+        $('#profile-screen').fadeOut(100)
         false
 
     $('#profile-submit-link').click ->
@@ -1289,7 +1289,7 @@ jQuery ($) ->
             'full-name': $('#profile-full-name')[0].value
             'newsletter': $('#profile-newsletter')[0].checked
         }
-        $('#profile-screen').fadeOut()
+        $('#profile-screen').fadeOut(100)
         false
 
     $('.profile-button').click ->
