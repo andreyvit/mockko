@@ -10,7 +10,7 @@ class Account(db.Model):
 
     profile_created = db.BooleanProperty(required=True, default=False)
     newsletter = db.BooleanProperty()
-    full_name = db.BooleanProperty()
+    full_name = db.StringProperty()
 
 class App(db.Model):
     name = db.StringProperty(required=True)

@@ -47,6 +47,19 @@ processPossibleErrorResponse: (failedActivity, response) ->
                 # TODO ERROR HANDLING!
         }
 
+    setUserInfo: (userInfo) ->
+        failedActivity: "Failed to save user profile"
+        $.ajax {
+            url: '/user/'
+            type: 'POST'
+            data: JSON.stringify(userInfo)
+            contentType: 'application/json'
+            success: (r) ->
+                return if processPossibleErrorResponse(failedActivity, r)
+            error: (xhr, status, e) ->
+                handleHttpError failedActivity, status, e
+        }
+
     startDesigner: (userData, switchToDashboard, startDesignerWithSampleApp) ->
         switchToDashboard()
 

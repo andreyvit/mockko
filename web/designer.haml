@@ -59,6 +59,7 @@
           %a#new-app-button(href="#") New Application
         .right
           %a#logout-button.logout-button(href="#") Sign Out
+          %a.profile-button(href="#") User profile
         %h1
           My Applications
           .mockko-logo-titlebar
@@ -98,6 +99,7 @@
           %a#logout-button.logout-button(href="#") Sign Out
           / %a#share-button(href="#") Share
           %a#run-button(href="#") Run
+          %a.profile-button(href="#") User profile
         %h1#app-name
           %span#app-name-content My Great App
           .mockko-logo-titlebar
@@ -192,35 +194,17 @@
 
     #welcome-screen.screen
       #welcome-popup
-        %h1 Here's our approach to mobile application design.
-        
+        %h1 User profile
         %p
-          1. Super-fast pixel-perfect design with <b>every popular style built-in</b>.
-          You don't spend hours moving pixels around because Mockko knows all about:
-          %small
-            tinted navigation bars, App Store-style listings, plastic lists with full-height images,
-            Stopwatch colored buttons, Contacts colored buttons, Tweetie reload controls,
-            customized maps, tab bar icon effects, and 72 more things.
-          
+          Full name
+          %input#profile-full-name(type="text" size="40")
         %p
-          2. A <b>fully working prototype</b> is a click away: run it on a real device or in your browser.
-          Share one with your colleagues, clients and bosses, they won't even need an account.
-        
-        %p
-          3. Don't throw your prototype away, export an <b>Xcode project</b> or an <b>HTML5 web application</b> instead.
-          
-        %p
-          Mockko only targets the iPhone for now, with iPad and Android support coming soon.
-      
-        
+          Newsletter subscription
+          %input#profile-newsletter(type="checkbox" value="off")
         .buttons
-          %a#welcome-login-link.login-button(href='#') Sign In
+          %a#welcome-submit-link(href='#') Update profile info
           or
-          %a#welcome-continue-link(href='#') Try Mockko anonymously
-        .unsupported
-          Sorry, Mockko requires Safari or Google Chrome.
-          %br
-          Downloadable browser-independent version is coming soon.
+          %a#welcome-continue-link(href='#') do it later
 
     #run-screen.screen
       #run-stop-button Back to Designer

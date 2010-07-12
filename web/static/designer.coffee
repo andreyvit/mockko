@@ -1268,6 +1268,32 @@ jQuery ($) ->
         shouldProcessPaste: -> !activeMode()?.isInsideTextField
     }
 
+    #######
+    # Profile
+
+    updateUserProfile: (userInfo) ->
+        $('#profile-full-name').val(userInfo['full-name'])
+        $('#profile-newsletter').checked(userInfo['newsletter'])
+
+        console.log $('#profile-full-name'), $('#profile-newsletter')
+
+    showUserProfileScreen: ->
+        $('#welcome-screen').fadeIn()
+
+    $('#welcome-continue-link').click ->
+        $('#welcome-screen').fadeOut()
+        false
+
+    $('#welcome-submit-link').click ->
+        serverMode.setUserInfo {
+            'full-name': $('#profile-full-name')[0].value
+            'newsletter': $('#profile-newsletter')[0].checked
+        }
+        $('#welcome-screen').fadeOut()
+        false
+
+    $('.profile-button').click ->
+        showUserProfileScreen()
 
     ##########################################################################################################
 
@@ -1384,10 +1410,6 @@ jQuery ($) ->
 
         console.log "done"
 
-    $('#welcome-continue-link').click ->
-        $('#welcome-screen').fadeOut()
-        false
-
     adjustDeviceImagePosition: ->
         deviceOffset: $('#device-panel').offset()
         contentOffset: $('#design-area').offset()
@@ -1440,5 +1462,6 @@ jQuery ($) ->
 
     serverMode.getUserInfo (userInfo) ->
         loadDesigner userInfo
-        if not userInfo['profile_created']
-            $('#welcome-screen').show()
+        updateUserProfile userInfo
+        if not userInfo['profile-created']
+            showUserProfileScreen

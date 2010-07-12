@@ -75,10 +75,21 @@ class GetUserDataHandler(RequestHandler):
     def get(self, user, account):
         return render_json_response({
             'logout_url': users.create_logout_url(url_for('home')),
-            'profile_created': account.profile_created,
+            'profile-created': account.profile_created,
             'newsletter': account.newsletter,
-            'full_name': account.full_name
+            'full-name': account.full_name
         })
+
+class SetUserDataHandler(RequestHandler):
+    @auth
+    def post(self, user, account):
+        user_info = json.loads(request.data)
+        account.profile_created = True
+        account.newsletter = user_info['newsletter']
+        account.full_name = user_info['full-name']
+        account.put()
+
+        return render_json_response({ 'status': 'ok' })
 
 class GetAppListHandler(RequestHandler):
 
