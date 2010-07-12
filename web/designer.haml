@@ -192,8 +192,8 @@
               #chosen-action-label (no action set)
     #color-picker
 
-    #welcome-screen.screen
-      #welcome-popup
+    #profile-screen.screen
+      #profile-popup
         %h1 User profile
         %p
           Full name
@@ -202,9 +202,9 @@
           Newsletter subscription
           %input#profile-newsletter(type="checkbox" value="off")
         .buttons
-          %a#welcome-submit-link(href='#') Update profile info
+          %a#profile-submit-link(href='#') Update profile info
           or
-          %a#welcome-continue-link(href='#') do it later
+          %a#profile-close-link(href='#') do it later
 
     #run-screen.screen
       #run-stop-button Back to Designer

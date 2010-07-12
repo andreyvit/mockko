@@ -1278,18 +1278,18 @@ jQuery ($) ->
         console.log $('#profile-full-name'), $('#profile-newsletter')
 
     showUserProfileScreen: ->
-        $('#welcome-screen').fadeIn()
+        $('#profile-screen').fadeIn()
 
-    $('#welcome-continue-link').click ->
-        $('#welcome-screen').fadeOut()
+    $('#profile-close-link').click ->
+        $('#profile-screen').fadeOut()
         false
 
-    $('#welcome-submit-link').click ->
+    $('#profile-submit-link').click ->
         serverMode.setUserInfo {
             'full-name': $('#profile-full-name')[0].value
             'newsletter': $('#profile-newsletter')[0].checked
         }
-        $('#welcome-screen').fadeOut()
+        $('#profile-screen').fadeOut()
         false
 
     $('.profile-button').click ->
