@@ -1350,6 +1350,10 @@ jQuery ($) ->
     switchToDesign: ->
         $(".screen").hide()
         $('#design-screen').show()
+
+        # Palette initialization need to be performed after displaying
+        # #design-screen in order to make DOM calculate proper sizes of
+        # elements, otherwise components will be displayed improperly.
         initPalette()
         deactivateMode() # if any
         adjustDeviceImagePosition()
