@@ -71,18 +71,14 @@ def auth(func):
 
 class GetUserDataHandler(RequestHandler):
 
-    def get(self, **kwargs):
-        user = users.get_current_user()
-        if user is None:
-            return render_json_response({
-                'status': 'anonymous',
-                'login_url': users.create_login_url('/'),
-            })
-        else:
-            return render_json_response({
-                'status': 'authenticated',
-                'logout_url': users.create_logout_url(url_for('home')),
-            })
+    @auth
+    def get(self, user, account):
+        return render_json_response({
+            'logout_url': users.create_logout_url(url_for('home')),
+            'profile_created': account.profile_created,
+            'newsletter': account.newsletter,
+            'full_name': account.full_name
+        })
 
 class GetAppListHandler(RequestHandler):
 

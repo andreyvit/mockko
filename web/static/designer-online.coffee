@@ -39,7 +39,9 @@ processPossibleErrorResponse: (failedActivity, response) ->
         $.ajax {
             url: '/user-info.json'
             dataType: 'json'
-            success: (userData) -> callback userData
+            success: (userData) ->
+                userData['status']: 'online'
+                callback userData
             error: (xhr, status, e) ->
                 alert "Failed to load the application: ${status} - ${e}"
                 # TODO ERROR HANDLING!

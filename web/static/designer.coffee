@@ -1440,3 +1440,5 @@ jQuery ($) ->
 
     serverMode.getUserInfo (userInfo) ->
         loadDesigner userInfo
+        if not userInfo['profile_created']
+            $('#welcome-screen').show()

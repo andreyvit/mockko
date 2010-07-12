@@ -8,6 +8,10 @@ class Account(db.Model):
     created_at = db.DateTimeProperty(auto_now_add=True)
     updated_at = db.DateTimeProperty(auto_now=True)
 
+    profile_created = db.BooleanProperty(required=True, default=False)
+    newsletter = db.BooleanProperty()
+    full_name = db.BooleanProperty()
+
 class App(db.Model):
     name = db.StringProperty(required=True)
     body = db.TextProperty()
