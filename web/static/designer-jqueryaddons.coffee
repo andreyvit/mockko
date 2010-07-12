@@ -347,4 +347,4 @@ $.fn.checked: (v) ->
         else
             this.removeAttr('checked')
     else
-        this.checked
+        this.attr('checked')
