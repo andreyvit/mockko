@@ -339,3 +339,12 @@ window.domTemplate: (->
             $(this).removeClass('template').remove()
     domTemplate: (id) -> domTemplates[id].cloneNode(true)
 )()
+
+$.fn.checked: (v) ->
+    if v?
+        if v
+            this.attr('checked', 'checked')
+        else
+            this.removeAttr('checked')
+    else
+        this.checked
