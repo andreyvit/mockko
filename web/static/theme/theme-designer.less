@@ -285,8 +285,6 @@
     overflow-y: scroll;
     
     .group {
-        float: left;
-        
         .header {
             margin: 10px 5px 8px 5px;
             font-size: 12px;
@@ -299,7 +297,7 @@
     }
     
     .items {
-        float: left;
+        display: block;
         @scale: 1;
         width: 320px / @scale;
         -webkit-transform-origin-x: 0%;
@@ -323,7 +321,8 @@
     
     .item {
         position: relative;
-        float: left;
+        display: inline-block;
+        vertical-align: middle;
         margin-left: 5px;
         margin-right: 5px;
         margin-bottom: 10px;
