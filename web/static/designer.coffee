@@ -1326,6 +1326,16 @@ jQuery ($) ->
         showUserProfileScreen()
 
     ##########################################################################################################
+    ##  Feedback Button
+
+    $('#feedback').bind {
+        'click':     -> UserVoice.Popin.show(uservoiceOptions)
+        'mousedown': -> $(this).addClass('active')
+        'mouseup':   -> $(this).removeClass('active')
+        'mouseout':  -> $(this).removeClass('active')
+    }
+
+    ##########################################################################################################
 
     initComponentTypes: ->
         for typeName, ct of Types
