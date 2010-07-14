@@ -61,7 +61,7 @@
           %a#logout-button.logout-button(href="#") Sign Out
           %a.profile-button(href="#") User Profile
         %h1
-          My Applications
+          Dashboard
           .mockko-logo-titlebar
 
       /
@@ -90,16 +90,16 @@
       .toolbar
         .left
           / %a#login-button.login-button(href="#") Sign In To Continue
-          %a#dashboard-button(href="#myapps") My Applications
+          %a#dashboard-button(href="#myapps") Dashboard
           %a#undo-button(href="#undo")
             #undo-hint
               %span Undo something...
             Undo
         .right
-          %a#logout-button.logout-button(href="#") Sign Out
+          / %a#logout-button.logout-button(href="#") Sign Out
           / %a#share-button(href="#") Share
           %a#run-button(href="#") Run
-          %a.profile-button(href="#") User Profile
+          / %a.profile-button(href="#") User Profile
         %h1#app-name
           %span#app-name-content My Great App
           .mockko-logo-titlebar
@@ -193,7 +193,7 @@
     #color-picker
 
     #profile-screen.screen
-      #profile-popup
+      %form#profile-popup
         %h1 Edit User Profile
         %p.field
           %label(for="profile-full-name") Full Name:
