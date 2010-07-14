@@ -724,6 +724,7 @@ jQuery ($) ->
 
     renderPaletteGroup: (ctg, permanent, itemRenderedCallback) ->
         group: $('<div />').addClass('group').appendTo($('#palette-container'))
+        ctg.node: group
         renderPaletteGroupContent ctg, group, itemRenderedCallback
         if not permanent
             group.addClass('transient-group')
@@ -762,9 +763,8 @@ jQuery ($) ->
                 item.imageEl.node: node
                 $(node).bindContextMenu '#custom-image-context-menu', item.imageEl
 
-    addCustomImagePlaceholder: ->
-        # FIXME: draw this placeholder in proper place
-        #$(customImagesPaletteCategory.itemsNode).append $("<div />", { className: 'customImagePlaceholder' })
+    addCustomImagePlaceholder: (node) ->
+        $(node).append $("<div />", { className: 'customImagePlaceholder' })
         $('#palette').scrollToBottom()
 
     paletteInitialized: no
@@ -1103,7 +1103,7 @@ jQuery ($) ->
             alert message
         filesRemaining: filesToUpload.length
         for file in filesToUpload
-            addCustomImagePlaceholder()
+            addCustomImagePlaceholder dropGroup.node
             uploadImage dropGroup, file, (err) ->
                 filesRemaining -= 1
                 if filesRemaining is 0
