@@ -1062,6 +1062,7 @@ jQuery ($) ->
             for group in groups
                 _updateGroup group['name'], group['images']
                 gg: {
+                    id: group['id']
                     name: group['name']
                     effect: group['effect']
                     writeable: group['writeable']

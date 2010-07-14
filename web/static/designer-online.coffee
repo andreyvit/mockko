@@ -90,11 +90,11 @@ processPossibleErrorResponse: (failedActivity, response) ->
                 handleHttpError failedActivity, status, e
         }
 
-    uploadImage: (groupName, fileName, file, callback) ->
+    uploadImage: (group, fileName, file, callback) ->
         failedActivity: "Could not upload your image"
         $.ajax {
             type: 'POST'
-            url: '/images/${encodeURIComponent groupName}'
+            url: "/images/${encodeURIComponent group['id']}"
             data: file
             processData: no
             beforeSend: (xhr) -> xhr.setRequestHeader("X-File-Name", fileName)
