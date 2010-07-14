@@ -1077,6 +1077,7 @@ jQuery ($) ->
             updateCustomImagesPalette()
 
     # Looks up group to use to drop images to after drag-and-drop
+    # FIXME: use actual group under cursor, not first writeable.
     findImageDropGroup: ->
         for groupId, groupInfo of customImages
             if groupInfo.writeable
