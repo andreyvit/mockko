@@ -59,7 +59,7 @@
           %a#new-app-button(href="#") New Application
         .right
           %a#logout-button.logout-button(href="#") Sign Out
-          %a.profile-button(href="#") User profile
+          %a.profile-button(href="#") User Profile
         %h1
           My Applications
           .mockko-logo-titlebar
@@ -99,7 +99,7 @@
           %a#logout-button.logout-button(href="#") Sign Out
           / %a#share-button(href="#") Share
           %a#run-button(href="#") Run
-          %a.profile-button(href="#") User profile
+          %a.profile-button(href="#") User Profile
         %h1#app-name
           %span#app-name-content My Great App
           .mockko-logo-titlebar
@@ -194,17 +194,18 @@
 
     #profile-screen.screen
       #profile-popup
-        %h1 User profile
-        %p
-          Full name
+        %h1 Edit User Profile
+        %p.field
+          %label(for="profile-full-name") Full Name:
           %input#profile-full-name(type="text" size="40")
-        %p
-          Newsletter subscription
-          %input#profile-newsletter(type="checkbox" value="off")
+        %p.newsletter
+          %input#profile-newsletter(type="checkbox")
+          %label(for="profile-newsletter")
+            Subscribe to Newsletter
+            %span (2x/month, new features & tips)
         .buttons
-          %a#profile-submit-link(href='#') Update profile info
-          or
-          %a#profile-close-link(href='#') do it later
+          %a#profile-close-link.cancel(href='#') Cancel
+          %a#profile-submit-link.save(href='#') Save
 
     #run-screen.screen
       #run-stop-button Back to Designer
