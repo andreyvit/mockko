@@ -740,7 +740,7 @@ jQuery ($) ->
         else
           { w: maxSize.w; h: imageSize.h * ratio.x }
 
-    updateCustomImagesPalette: ->
+    updateImagesPalette: ->
         $('.transient-group').remove()
         for group_id, group of imageGroups
             group.isImageGroup: yes
@@ -774,7 +774,7 @@ jQuery ($) ->
 
         for ctg in Mockko.paletteDefinition
             renderPaletteGroup ctg, true
-        updateCustomImagesPalette()
+        updateImagesPalette()
 
 
     ##########################################################################################################
@@ -1054,10 +1054,10 @@ jQuery ($) ->
     uploadImage: (group, file, callback) ->
         console.log "Uploading ${file.fileName} of size ${file.fileSize}"
         serverMode.uploadImage group, file.fileName, file, (err) ->
-            updateCustomImages() unless err
+            updateImages() unless err
             callback(err)
 
-    updateCustomImages: ->
+    updateImages: ->
         serverMode.loadImages (groups) ->
             for group in groups
                 _updateGroup group['name'], group['images']
@@ -1074,7 +1074,7 @@ jQuery ($) ->
                     group_id: group['id']
                 } for img in group['images'])
                 imageGroups[group['id']]: gg
-            updateCustomImagesPalette()
+            updateImagesPalette()
 
     # Looks up group to use to drop images to after drag-and-drop
     # FIXME: use actual group under cursor, not first writeable.
@@ -1412,7 +1412,7 @@ jQuery ($) ->
         initPalette()
         deactivateMode() # if any
         adjustDeviceImagePosition()
-        updateCustomImages()
+        updateImages()
 
     switchToDashboard: ->
         $(".screen").hide()
