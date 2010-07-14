@@ -1286,7 +1286,10 @@ jQuery ($) ->
         $('#profile-screen').fadeOut(100)
         false
 
-    $('#profile-submit-link').click ->
+    $('#profile-submit-link').click -> submitProfileForm()
+    $('#profile-popup').submit (e) -> e.preventDefault(); submitProfileForm()
+
+    submitProfileForm: ->
         serverMode.setUserInfo {
             'full-name': $('#profile-full-name').val()
             'newsletter': $('#profile-newsletter').checked()
@@ -1466,4 +1469,4 @@ jQuery ($) ->
         loadDesigner userInfo
         updateUserProfile userInfo
         if not userInfo['profile-created']
-            showUserProfileScreen
+            showUserProfileScreen()

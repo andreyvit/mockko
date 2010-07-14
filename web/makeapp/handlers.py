@@ -50,7 +50,7 @@ def create_account(user):
     """
     This function creates account for new user
     """
-    account = Account(user=user)
+    account = Account(user=user, newsletter=True)
     account.put()
     ig = ImageGroup(name='Custom Images', owner=account, priority=0)
     ig.save()
