@@ -684,7 +684,7 @@ jQuery ($) ->
     ##########################################################################################################
     ##  palette
 
-    customImages: {}
+    imageGroups: {}
 
     bindPaletteItem: (item, compTemplate) ->
         $(item).mousedown (e) ->
@@ -742,7 +742,7 @@ jQuery ($) ->
 
     updateCustomImagesPalette: ->
         $('.transient-group').remove()
-        for group_id, group of customImages
+        for group_id, group of imageGroups
             group.isImageGroup: yes
             group.items: []
             for image in group.images
@@ -1073,13 +1073,13 @@ jQuery ($) ->
                     fileName: img['fileName']
                     group_id: group['id']
                 } for img in group['images'])
-                customImages[group['id']]: gg
+                imageGroups[group['id']]: gg
             updateCustomImagesPalette()
 
     # Looks up group to use to drop images to after drag-and-drop
     # FIXME: use actual group under cursor, not first writeable.
     findImageDropGroup: ->
-        for groupId, groupInfo of customImages
+        for groupId, groupInfo of imageGroups
             if groupInfo.writeable
                 return groupId
 
