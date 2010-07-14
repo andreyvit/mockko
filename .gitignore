@@ -13,3 +13,4 @@
 /web/webios/webios/webios-*.js
 .*.sum
 .dev_appserver.datastore
+.*.d
