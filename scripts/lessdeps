@@ -1,0 +1,22 @@
+#!/usr/bin/python
+from __future__ import with_statement
+import sys, re, os.path
+
+IMPORT_RE = re.compile('^\s*\@import\s+"(.*)";')
+
+def generate_deps(filename):
+    d, b = os.path.split(filename)
+    outfile = d + os.path.sep + '.' + b + '.d'
+
+    deps = []
+    with open(filename, 'r') as ifh:
+        for line in ifh:
+            r = IMPORT_RE.match(line)
+            if r:
+                deps += [r.group(1)]
+    with open(outfile, 'w') as ofh:
+        ofh.write('%s: %s\n' % (d + os.path.sep + b.replace('.less', '.css'), ' '.join([d + os.path.sep + s + '.less' for s in deps])))
+
+if __name__ == '__main__':
+    for arg in sys.argv[1:]:
+        generate_deps(arg)
