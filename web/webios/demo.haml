@@ -10,6 +10,7 @@
     %script(src="webios/webios-components.js" type="text/javascript" charset="utf-8")
   %body.black-opaque
     #screen-container
+
       #home-screen.screen
         .navbar
           %h1 Webios
@@ -31,6 +32,7 @@
             %li.link(href='#components-screen')
               .disclosure-indicator
               %p Components
+
       #transitions-screen.screen
         .navbar
           %a.back Back
@@ -49,21 +51,25 @@
             %li.link.slide-right(href='#slide-right-done-screen')
               .disclosure-indicator
               %p Slide Right
+
       #immediate-done-screen.screen
         .navbar
           %a.back.immediate(href='#transitions-screen') Back
           %h1 Immediate
         .content
+
       #slide-left-done-screen.screen
         .navbar
           %a.back(href='#transitions-screen') Back
           %h1 Slide Left
         .content
+
       #slide-right-done-screen.screen
         .navbar
           %a.back.immediate(href='#transitions-screen') Back
           %h1 Slide Right
         .content
+
       #components-screen.screen
         .navbar
           %a.back Back
@@ -73,6 +79,7 @@
             %li.link(href='#segmented-control-screen')
               .disclosure-indicator
               %p Segmented Control
+
       #segmented-control-screen.screen
         .navbar
           %a.back Back
