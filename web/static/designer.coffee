@@ -693,7 +693,20 @@ jQuery ($) ->
                 activateNewComponentDragging { x: e.pageX, y: e.pageY }, c, e
 
     renderPaletteGroupContent: (ctg, group, func) ->
+        # FIXME: sometimes `group` is `undefined` (at startup)
         $('<div />').addClass('header').html(ctg.name).appendTo(group)
+        if ctg.isImageGroup && ctg.writeable
+            $("<div />").addClass('image-upload-prompt').html("Click to upload an image (or just drop your image files here).").appendTo(group).click (e) ->
+                e.preventDefault()
+                fileField: $("<input />").attr({ 'type': 'file' })[0]
+                document.body.appendChild(fileField)
+                fileField.click()
+                $(fileField).change ->
+                    console.log "Got ${fileField.files.length} files"
+                    if fileField.files && fileField.files.length > 0
+                        uploadFiles fileField.files, ctg, (err) ->
+                            $(fileField).remove()
+
         ctg.itemsNode: items: $('<div />').addClass('items').appendTo(group)
         func ||= ((ct, n) ->)
         for compTemplate in ctg.items
@@ -729,6 +742,7 @@ jQuery ($) ->
     updateCustomImagesPalette: ->
         $('.transient-group').remove()
         for group_id, group of customImages
+            group.isImageGroup: yes
             group.items: []
             for image in group.images
                 i: {
@@ -1037,17 +1051,18 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Image Upload
 
-    uploadImage: (group, file) ->
+    uploadImage: (group, file, callback) ->
         console.log "Uploading ${file.fileName} of size ${file.fileSize}"
-        serverMode.uploadImage group, file.fileName, file, ->
-            updateCustomImages()
+        serverMode.uploadImage group, file.fileName, file, (err) ->
+            updateCustomImages() unless err
+            callback(err)
 
     updateCustomImages: ->
         serverMode.loadImages (groups) ->
             for group in groups
                 _updateGroup group['name'], group['images']
                 gg: {
-                    name: group['name'] + (if group['writeable'] then ' (drop your image files here)' else '')
+                    name: group['name']
                     effect: group['effect']
                     writeable: group['writeable']
                 }
@@ -1065,6 +1080,33 @@ jQuery ($) ->
             if groupInfo.writeable
                 return groupId
 
+    uploadFiles: (files, dropGroup, callback) ->
+        errors: []
+        filesToUpload: []
+        for file in files
+            if not file.fileName.match(/\.jpe?g$|\.png$|\.gif$/i)
+                ext: file.fileName.match(/\.[^.\/\\]+$/)[1]
+                errors.push { fileName: file.fileName, reason: "${ext || 'this'} format is not supported"}
+            else if file.fileSize > MAX_IMAGE_UPLOAD_SIZE
+                errors.push { fileName: file.fileName, reason: "file too big, maximum size is ${MAX_IMAGE_UPLOAD_SIZE_DESCR}"}
+            else
+                filesToUpload.push file
+        if errors.length > 0
+            message: switch errors.length
+                when 1 then "Cannot upload ${errors[0].fileName}: ${errors[0].reason}.\n"
+                else "Cannot upload the following files:\n" + ("\t* ${e.fileName} (${e.reason})\n" for e in errors)
+            if filesToUpload.length > 0
+                message += "\nThe following files WILL be uploaded: " + _(filesToUpload).map((f) -> f.fileName).join(", ")
+            alert message
+        filesRemaining: filesToUpload.length
+        for file in filesToUpload
+            addCustomImagePlaceholder()
+            uploadImage dropGroup, file, (err) ->
+                filesRemaining -= 1
+                if filesRemaining is 0
+                    callback() if callback
+        $('#palette').scrollToBottom()
+
     $('body').each ->
         this.ondragenter: (e) ->
             console.log "dragenter"
@@ -1080,28 +1122,7 @@ jQuery ($) ->
             return unless e.dataTransfer?.files?.length
             console.log "drop"
             e.preventDefault()
-            errors: []
-            filesToUpload: []
-            for file in e.dataTransfer.files
-                if not file.fileName.match(/\.jpg$|\.png$|\.gif$/)
-                    ext: file.fileName.match(/\.[^.\/\\]+$/)[1]
-                    errors.push { fileName: file.fileName, reason: "${ext || 'this'} format is not supported"}
-                else if file.fileSize > MAX_IMAGE_UPLOAD_SIZE
-                    errors.push { fileName: file.fileName, reason: "file too big, maximum size is ${MAX_IMAGE_UPLOAD_SIZE_DESCR}"}
-                else
-                    filesToUpload.push file
-            if errors.length > 0
-                message: switch errors.length
-                    when 1 then "Cannot upload ${errors[0].fileName}: ${errors[0].reason}.\n"
-                    else "Cannot upload the following files:\n" + ("\t* ${e.fileName} (${e.reason})\n" for e in errors)
-                if filesToUpload.length > 0
-                    message += "\nThe following files WILL be uploaded: " + _(filesToUpload).map((f) -> f.fileName).join(", ")
-                alert message
-            dropGroup: findImageDropGroup()
-            for file in filesToUpload
-                addCustomImagePlaceholder()
-                uploadImage dropGroup, file
-            $('#palette').scrollToBottom()
+            uploadFiles e.dataTransfer.files, findImageDropGroup()
 
     deleteImage: (image) ->
         serverMode.deleteImage image.id, ->

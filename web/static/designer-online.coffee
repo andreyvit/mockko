@@ -101,10 +101,13 @@ processPossibleErrorResponse: (failedActivity, response) ->
             contentType: 'application/octet-stream'
             dataType: 'json'
             success: (r) ->
-                return if processPossibleErrorResponse(failedActivity, r)
-                callback()
+                if processPossibleErrorResponse(failedActivity, r)
+                    callback(true)
+                else
+                    callback(false)
             error: (xhr, status, e) ->
                 handleHttpError failedActivity, status, e
+                callback(true)
         }
 
     loadImages: (callback) ->
