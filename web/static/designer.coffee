@@ -698,6 +698,9 @@ jQuery ($) ->
         func ||= ((ct, n) ->)
         for compTemplate in ctg.items
             c: cloneTemplateComponent(ser.externalizePaletteComponent(compTemplate))
+            traverse c, (comp) ->
+                if comp.image?
+                    ensureImageGroupLoaded comp.image.group
             n: renderPaletteComponentHierarchy c
             $(n).attr('title', compTemplate.label || c.type.label)
             $(n).addClass('item').appendTo(items)
@@ -726,7 +729,6 @@ jQuery ($) ->
     updateCustomImagesPalette: ->
         $('.transient-group').remove()
         for group_id, group of customImages
-            ensureImageGroupLoaded group_id
             group.items: []
             for image in group.images
                 i: {
