@@ -721,9 +721,9 @@ jQuery ($) ->
             bindPaletteItem n, ser.externalizePaletteComponent(compTemplate)
             func compTemplate, n
 
-    renderPaletteGroup: (ctg, permanent) ->
+    renderPaletteGroup: (ctg, permanent, itemRenderedCallback) ->
         group: $('<div />').addClass('group').appendTo($('#palette-container'))
-        renderPaletteGroupContent ctg, group
+        renderPaletteGroupContent ctg, group, itemRenderedCallback
         if not permanent
             group.addClass('transient-group')
         group
@@ -757,8 +757,7 @@ jQuery ($) ->
                     i.style = { imageEffect: group.effect }
                     i.size = imageSizeForImage i, group.effect
                 group.items.push(i)
-            renderPaletteGroup group, false
-            renderPaletteGroupContent group, group.element, (item, node) ->
+            renderPaletteGroup group, false, (item, node) ->
                 item.imageEl.node: node
                 $(node).bindContextMenu '#custom-image-context-menu', item.imageEl
 
