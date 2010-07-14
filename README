@@ -1,6 +1,7 @@
 == Prerequisites ==
 
 * GNU make
+* Python >= 2.5
 * ruby-haml
 * less.js
 * coffeescript [trunk]
