@@ -33,6 +33,8 @@ renderComponentPosition: (c, cn) ->
                 'x': c.abspos.x - ((c.parent?.dragpos && false || c.parent?.abspos)?.x || 0)
                 'y': c.abspos.y - ((c.parent?.dragpos && false || c.parent?.abspos)?.y || 0)
             }
+    if o: c.type.childrenOffset
+        relpos: { x: relpos.x + o.x, y: relpos.y + o.y }
     $(cn || c.node).css({
         left:   "${relpos.x}px"
         top:    "${relpos.y}px"
@@ -93,6 +95,14 @@ textNodeOfComponent: (c, cn) ->
     return null unless c.type.supportsText
     if c.type.textSelector then $(c.type.textSelector, cn)[0] else cn
 
+childrenNodeOfComponent: (c, cn) ->
+    throw "node is null" unless c
+    unless c.type
+        console.log c
+        throw "node type is null"
+    cn ||= c.node
+    if c.type.childrenSelector then $(c.type.childrenSelector, cn)[0] else cn
+
 renderImageDefault: (comp, node, imageUrl) ->
     if imageUrl
         $(imageNodeOfComponent comp, node).css { backgroundImage: "url(${imageUrl})"}
@@ -151,7 +161,7 @@ _renderComponentHierarchy: (c, storeFunc) ->
     n: storeFunc c, renderComponentNode(c)
     for child in c.children || []
         childNode: _renderComponentHierarchy(child, storeFunc)
-        $(n).append(childNode)
+        $(childrenNodeOfComponent c, n).append(childNode)
     n
 
 renderComponentHierarchy: (c, saveNodes, positionRoot) ->
@@ -171,7 +181,7 @@ renderComponentHierarchy: (c, saveNodes, positionRoot) ->
     renderComponentNode
     renderComponentSize, updateEffectiveSize, updateComponentTooltip
     renderComponentPosition
-    renderComponentStyle, textNodeOfComponent
+    renderComponentStyle, textNodeOfComponent, childrenNodeOfComponent
     renderComponentVisualProperties, renderComponentProperties
     renderComponentHierarchy
 }

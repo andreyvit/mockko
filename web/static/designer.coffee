@@ -41,7 +41,7 @@ jQuery ($) ->
         renderComponentNode
         renderComponentSize, updateEffectiveSize, updateComponentTooltip
         renderComponentPosition
-        renderComponentStyle, textNodeOfComponent
+        renderComponentStyle, textNodeOfComponent, childrenNodeOfComponent
         renderComponentVisualProperties, renderComponentProperties
         renderComponentHierarchy
     }: Mockko.renderer
@@ -133,10 +133,11 @@ jQuery ($) ->
     containerChildrenChanged: (container) ->
         sorted: _(container.children).sortBy (child) -> child.abspos.x
         if _(_(sorted).zip(container.children)).any((a, b) -> a isnt b)
-            for node in (n for n in container.node.childNodes)
-                container.node.removeChild node
+            childrenNode: childrenNodeOfComponent container
+            for node in (n for n in childrenNode.childNodes)
+                childrenNode.removeChild node
             for node in (child.node for child in sorted)
-                container.node.appendChild node
+                childrenNode.appendChild node
 
 
     ##########################################################################################################
@@ -216,7 +217,7 @@ jQuery ($) ->
 
         newComp: ser.internalizeComponent(ser.externalizeComponent(comp), comp.parent)
 
-        $(comp.parent.node).append renderInteractiveComponentHeirarchy newComp
+        $(childrenNodeOfComponent comp.parent).append renderInteractiveComponentHeirarchy newComp
         updateEffectiveSizesAndRelayoutHierarchy newComp
 
         effect: layouting.computeDuplicationEffect activeScreen, newComp, comp
@@ -477,7 +478,7 @@ jQuery ($) ->
 
                 if c.node.parentNode
                     c.node.parentNode.removeChild(c.node)
-                c.parent.node.appendChild(c.node)
+                (childrenNodeOfComponent c.parent).appendChild(c.node)
 
                 if c.dragsize
                     c.size: {
@@ -1262,7 +1263,7 @@ jQuery ($) ->
             for newComp in newComps
                 newComp.parent: targetCont
                 targetCont.children.push newComp
-                $(targetCont.node).append renderInteractiveComponentHeirarchy newComp
+                $(childrenNodeOfComponent targetCont).append renderInteractiveComponentHeirarchy newComp
                 updateEffectiveSizesAndRelayoutHierarchy newComp
 
                 effect: layouting.computeDuplicationEffect activeScreen, newComp

@@ -292,6 +292,8 @@ Pins.bottom.dependantPins.push Pins.secondBottom
             background: 'white'
         }
         backgroundSelector: '.inner'
+        childrenSelector: '.inner'
+        childrenOffset: { x: -10, y: 0 }  # compensate for .inner margins
     }
     'switch': {
         label: 'On/Off Switch'
