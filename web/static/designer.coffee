@@ -684,7 +684,7 @@ jQuery ($) ->
     ##########################################################################################################
     ##  palette
 
-    imageGroups: {}
+    imageGroups: []
 
     bindPaletteItem: (item, compTemplate) ->
         $(item).mousedown (e) ->
@@ -743,14 +743,14 @@ jQuery ($) ->
 
     updateImagesPalette: ->
         $('.transient-group').remove()
-        for group_id, group of imageGroups
+        for group in imageGroups
             group.isImageGroup: yes
             group.items: []
             for image in group.images
                 i: {
                     type: 'image'
                     label: "${image.fileName} ${image.width}x${image.height}"
-                    image: { name: image.fileName, group: group_id }
+                    image: { name: image.fileName, group: group.id }
                     # TODO landscape
                     size: constrainImageSize { w: image.width, h: image.height }, { w: 320, h: 480 }
                     imageEl: image
@@ -1059,6 +1059,7 @@ jQuery ($) ->
 
     updateImages: ->
         serverMode.loadImages (groups) ->
+            imageGroups: []
             for group in groups
                 _updateGroup group['name'], group['images']
                 gg: {
@@ -1073,15 +1074,15 @@ jQuery ($) ->
                     fileName: img['fileName']
                     group_id: group['id']
                 } for img in group['images'])
-                imageGroups[group['id']]: gg
+                imageGroups.push gg
             updateImagesPalette()
 
     # Looks up group to use to drop images to after drag-and-drop
     # FIXME: use actual group under cursor, not first writeable.
     findImageDropGroup: ->
-        for groupId, groupInfo of imageGroups
-            if groupInfo.writeable
-                return groupId
+        for group of imageGroups
+            if group.writeable
+                return group.id
 
     uploadFiles: (files, dropGroup, callback) ->
         errors: []
