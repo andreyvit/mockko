@@ -332,7 +332,7 @@ class DeleteImageHandler(RequestHandler):
         if group.owner.key() != account.key():
             return render_json_response({'error': 'access-denied'})
 
-        img = Image.get_by_key_name(image_name)
+        img = group.image_set.filter('file_name', image_name).get()
         if img is None:
             raise NotFound()
 
