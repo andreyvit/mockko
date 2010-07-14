@@ -1070,6 +1070,7 @@ jQuery ($) ->
                     width: img['width']
                     height: img['height']
                     fileName: img['fileName']
+                    group_id: group['id']
                 } for img in group['images'])
                 customImages[group['id']]: gg
             updateCustomImagesPalette()
@@ -1125,7 +1126,7 @@ jQuery ($) ->
             uploadFiles e.dataTransfer.files, findImageDropGroup()
 
     deleteImage: (image) ->
-        serverMode.deleteImage image.id, ->
+        serverMode.deleteImage image.group_id, image.fileName, ->
             $(image.node).fadeOut 250, ->
                 $(image.node).remove()
 

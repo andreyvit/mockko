@@ -123,11 +123,12 @@ processPossibleErrorResponse: (failedActivity, response) ->
                 handleHttpError failedActivity, status, e
         }
 
-    deleteImage: (groupName, imageId, callback) ->
+    deleteImage: (groupId, imageName, callback) ->
         failedActivity: "Could not delete the image"
+        console.log groupId, imageName
         $.ajax {
             type: 'DELETE'
-            url: "/images/${encodeURIComponent groupName}/${encodeURIComponent imageId}"
+            url: "/images/${encodeURIComponent groupId}/${encodeURIComponent imageName}"
             dataType: 'json'
             success: (r) ->
                 return if processPossibleErrorResponse(failedActivity, r)
