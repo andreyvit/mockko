@@ -192,14 +192,14 @@ class GetImageListHandler(RequestHandler):
 
 class GetImageGroupHandler(RequestHandler):
     @auth
-    def get(self, user, account, group_name):
-        group = get_image_group_or_404(group_name)
+    def get(self, user, account, group_id):
+        group = get_image_group_or_404(group_id)
         return render_json_response(format_group(group, group.owner == account))
 
 class SaveImageHandler(RequestHandler):
     @auth
-    def post(self, user, account, group_name):
-        group = get_image_group_or_404(group_name)
+    def post(self, user, account, group_id):
+        group = get_image_group_or_404(group_id)
 
         # FIXME: admins!
         if group.owner.key() != account.key():
@@ -297,10 +297,10 @@ def overlay_png(underlay, overlay):
     return f
 
 class ServeImageHandler(RequestHandler):
-    def get(self, group_name, image_name):
+    def get(self, group_id, image_name):
         filename, effect = parse_image_name(image_name)
 
-        group = get_image_group_or_404(group_name)
+        group = get_image_group_or_404(group_id)
 
         img = db.GqlQuery("SELECT * FROM Image WHERE file_name = :1 AND group = :2",
                           filename, group).get()
@@ -326,8 +326,8 @@ class ServeImageHandler(RequestHandler):
 
 class DeleteImageHandler(RequestHandler):
     @auth
-    def delete(self, user, account, group_name, image_name):
-        group = get_image_group_or_404(group_name)
+    def delete(self, user, account, group_id, image_name):
+        group = get_image_group_or_404(group_id)
 
         # FIXME: admins!
         if group.owner.key() != account.key():
