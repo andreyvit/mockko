@@ -699,7 +699,7 @@ jQuery ($) ->
         if ctg.isImageGroup && ctg.writeable
             $("<div />").addClass('image-upload-prompt').html("Click to upload an image (or just drop your image files here).").appendTo(group).click (e) ->
                 e.preventDefault()
-                fileField: $("<input />").attr({ 'type': 'file' })[0]
+                fileField: $("<input />").attr({ 'type': 'file', 'multiple': 'multiple'})[0]
                 document.body.appendChild(fileField)
                 fileField.click()
                 $(fileField).change ->
