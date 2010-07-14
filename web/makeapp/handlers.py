@@ -100,9 +100,12 @@ class GetAppListHandler(RequestHandler):
             apps = apps.filter('editors', account.key())
         apps = apps.order('-updated_at').fetch(100)
 
+        accounts = Account.get(set([app._created_by for app in apps]))
+        accounts_by_key = {}
+        for account in accounts: accounts_by_key[account.key()] = account
         apps_json = [ { 'id': app.key().id(),
-                        'created_by': app.created_by.user.user_id(),
-                        'nickname': app.created_by.user.nickname(),
+                        'created_by': accounts_by_key[app._created_by].user.user_id(),
+                        'nickname': accounts_by_key[app._created_by].user.nickname(),
                         'body': app.body } for app in apps]
         return render_json_response({ 'apps': apps_json, 'current_user': account.user.user_id() if account else None })
 
@@ -157,7 +160,7 @@ def format_image(image):
     }
 
 def format_images(group):
-    for image in db.GqlQuery(IMAGES_QUERY, group):
+    for image in group.image_set.order('created_at').fetch(1000):
         yield format_image(image)
 
 def format_group(group, read_write):
@@ -178,13 +181,10 @@ def get_image_group_or_404(group_id):
 
 class GetImageListHandler(RequestHandler):
 
-    COMMON_GROUPS_QUERY = \
-        "SELECT * FROM ImageGroup WHERE owner = NULL ORDER BY priority"
-
     @auth
     def get(self, user, account, **kwargs):
         images = []
-        for group in db.GqlQuery(self.COMMON_GROUPS_QUERY):
+        for group in ImageGroup.all().filter('owner', None).order('priority').fetch(1000):
             images += [format_group(group, False)]
         for group in account.imagegroup_set.order('priority'):
             images += [format_group(group, True)]
@@ -302,8 +302,7 @@ class ServeImageHandler(RequestHandler):
 
         group = get_image_group_or_404(group_id)
 
-        img = db.GqlQuery("SELECT * FROM Image WHERE file_name = :1 AND group = :2",
-                          filename, group).get()
+        img = Image.all().filter('file_name', filename).filter('group', group).get()
         if not img or not img.data:
             raise NotFound()
 
