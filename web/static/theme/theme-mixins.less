@@ -40,6 +40,17 @@
     :active {
         -webkit-border-image: url(images/UINavigationBarSilverButtonPressed.png) 0 5 0 5 stretch stretch;
     }
+
+    &.disabled {
+        cursor: default;
+        color: #bbbbbb;
+        &:hover #undo-hint {
+            visibility: hidden;
+        }
+        &:active {
+            -webkit-border-image: url(images/UINavigationBarSilverButton.png) 0 5 0 5 stretch stretch;
+        }
+    }
 }
 
 .popover {
