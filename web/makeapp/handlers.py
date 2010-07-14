@@ -208,7 +208,7 @@ class SaveImageHandler(RequestHandler):
         file_name = request.headers['X-File-Name']
         data = request.data
 
-        mime_type = mimetypes.guess_type(file_name)
+        mime_type = mimetypes.guess_type(file_name)[0]
         if not mime_type.startswith('image/'):
             return render_json_response({'error': 'wrong-file-type'})
 
