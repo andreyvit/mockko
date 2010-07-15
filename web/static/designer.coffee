@@ -1328,12 +1328,19 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Feedback Button
 
-    $('#feedback').bind {
-        'click':     -> UserVoice.Popin.show(uservoiceOptions)
-        'mousedown': -> $(this).addClass('active')
-        'mouseup':   -> $(this).removeClass('active')
-        'mouseout':  -> $(this).removeClass('active')
-    }
+    initFeedbackButton: ->
+        uservoiceOptions = { 'key': 'mockko', 'host': 'mockko.uservoice.com',
+            'forum': '54458', 'lang': 'en', 'showTab': false }
+        s: document.createElement('script')
+        s.src: "http://cdn.uservoice.com/javascripts/widgets/tab.js"  # can use https:// too
+        document.getElementsByTagName('head')[0].appendChild(s)
+
+        $('#feedback').bind {
+            'click':     -> window['UserVoice']['Popin']['show'](uservoiceOptions)
+            'mousedown': -> $(this).addClass('active')
+            'mouseup':   -> $(this).removeClass('active')
+            'mouseout':  -> $(this).removeClass('active')
+        }
 
     ##########################################################################################################
 
@@ -1497,6 +1504,7 @@ jQuery ($) ->
     else
         serverMode: Mockko.server
 
+    initFeedbackButton()
     initComponentTypes()
     hookKeyboardShortcuts()
 
