@@ -74,7 +74,8 @@ updateEffectiveSize: (c) ->
 
 updateComponentTooltip: (c) ->
     r: rectOf c
-    $(c.node).attr('title', "${c.type.label} — (${r.x}, ${r.y}) ${r.w}x${r.h}")
+    tooltip: if c.type.tooltip? then c.type.tooltip(c) else "${c.type.label}"
+    $(c.node).attr('title', "${tooltip} — (${r.x}, ${r.y}) ${r.w}x${r.h}")
 
 
 ## style

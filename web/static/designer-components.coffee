@@ -79,6 +79,8 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         tagName: 'img'
         renderImage: (comp, node, imageUrl) ->
           node.src: imageUrl
+        tooltip: (comp) ->
+            comp.image.name
     }
     'text': {
         label: 'Text'
