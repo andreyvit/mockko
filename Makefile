@@ -3,7 +3,8 @@
 
 DEVAPPSERVER_ARGS=--show_mail_body \
 	--datastore_path=$(CURDIR)/.dev_appserver.datastore \
-	--history_path=$(CURDIR)/.dev_appserver.datastore.history
+	--history_path=$(CURDIR)/.dev_appserver.datastore.history \
+	--disable_task_running
 
 CLOSURE=java -jar scripts/closure-compiler/compiler.jar
 YUI=java -jar scripts/yuicompressor-2.4.2.jar
