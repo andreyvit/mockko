@@ -117,7 +117,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         hitAreaInset: 10
         hitAreaOutset: 10
         canHazLink: no
-        
+
         layoutChildren: (children, tabBarRect) ->
             count: children.length
             [hinset, hgap, vinset]: [5, 2, 3]
@@ -199,7 +199,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         pin: Pins.secondBottom
         singleInstance: yes
         canHazLink: no
-        
+
         layoutChildren: (children, outerRect) ->
             return [] if children.length is 0
 
@@ -400,7 +400,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         hitAreaInset: 10
         hitAreaOutset: 10
         canHazLink: no
-        
+
         layoutChildren: (children, outerRect) ->
             return [] if children.length is 0
 
