@@ -1082,7 +1082,7 @@ jQuery ($) ->
     findImageDropGroup: ->
         for group in imageGroups
             if group.writeable
-                return group.id
+                return group
 
     uploadFiles: (files, dropGroup, callback) ->
         errors: []
