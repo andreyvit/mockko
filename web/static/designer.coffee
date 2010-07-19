@@ -1326,7 +1326,7 @@ jQuery ($) ->
         showUserProfileScreen()
 
     ##########################################################################################################
-    ##  Feedback Button
+    ##  Help & Vote (Feedback) Buttons
 
     initFeedbackButton: ->
         uservoiceOptions = { 'key': 'mockko', 'host': 'mockko.uservoice.com',
@@ -1341,6 +1341,16 @@ jQuery ($) ->
             'mouseup':   -> $(this).removeClass('active')
             'mouseout':  -> $(this).removeClass('active')
         }
+
+        window['Tender'] = {
+            'hideToggle': true
+            # sso: "unique-sso-token-of-current-user"
+            'widgetToggles': $('#help')
+        }
+
+        s: document.createElement('script')
+        s.src: "http://help.mockko.com/tender_widget.js"
+        document.getElementsByTagName('head')[0].appendChild(s)
 
     ##########################################################################################################
 

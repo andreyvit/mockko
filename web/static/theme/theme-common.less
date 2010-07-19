@@ -155,19 +155,25 @@ a {
 }
 
 #feedback {
+    right: 85px;
+}
+#help {
+    right: 10px;
+}
+#feedback, #help {
     position: absolute;
     cursor: pointer;
     display: block;
     bottom: 11px;
-    right: 10px;
     font-size: 12px;
     font-weight: bold;
-    padding: 7px 10px;
     z-index: 5000;
 	-webkit-border-image: url(images/feedback-button.png) 0 5 0 5 stretch stretch;
     border-width: 0px 5px;
-    max-width: 160px;
 	text-shadow: rgba(0, 0, 0, 0.597656) 0px -1px 0px;
+	text-align: center;
+    padding: 7px 5px;
+    min-width: 65px;
 	color: white;
 
     &:hover {
