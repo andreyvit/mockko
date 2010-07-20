@@ -189,14 +189,26 @@ run-opt: all optimize
 
 # Deployment
 
-deploy: VER_ARG=$(if $(APP_VERSION),-V $(APP_VERSION))
-deploy: all optimize deploy-$(shell id -un)
+deploy: check-branches do-deploy
 
-deploy-andreyvit:
+check-branches:
+	@echo "  CHECK BRANCHES"
+	@git fetch origin
+	@CUR_BRANCH=$$(git branch | awk '/^*/ { print $$2 }'); \
+	HEAD=$$(git show-ref -s refs/heads/$$CUR_BRANCH); \
+	REMOTE_HEAD=$$(git show-ref -s refs/remotes/origin/$$CUR_BRANCH); \
+	if [ x"$$HEAD" != x"$$REMOTE_HEAD" ]; then \
+		echo "Please push your changes *before* deployment."; false; \
+	fi
+
+do-deploy: VER_ARG=$(if $(APP_VERSION),-V $(APP_VERSION))
+do-deploy: all optimize do-deploy-$(shell id -un)
+
+do-deploy-andreyvit:
 	appcfg.py $(VER_ARG) -e andreyvit@gmail.com --passin update web < ~/.andreyvit_passwd
 
-deploy-dottedmag:
+do-deploy-dottedmag:
 	appcfg.py $(VER_ARG) -e dottedmag@dottedmag.net update web
 
 deploy-playground: APP_VERSION=$(shell id -un)-playground
-deploy-playground: deploy
+deploy-playground: do-deploy
