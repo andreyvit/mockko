@@ -1329,7 +1329,7 @@ jQuery ($) ->
     ##  Help & Vote (Feedback) Buttons
 
     initFeedbackButton: ->
-        uservoiceOptions = { 'key': 'mockko', 'host': 'mockko.uservoice.com',
+        uservoiceOptions = { 'key': 'mockko', 'host': 'votebox.mockko.com',
             'forum': '54458', 'lang': 'en', 'showTab': false }
         s: document.createElement('script')
         s.src: "http://cdn.uservoice.com/javascripts/widgets/tab.js"  # can use https:// too
