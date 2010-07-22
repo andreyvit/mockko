@@ -42,6 +42,8 @@
 # have an ability to contain table rows (e.g. panes of a split screen, popovers).
 #
 
+{ centerSizeInRect }: Mockko.geom
+
 {
     rectOf
     findComponentOccupyingRect, findChildByType, findComponentByTypeIntersectingRect
