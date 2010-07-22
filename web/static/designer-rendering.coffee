@@ -138,7 +138,7 @@ renderComponentStyle: (c, cn) ->
     if c.state?
         $(cn).removeClass('state-on state-off').addClass("state-${c.state && 'on' || 'off'}")
     if c.text? and not c.dirtyText
-        $(textNodeOfComponent c, cn).html(c.text)
+        $(textNodeOfComponent c, cn).text(c.text)
     if c.image?
         getImageUrl c.image, (style.imageEffect || null), (imageUrl) ->
             (c.type.renderImage || renderImageDefault)(c, cn, imageUrl)
