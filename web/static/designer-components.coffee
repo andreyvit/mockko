@@ -134,6 +134,11 @@ Pins.bottom.dependantPins.push Pins.secondBottom
                         r: rectFromPtAndSize(pt, itemSize)
                         pt.x += itemSize.w + hgap
                         r
+
+        adjustChildAfterPasteOrDuplication: (screen, child, container) ->
+            if child.state
+                if _(container.children).any((c) -> c.state && c isnt child)
+                    child.state: off
     }
     'tab-bar-item': {
         label: 'Tab Bar Item'

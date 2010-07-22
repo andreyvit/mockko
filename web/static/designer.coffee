@@ -50,6 +50,7 @@ jQuery ($) ->
         sizeOf, rectOf, friendlyComponentName
         traverse, skipTraversingChildren
         compWithChildrenAndParents, isComponentOrDescendant
+        findChildByType
         moveComponent
     }: Mockko.model
 
@@ -228,6 +229,9 @@ jQuery ($) ->
 
         runTransaction "duplicate ${friendlyComponentName comp}", ->
             comp.parent.children.push newComp
+
+            layouting.adjustChildAfterPasteOrDuplication activeScreen, newComp, newComp.parent
+            renderComponentStyle newComp
 
             newRect: effect.rect
             if newRect.w != comp.effsize.w or newRect.h != comp.effsize.h
@@ -1264,9 +1268,15 @@ jQuery ($) ->
         friendlyName: if newComps.length > 1 then "${newComps.length} objects" else friendlyComponentName(newComps[0])
         runTransaction "pasting ${friendlyName}", ->
             for newComp in newComps
+                # XXX FIXME hack for proper pasting of tab bar items
+                if newComp.type is Types['tab-bar-item']
+                    unless targetCont: findChildByType(activeScreen.rootComponent, Mockko.componentTypes['tabBar'])
+                        alert "Please add a tab bar before pasting tabs"
+                        return
                 newComp.parent: targetCont
                 targetCont.children.push newComp
                 $(childrenNodeOfComponent targetCont).append renderInteractiveComponentHeirarchy newComp
+                newComp.abspos.x += 1  # FIXME a hack to properly place a new tab after the existing one
                 updateEffectiveSizesAndRelayoutHierarchy newComp
 
                 effect: layouting.computeDuplicationEffect activeScreen, newComp
@@ -1280,6 +1290,9 @@ jQuery ($) ->
                 if newRect.w != newComp.effsize.w or newRect.h != newComp.effsize.h
                     newComp.size: { w: newRect.w, h: newRect.h }
                 traverse newComp, (child) -> componentPositionChanged child
+
+                layouting.adjustChildAfterPasteOrDuplication activeScreen, newComp, newComp.parent
+                renderComponentStyle newComp
 
     cutComponents: (comps) ->
         comps: _((if c.type is Types.background then c.children else c) for c in comps).flatten()
@@ -1368,6 +1381,7 @@ jQuery ($) ->
                 ct.canHazColor: yes
             unless ct.canHazLink?
                 ct.canHazLink: yes
+            ct.adjustChildAfterPasteOrDuplication ||= (->)
 
     createNewApplicationName: ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',

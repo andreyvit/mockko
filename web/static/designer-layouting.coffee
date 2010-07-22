@@ -273,6 +273,8 @@ hasNonFlexiblePosition: (screen, comp) ->
         return layout.hasNonFlexiblePosition(comp)
     return false
 
+adjustChildAfterPasteOrDuplication: (screen, child, container) ->
+    container.type.adjustChildAfterPasteOrDuplication(screen, child, container)
 
 Mockko.layouting: {
     computeRelayoutEffect
@@ -280,4 +282,5 @@ Mockko.layouting: {
     computeDuplicationEffect
     computeDeletionEffect
     hasNonFlexiblePosition
+    adjustChildAfterPasteOrDuplication
 }
