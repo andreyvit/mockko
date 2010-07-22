@@ -297,6 +297,17 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         childrenSelector: '.inner'
         childrenOffset: { x: -10, y: 0 }  # compensate for .inner margins
     }
+    'text-field': {
+        label: 'Text Field'
+        defaultText: 'First Name'
+        widthPolicy: { fixedSize: 86, userSize: true }
+        heightPolicy: { fixedSize: 31 }
+        style: {
+        	textColor: '#9d9e9e'
+        	fontSize: 12
+        }
+        wantsSmartAlignment: yes
+    }
     'switch': {
         label: 'On/Off Switch'
         widthPolicy: { fixedSize: 94 }
@@ -1292,6 +1303,9 @@ Pins.bottom.dependantPins.push Pins.secondBottom
     {
         name: "Input Controls"
         items: [
+            {
+                type: 'text-field'
+            }
             {
                 type: 'switch'
                 state: on
