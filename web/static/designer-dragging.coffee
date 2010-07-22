@@ -100,7 +100,9 @@ Mockko.startDragging: (screen, comp, options, initialMoveOptions, computeDropAct
             action: computeDropAction comp, res.target, originalSize, originalEffSize
             action.execute()
             liveMover.commit()
-            containerChildrenChanged comp.parent
+            if comp.parent isnt null
+                # may be null if comp was deleted as part of action (e.g.. image dropped on tab bar)
+                containerChildrenChanged comp.parent
             true
         else
             comp.dragpos: null
