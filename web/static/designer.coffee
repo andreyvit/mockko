@@ -1153,6 +1153,7 @@ jQuery ($) ->
     }
 
     moveComponentByKeyboard: (comp, e, movement) ->
+        return if layouting.hasNonFlexiblePosition(activeScreen, comp)
         if e.ctrlKey
             # TODO: duplicate
         else

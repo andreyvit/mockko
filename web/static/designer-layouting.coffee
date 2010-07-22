@@ -108,6 +108,8 @@ class PinnedLayout extends Layout
 
     relayout: -> throw "Unsupported operation: unreachable at the moment"
 
+    hasNonFlexiblePosition: (comp) -> true
+
 class ContainerDeterminedLayout extends Layout
 
     computeDropEffect: (comp, rect, moveOptions) ->
@@ -130,6 +132,8 @@ class ContainerDeterminedLayout extends Layout
         children: _(@target.children).sortBy (child) -> child.abspos.x
         itemRects: @target.type.layoutChildren children, rectOf(@target)
         computeDropEffectFromNewRects children, itemRects, null
+
+    hasNonFlexiblePosition: (comp) -> true
 
 class RegularLayout extends Layout
 
@@ -186,6 +190,8 @@ class RegularLayout extends Layout
 
     relayout: ->
         #
+
+    hasNonFlexiblePosition: (comp) -> false
 
 class TableRowLayout extends RegularLayout
     #
@@ -261,10 +267,17 @@ computeDeletionEffect: (screen, comp) ->
 computeRelayoutEffect: (screen, comp) ->
     computeContainerLayout(screen, comp).relayout()
 
+hasNonFlexiblePosition: (screen, comp) ->
+    return true if comp.type is Mockko.componentTypes['background']
+    if layout: computeLayout(screen, comp, comp.parent)
+        return layout.hasNonFlexiblePosition(comp)
+    return false
+
 
 Mockko.layouting: {
     computeRelayoutEffect
     computeDropEffect
     computeDuplicationEffect
     computeDeletionEffect
+    hasNonFlexiblePosition
 }
