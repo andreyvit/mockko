@@ -1016,7 +1016,7 @@ jQuery ($) ->
     renderApplicationName: ->
         $('#app-name-content').html(application.name)
 
-    $('#app-name-content').click ->
+    startDesignScreenApplicationNameEditing: ->
         return if activeMode()?.isAppRenamingMode
         $('#app-name-content').startInPlaceEditing {
             before: ->
@@ -1034,6 +1034,9 @@ jQuery ($) ->
                 runTransaction "application rename", ->
                     application.name: newText
         }
+
+    $('#app-name-content').click ->
+        startDesignScreenApplicationNameEditing()
         false
 
     ##########################################################################################################
@@ -1414,6 +1417,7 @@ jQuery ($) ->
         $('#design-screen').show()
         loadApplication ser.internalizeApplication(MakeApp.appTemplates.basic), null
         switchToDesign()
+        startDesignScreenApplicationNameEditing()
 
     bindApplication: (app, an) ->
         app.node: an
