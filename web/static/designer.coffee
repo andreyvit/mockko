@@ -208,7 +208,23 @@ jQuery ($) ->
         runTransaction "deletion of ${friendlyComponentName rootc}", ->
             deleteComponentWithoutTransaction rootc, true
 
+    insetsToEdges: (screen, comp) ->
+        r: rectOf comp
+        a: screen.allowedArea
+        {
+            l: Math.max(0, r.x - a.x)
+            t: Math.max(0, r.y - a.y)
+            r: Math.max(0, (a.x+a.w) - (r.x+r.w))
+            b: Math.max(0, (a.y+a.h) - (r.y+r.h))
+        }
+
     moveComponentBy: (comp, offset) ->
+        insets: insetsToEdges(activeScreen, comp)
+        offset: {
+            x: if offset.x < 0 then -Math.min(-offset.x, insets.l) else Math.min( offset.x, insets.r)
+            y: if offset.y < 0 then -Math.min(-offset.y, insets.t) else Math.min( offset.y, insets.b)
+        }
+        return if offset.x == 0 and offset.y == 0
         runTransaction "keyboard moving of ${friendlyComponentName comp}", ->
             traverse comp, (c) -> c.abspos: ptSum(c.abspos, offset)
             traverse comp, componentPositionChanged
