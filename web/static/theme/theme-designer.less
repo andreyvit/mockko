@@ -467,8 +467,12 @@
         width: 100%;
         text-align: center;
         font-size: 12px;
-        line-height: 16px;
+        line-height: 21px;
         cursor: text;
+        &:hover {
+            outline: 1px solid rgba(187,0,0,0.3);
+            outline-offset: -3px;
+        }
     }
     
 }
@@ -1035,6 +1039,11 @@
 
 #app-name-content {
     cursor: text;
+    line-height: 1;
+    &:hover {
+        outline: 1px solid rgba(187,0,0,0.3);
+        outline-offset: 3px;
+    }
 }
 
 .jPicker .Icon {
