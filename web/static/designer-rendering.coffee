@@ -146,6 +146,11 @@ renderComponentStyle: (c, cn) ->
     $(cn).attr('action', actionURL)
     $(cn).alterClass('has-action', actionURL != '')
 
+renderComponentParentship: (child) ->
+    if child.node.ownerDocument && child.node.parentNode
+        $(child.node).detach()  #.parentNode.removeChild(child)
+    $(childrenNodeOfComponent child.parent).append(child.node)
+
 
 ##  combined
 
@@ -184,5 +189,5 @@ renderComponentHierarchy: (c, saveNodes, positionRoot) ->
     renderComponentPosition
     renderComponentStyle, textNodeOfComponent, childrenNodeOfComponent
     renderComponentVisualProperties, renderComponentProperties
-    renderComponentHierarchy
+    renderComponentHierarchy, renderComponentParentship
 }

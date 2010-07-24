@@ -46,6 +46,7 @@ JS_SRC = $(addprefix web/static/, \
 	designer-hover-panel.js \
 	designer-snapping.js \
 	designer-layouting.js \
+	designer-component-tree.js \
 	designer-effect-live-applicator.js \
 	designer-dragging.js \
 	designer-resizing.js \

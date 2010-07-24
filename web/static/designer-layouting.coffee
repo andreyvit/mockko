@@ -292,4 +292,5 @@ Mockko.layouting: {
     computeDeletionEffect
     hasNonFlexiblePosition
     adjustChildAfterPasteOrDuplication
+    containerAcceptsChild
 }

@@ -36,6 +36,7 @@ jQuery ($) ->
     hover: null
     inspector: null
     layouting: Mockko.layouting
+    componentTree: Mockko.componentTree
 
     {
         renderComponentNode
@@ -43,7 +44,7 @@ jQuery ($) ->
         renderComponentPosition
         renderComponentStyle, textNodeOfComponent, childrenNodeOfComponent
         renderComponentVisualProperties, renderComponentProperties
-        renderComponentHierarchy
+        renderComponentHierarchy, renderComponentParentship
     }: Mockko.renderer
 
     {
@@ -104,6 +105,12 @@ jQuery ($) ->
     ##  global events
 
     componentsChanged: ->
+        componentTree.rebuildComponentTree(activeScreen.rootComponent)
+        traverse activeScreen.rootComponent, (child) ->
+            if child.componentTree_oldParent != child.parent
+                renderComponentParentship child
+                renderComponentPosition child
+
         if $('#share-popover').is(':visible')
             updateSharePopover()
 

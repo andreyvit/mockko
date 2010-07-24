@@ -86,6 +86,11 @@ findComponentByTypeIntersectingRect: (root, type, rect, exclusionSet) ->
             match: comp
     match
 
+flatSubtreeOfComponent: (comp) ->
+    items: []
+    traverse comp, (child) -> items.push child
+    items
+
 compWithChildrenAndParents: (comp) ->
     items: []
     traverse comp, (child) -> items.push child
@@ -192,6 +197,12 @@ friendlyComponentName: (c) ->
         label: (c.type.genericLabel || c.type.label).toLowerCase()
         if c.text then "the “${c.text}” ${label}" else aOrAn label
 
+dumpComponentTree: (component, indentStep, indent) ->
+    indentStep ||= "\t"
+    indent ||= ""
+    "${indent}${friendlyComponentName component}\n" +
+        (dumpComponentTree(child, indentStep, indent + indentStep) for child in component.children).join("")
+
 
 (window.Mockko ||= {}).model: {
     sizeOf, rectOf, friendlyComponentName
@@ -201,4 +212,5 @@ friendlyComponentName: (c) ->
     pickHorizontalPositionBetween, pickHorizontalRectAmong
     moveComponent
     newItemsForHorizontalStack, newItemsForHorizontalStackDuplication, computeDropEffectFromNewRects
+    flatSubtreeOfComponent, dumpComponentTree
 }

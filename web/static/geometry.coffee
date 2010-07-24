@@ -74,6 +74,7 @@ ZeroSize:     { w: 0, h: 0 }
 sizeToString: (size) -> "${size.w}x${size.h}"
 domSize:      (node) -> { w: node.offsetWidth, h: node.offsetHeight }
 centerOfSize: (s) -> { x: s.w / 2, y: s.h / 2 }
+areaOfSize:   (s) -> s.w * s.h
 
 
 ##############################################################################################################
@@ -97,6 +98,9 @@ insetRect: (r, i) -> { x: r.x+i.l, y: r.y+i.t, w: r.w-i.l-i.r, h: r.h-i.t-i.b }
 
 centerOfRect: (r) -> { x: r.x + r.w / 2, y: r.y + r.h / 2 }
 centerSizeInRect:  (s, r) -> rectFromPtAndSize { x: r.x + (r.w-s.w) / 2, y: r.y + (r.h-s.h)/2 }, s
+
+isRectStrictlyInsideRect: (i, o) -> i.x >= o.x and i.x+i.w <= o.x+o.w and i.y >= o.y and i.y+i.h <= o.y+o.h
+
 
 
 ##############################################################################################################
@@ -143,10 +147,10 @@ distancePtSegment: (pt, segm) ->
     ZeroPt, ptToString, distancePtPt1, distancePtPt2, addPtPt, subPtPt, mulPtSize, ptFromLT, ptFromNode
     unitVecOfPtPt, mulVecLen, ptInRect
     #  Size
-    ZeroSize, sizeToString, domSize, centerOfSize
+    ZeroSize, sizeToString, domSize, centerOfSize, areaOfSize
     #  Rect
     rectToString, rectFromPtAndSize, rectFromPtPt, dupRect, addRectPt, subRectPt, topLeftOf, bottomRightOf
-    rectOfNode, canonRect, insetRect, centerOfRect, centerSizeInRect
+    rectOfNode, canonRect, insetRect, centerOfRect, centerSizeInRect, isRectStrictlyInsideRect
     #  Line / Segment
     lineFromPtPt, lineFromABPt, signum, classifyPtLine, perpendicularLineThroughPoint, distancePtLine
     distancePtSegment
