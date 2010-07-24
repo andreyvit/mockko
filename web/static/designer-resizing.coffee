@@ -20,6 +20,8 @@ Mockko.startResizing: (screen, comp, startPt, options, componentPositionChanged)
     {
         moveTo: (pt) ->
             delta: ptDiff(pt, startPt)
+            constrained: ((options.hmode isnt 'c' and options.vmode isnt 'c') and comp.type.constrainProportionsByDefault and (baseSize.w > 0 and baseSize.h > 0))
+
             newPos: {}
             newSize: {}
             console.log options
@@ -36,22 +38,65 @@ Mockko.startResizing: (screen, comp, startPt, options, componentPositionChanged)
                 when 't' then originalPos.y - allowedArea.y
                 else          allowedArea.y+allowedArea.h - (originalPos.y+baseSize.h)
 
-            switch options.hmode
-                when 'l' then delta.x: Math.max(-maxSizeIncrease.x, Math.min( maxSizeDecrease.x, delta.x))
-                else          delta.x: Math.min( maxSizeIncrease.x, Math.max(-maxSizeDecrease.x, delta.x))
-            switch options.vmode
-                when 't' then delta.y: Math.max(-maxSizeIncrease.y, Math.min( maxSizeDecrease.y, delta.y))
-                else          delta.y: Math.min( maxSizeIncrease.y, Math.max(-maxSizeDecrease.y, delta.y))
+            # convert mouse delta (“how many pixels the mouse moved”) into size delta
+            # (“how many pixels the size should increase”) — this only affects the sign
+            delta: {
+                x: if options.hmode is 'l' then -delta.x else delta.x
+                y: if options.vmode is 't' then -delta.y else delta.y
+            }
+
+            if constrained
+                ratioWH: baseSize.w / baseSize.h
+
+                maxSize: {
+                    w: baseSize.w + maxSizeIncrease.x
+                    h: baseSize.h + maxSizeIncrease.y
+                }
+                maxSize: {
+                    w: Math.min(maxSize.w, maxSize.h * ratioWH)
+                    h: Math.min(maxSize.h, maxSize.w / ratioWH)
+                }
+                minSize: {
+                    w: baseSize.w - maxSizeDecrease.x
+                    h: baseSize.h - maxSizeDecrease.y
+                }
+                minSize: {
+                    w: Math.max(minSize.w, minSize.h * ratioWH)
+                    h: Math.max(minSize.h, minSize.w / ratioWH)
+                }
+
+                newSize: {
+                    w: baseSize.w + delta.x
+                    h: baseSize.h + delta.y
+                }
+                newSize: {
+                    w: Math.max(minSize.w, Math.min(maxSize.w, newSize.w))
+                    h: Math.max(minSize.h, Math.min(maxSize.h, newSize.h))
+                }
+                newSize: switch
+                    when baseSize.w > baseSize.h then { w: newSize.w, h: newSize.w * baseSize.h / baseSize.w }
+                    when baseSize.w < baseSize.h then { h: newSize.h, w: newSize.h * baseSize.w / baseSize.h }
+                    else                              newSize
+
+                delta: {
+                    x: newSize.w - baseSize.w
+                    y: newSize.h - baseSize.h
+                }
+            else
+                delta: {
+                    x: Math.min( maxSizeIncrease.x, Math.max(-maxSizeDecrease.x, delta.x))
+                    y: Math.min( maxSizeIncrease.y, Math.max(-maxSizeDecrease.y, delta.y))
+                }
 
             [newSize.w, newPos.x]: switch
                 when delta.w is 0 or options.hmode is 'c' then [originalSize.w, originalPos.x]
                 when options.hmode is 'r' then [baseSize.w + delta.x, originalPos.x]
-                when options.hmode is 'l' then [baseSize.w - delta.x, originalPos.x + delta.x]
+                when options.hmode is 'l' then [baseSize.w + delta.x, originalPos.x - delta.x]
                 else throw "Internal Error: unknown resize hmode ${options.hmode}"
             [newSize.h, newPos.y]: switch
                 when delta.h is 0 or options.vmode is 'c' then [originalSize.h, originalPos.y]
                 when options.vmode is 'b' then [baseSize.h + delta.y, originalPos.y]
-                when options.vmode is 't' then [baseSize.h - delta.y, originalPos.y + delta.y]
+                when options.vmode is 't' then [baseSize.h + delta.y, originalPos.y - delta.y]
                 else throw "Internal Error: unknown resize vmode ${options.vmode}"
             comp.size: newSize
             comp.dragpos: newPos

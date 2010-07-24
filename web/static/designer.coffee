@@ -1395,6 +1395,8 @@ jQuery ($) ->
                 ct.supportsBackground: 'background' of ct.style
             if not ct.textStyleEditable?
                 ct.textStyleEditable: ct.defaultText?
+            unless ct.constrainProportionsByDefault?
+                ct.constrainProportionsByDefault: no
             ct.supportsText: ct.defaultText?
             unless ct.canHazColor?
                 ct.canHazColor: yes

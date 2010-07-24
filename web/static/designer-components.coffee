@@ -81,6 +81,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
           node.src: imageUrl
         tooltip: (comp) ->
             comp.image.name
+        constrainProportionsByDefault: yes
     }
     'text': {
         label: 'Text'
