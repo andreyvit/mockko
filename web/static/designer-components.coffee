@@ -139,6 +139,8 @@ Pins.bottom.dependantPins.push Pins.secondBottom
             if child.state
                 if _(container.children).any((c) -> c.state && c isnt child)
                     child.state: off
+
+        allowedChildren: ['tab-bar-item']
     }
     'tab-bar-item': {
         label: 'Tab Bar Item'

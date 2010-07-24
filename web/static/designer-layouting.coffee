@@ -202,6 +202,12 @@ computeContainerLayout: (screen, container) ->
     else
         new RegularLayout(screen, container)
 
+containerAcceptsChild: (container, candidateChild) ->
+    if container.type.allowedChildren
+        return candidateChild.type.name in container.type.allowedChildren
+    else
+        return true
+
 # either target or rect is specified
 # (note: I'd really want to split up this function into determineDropTarget(comp, rect) and
 # then use computeContainerLayout(target), but I expect that for some target containers,
@@ -227,6 +233,9 @@ computeLayout: (screen, comp, target, rect) ->
                     break
             unless target
                 target: findBestTargetContainerForRect screen.rootComponent, rect, [comp]
+            while not containerAcceptsChild target, comp
+                target: target.parent
+
         if target
             computeContainerLayout screen, target
         else
