@@ -340,6 +340,41 @@ window.domTemplate: (->
     domTemplate: (id) -> domTemplates[id].cloneNode(true)
 )()
 
+# Decorates a function to output a trace of all its call to the console.
+# Usage:
+#     var myFunc = tracing("myFunc", function(a, b){ return a + b; });
+window.tracing: (->
+    MAX_LEVEL: 20  # never trace deeper than this
+    INDENT_STEP: "  "
+    level: 0
+    traceCount: 0
+    indents: [""]
+    for i in [1..MAX_LEVEL]
+        indents.push(indents[i-1] + INDENT_STEP)
+    tracing: (fname, func) ->
+        wrapper: (args...) ->
+            if level <= MAX_LEVEL
+                traceCount: + 1
+                indent: indents[level]
+                console.log ["${indent}${fname}"].concat(args)
+            level += 1
+            watermark: traceCount
+            try
+                rv: func(args...)
+            finally
+                level -= 1
+            if level <= MAX_LEVEL and traceCount > watermark
+                console.log ["${indent}/${fname}"]
+            return rv
+        wrapper.wrapped: func
+        wrapper
+    tracing
+)()
+# window.factorial: tracing "factorial", (n) ->
+#     switch n
+#         when 0, 1 then 1
+#         else factorial(n-1) * n
+
 $.fn.checked: (v) ->
     if v?
         if v
