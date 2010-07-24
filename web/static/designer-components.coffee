@@ -452,7 +452,8 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         items: [
             {
                 type: 'text'
-                text: 'Single-Line Text'
+                text: 'Double-click me'
+                paletteTextOverride: 'Text'
                 style: {
                     fontSize: 17
                     textColor: '#000'
@@ -511,6 +512,8 @@ Pins.bottom.dependantPins.push Pins.secondBottom
             }
             {
                 type: 'tab-bar-item'
+                text: 'Dbl-click me'
+                paletteTextOverride: 'New Tab'
                 image: { group: 'glyphish-icons', name: '28-star.png' }
                 state: off
             }

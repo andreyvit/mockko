@@ -732,6 +732,8 @@ jQuery ($) ->
         func ||= ((ct, n) ->)
         for compTemplate in ctg.items
             c: cloneTemplateComponent(ser.externalizePaletteComponent(compTemplate))
+            if compTemplate.paletteTextOverride?
+                c.text: compTemplate.paletteTextOverride
             traverse c, (comp) ->
                 if comp.image?
                     ensureImageGroupLoaded comp.image.group
