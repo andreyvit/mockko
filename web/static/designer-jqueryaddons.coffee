@@ -256,7 +256,13 @@ jQuery.fn.startInPlaceEditing: (->
 (($) ->
     hiddenCopyTextArea: null
     $ -> hiddenCopyTextArea: $("<textarea />", { css: { 'display': 'none', 'z-index': 9999, 'position': 'absolute', 'left': 0, 'top': 0, 'width': 0, 'height': 0 }}).appendTo($("body"))
-    hideTextArea: -> hiddenCopyTextArea.hide()
+    hideTextAreaTimeout: null
+    hideTextArea: ->
+        hiddenCopyTextArea.hide()
+        $('body').focus()
+    hideTextAreaLater: ->
+        clearTimeout hideTextAreaTimeout if hideTextAreaTimeout
+        setTimeout hideTextArea, 10
 
     $.fn.copiableAsText: (options) ->
         options: { gettext: options } if options.constructor is Function
@@ -267,14 +273,17 @@ jQuery.fn.startInPlaceEditing: (->
                 data: options.gettext(this)
                 hiddenCopyTextArea.val(data || '').show().focus()
                 hiddenCopyTextArea[0].select()
+                hideTextAreaLater()
             this['oncopy']: (e) ->
                 return if options.shouldProcessCopy && !options.shouldProcessCopy()
-                setTimeout hideTextArea, 10
+                hideTextAreaLater()
             this['oncut']: (e) ->
                 return if options.shouldProcessCopy && !options.shouldProcessCopy()
-                setTimeout hideTextArea, 10
+                hideTextAreaLater()
                 options.aftercut() if options.aftercut
             if options.paste
+                this['onbeforepaste']: (e) ->
+                    e.returnValue: false  # some Googled magic... dunno where this is documented
                 this['onpaste']: (e) ->
                     return if options.shouldProcessPaste && !options.shouldProcessPaste()
                     e.preventDefault()
