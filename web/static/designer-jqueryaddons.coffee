@@ -356,24 +356,21 @@ window.tracing: (->
     MAX_LEVEL: 20  # never trace deeper than this
     INDENT_STEP: "  "
     level: 0
-    traceCount: 0
     indents: [""]
     for i in [1..MAX_LEVEL]
         indents.push(indents[i-1] + INDENT_STEP)
     tracing: (fname, func) ->
         wrapper: (args...) ->
             if level <= MAX_LEVEL
-                traceCount: + 1
                 indent: indents[level]
                 console.log ["${indent}${fname}"].concat(args)
             level += 1
-            watermark: traceCount
             try
                 rv: func(args...)
             finally
                 level -= 1
-            if level <= MAX_LEVEL and traceCount > watermark
-                console.log ["${indent}/${fname}"]
+            if level <= MAX_LEVEL
+                console.log ["${indent}/${fname}", rv]
             return rv
         wrapper.wrapped: func
         wrapper
