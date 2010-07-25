@@ -1304,7 +1304,6 @@ jQuery ($) ->
                 newComp.parent: targetCont
                 targetCont.children.push newComp
                 $(childrenNodeOfComponent targetCont).append renderInteractiveComponentHeirarchy newComp
-                newComp.abspos.x += 1  # FIXME a hack to properly place a new tab after the existing one
                 updateEffectiveSizesAndRelayoutHierarchy newComp
 
                 effect: layouting.computeDuplicationEffect activeScreen, newComp
