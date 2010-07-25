@@ -1301,8 +1301,6 @@ jQuery ($) ->
                     unless targetCont: findChildByType(activeScreen.rootComponent, Mockko.componentTypes['tabBar'])
                         alert "Please add a tab bar before pasting tabs"
                         return
-                newComp.parent: targetCont
-                targetCont.children.push newComp
                 $(childrenNodeOfComponent targetCont).append renderInteractiveComponentHeirarchy newComp
                 updateEffectiveSizesAndRelayoutHierarchy newComp
 
@@ -1310,6 +1308,10 @@ jQuery ($) ->
                 if effect is null
                     alert "Cannot paste the components because they do not fit into the designer"
                     return
+
+                newComp.parent: targetCont
+                targetCont.children.push newComp
+
                 commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION, activeScreen, componentPositionChanged
                 newRect: effect.rect
 
