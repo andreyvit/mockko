@@ -169,7 +169,7 @@ ${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.closure.js
 
 %.premin.js: %.combined.js
 	@echo "  PREMIN" $^
-	${PREMIN} < $^ > $@ 2>/dev/null || (rm -f $@; false)
+	${PREMIN} < $^ > $@ || (rm -f $@; false)
 
 ${OPT_DIR}/designer.combined.js: ${JS_SRC}
 	@echo "  CAT >" $@

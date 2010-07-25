@@ -23,18 +23,17 @@
 
 class String
   def shadow *regexps
-    s = self
     fragments = []
     fragments_set = {}
-    for regexp in regexps
-      s = s.gsub regexp do |match|
-        unless index = fragments_set[match]
-          index = fragments_set[match] = fragments.size
-          fragments << match.to_s
-        end
-        # $stderr.puts "SHADOW " + match
-        "@@#{index}@@"
+    combined = regexps.collect { |r| "#{r}" }.join("|")
+    $stderr.puts combined
+    s = self.gsub Regexp.new("(?:#{combined})") do |match|
+      unless index = fragments_set[match]
+        index = fragments_set[match] = fragments.size
+        fragments << match.to_s
       end
+      # $stderr.puts "SHADOW " + match
+      "@@#{index}@@"
     end
     [s, fragments]
   end
@@ -84,7 +83,7 @@ def minify_javascript orig_source, stoplists, mode, debug=false
     end
   end
 
-  source, fragments = orig_source.shadow(%r!/\*.*?\*/!m, %r!(\(|,)\s*?/([^/\\]|\\.)+/\w*!, %r!(^|[^:])//.*$!, /(["'])(?:[^\\\1]|\\.)*?\1/, *special_stoplist)
+  source, fragments = orig_source.shadow(%r!/\*.*?\*/!m, %r!(\(|,)\s*?/([^/\\]|\\.)+/\w*!, %r!//(?>.*)$!, /"(?>[^\\"]|\\.)*?"/, /'(?>[^\\']|\\.)*?'/, *special_stoplist)
 
   next_id = 1
   identifiers = {}
@@ -599,6 +598,6 @@ when ACTION_LEARN_JQUERY
 when ACTION_MINIFY
   orig_source = $stdin.read
   new_source, identifiers = minify_javascript orig_source, stoplist, mode, debug
-  print_stop_list identifiers
+  # print_stop_list identifiers
   puts new_source
 end
