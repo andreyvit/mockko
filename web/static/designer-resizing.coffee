@@ -5,7 +5,8 @@
 # Copyright (C) 2010, Andrey Tarantsov, Mikhail Gusarov
 #
 
-{ ptDiff }: Mockko.geom
+{ ptDiff, addPtPt }: Mockko.geom
+{ traverse }: Mockko.model
 
 
 INF: 100000  # our very own idea of infinity
@@ -99,14 +100,17 @@ Mockko.startResizing: (screen, comp, startPt, options, componentPositionChanged)
                 when options.vmode is 't' then [baseSize.h + delta.y, originalPos.y - delta.y]
                 else throw "Internal Error: unknown resize vmode ${options.vmode}"
             comp.size: newSize
-            comp.dragpos: newPos
-            comp.dragParent: comp.parent
-            console.log "resizing to ${comp.size.w} x ${comp.size.h}"
-            componentPositionChanged comp
+
+            delta: ptDiff(newPos, originalPos)
+            traverse comp, (child) ->
+                child.dragpos: addPtPt(child.abspos, delta)
+                child.dragParent: child.parent
+                componentPositionChanged child
 
         dropAt: (pt) ->
             @moveTo pt
-            comp.abspos: comp.dragpos
-            comp.dragpos: null
-            comp.dragParent: null
+            traverse comp, (child) ->
+                child.abspos: child.dragpos
+                child.dragpos: null
+                child.dragParent: null
     }
