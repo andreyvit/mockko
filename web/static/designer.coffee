@@ -1203,14 +1203,23 @@ jQuery ($) ->
             return if activeMode()?.isInsideTextField
             act: componentToActUpon()
             switch e.which
-                when $.KEY_ESC then dispatchToMode(ModeMethods.escdown, e) || deselectComponent(); false
-                when $.KEY_DELETE, $.KEY_BACKSPACE then deleteComponent(act) if act
+                when $.KEY_ESC
+                    e.preventDefault(); e.stopPropagation()
+                    dispatchToMode(ModeMethods.escdown, e) || deselectComponent()
+                when $.KEY_DELETE, $.KEY_BACKSPACE
+                    e.preventDefault(); e.stopPropagation()
+                    deleteComponent(act) if act
                 when $.KEY_ARROWUP    then moveComponentByKeyboard act, e, KB_MOVE_DIRS.up    if act
                 when $.KEY_ARROWDOWN  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.down  if act
                 when $.KEY_ARROWLEFT  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.left  if act
                 when $.KEY_ARROWRIGHT then moveComponentByKeyboard act, e, KB_MOVE_DIRS.right if act
-                when 'D'.charCodeAt(0) then duplicateComponent(act) if act and (e.ctrlKey or e.metaKey)
-                when 'Z'.charCodeAt(0) then undo.undoLastChange() if (e.ctrlKey or e.metaKey)
+                when 'D'.charCodeAt(0)
+                    e.preventDefault(); e.stopPropagation()
+                    duplicateComponent(act) if act and (e.ctrlKey or e.metaKey)
+                when 'Z'.charCodeAt(0)
+                    e.preventDefault(); e.stopPropagation()
+                    undo.undoLastChange() if (e.ctrlKey or e.metaKey)
+            undefined
 
     ##########################################################################################################
     ##  Simulation (Run)
