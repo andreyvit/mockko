@@ -232,6 +232,7 @@ jQuery ($) ->
             y: if offset.y < 0 then -Math.min(-offset.y, insets.t) else Math.min( offset.y, insets.b)
         }
         return if offset.x == 0 and offset.y == 0
+        # warning: this prefix (“keyboard moving of”) is also used in designer-undo.coffee
         runTransaction "keyboard moving of ${friendlyComponentName comp}", ->
             traverse comp, (c) -> c.abspos: ptSum(c.abspos, offset)
             traverse comp, componentPositionChanged
