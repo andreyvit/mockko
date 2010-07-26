@@ -614,18 +614,22 @@ jQuery ($) ->
                     undo.rollbackTransaction()
         }
 
-    activateResizingMode: (comp, startPt, options) ->
+    resizingOptionsFromEvent: (e) ->
+        { toggleConstrainMode: !!e.shiftKey }
+
+    activateResizingMode: (comp, e, options) ->
         undo.beginTransaction "resizing of ${friendlyComponentName comp}"
         console.log "activating resizing mode for ${friendlyComponentName comp}"
+        startPt: { x: e.pageX, y: e.pageY }
         resizer: Mockko.startResizing activeScreen, comp, startPt, options, componentPositionChanged
         activateMode {
             debugname: "Resizing"
             cancelOnMouseUp: yes
             mousemove: (e) ->
-                resizer.moveTo { x:e.pageX, y:e.pageY }
+                resizer.moveTo { x:e.pageX, y:e.pageY }, resizingOptionsFromEvent(e)
                 true
             mouseup: (e) ->
-                resizer.dropAt { x:e.pageX, y:e.pageY }
+                resizer.dropAt { x:e.pageX, y:e.pageY }, resizingOptionsFromEvent(e)
                 undo.endTransaction()
                 componentsChanged()
                 deactivateMode()

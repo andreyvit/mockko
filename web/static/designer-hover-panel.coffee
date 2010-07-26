@@ -132,7 +132,7 @@ Mockko.setupHoverPanel: (options) ->
             [vmode, hmode]: [adjustVerticalSizingMode(hoveredComponent, vmode), adjustHorizontalSizingMode(hoveredComponent, hmode)]
             disabled: (vmode is 'c' and hmode is 'c')
             return if disabled
-            options.activateResizingMode hoveredComponent, { x: e.pageX, y: e.pageY }, { vmode: vmode, hmode: hmode }
+            options.activateResizingMode hoveredComponent, e, { vmode: vmode, hmode: hmode }
             false
 
     activeLinkOverlay: null

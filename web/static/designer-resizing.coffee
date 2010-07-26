@@ -19,9 +19,11 @@ Mockko.startResizing: (screen, comp, startPt, options, componentPositionChanged)
     console.log baseSize
     originalPos: comp.abspos
     {
-        moveTo: (pt) ->
+        moveTo: (pt, ptOptions) ->
             delta: ptDiff(pt, startPt)
             constrained: ((options.hmode isnt 'c' and options.vmode isnt 'c') and comp.type.constrainProportionsByDefault and (baseSize.w > 0 and baseSize.h > 0))
+            if ptOptions.toggleConstrainMode
+                constrained: not constrained
 
             newPos: {}
             newSize: {}
@@ -107,8 +109,8 @@ Mockko.startResizing: (screen, comp, startPt, options, componentPositionChanged)
                 child.dragParent: child.parent
                 componentPositionChanged child
 
-        dropAt: (pt) ->
-            @moveTo pt
+        dropAt: (pt, ptOptions) ->
+            @moveTo pt, ptOptions
             traverse comp, (child) ->
                 child.abspos: child.dragpos
                 child.dragpos: null
