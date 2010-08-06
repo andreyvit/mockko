@@ -654,6 +654,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
             }
             {
                 type: 'barButton'
+                text: 'Done'
                 label: 'Grey Bar Button (Done Style)'
                 styleName: 'done'
                 style: {
