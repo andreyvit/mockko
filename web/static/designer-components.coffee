@@ -453,10 +453,106 @@ Pins.bottom.dependantPins.push Pins.secondBottom
             {
                 type: 'text'
                 text: 'Double-click me'
-                paletteTextOverride: 'Text'
+                paletteTextOverride: '17px Normal'
                 style: {
                     fontSize: 17
                     textColor: '#000'
+                }
+            }
+            {
+                type: 'text'
+                text: 'Double-click me'
+                paletteTextOverride: '17px Bold'
+                style: {
+                    fontSize: 17
+                    fontBold: yes
+                    textColor: '#000'
+                }
+            }
+            {
+                type: 'text'
+                text: 'Double-click me'
+                paletteTextOverride: '17px Bold Header-Gray'
+                style: {
+                    fontSize: 17
+                    fontBold: yes
+                    textColor: '#4c566c'
+                }
+            }
+            {
+                type: 'text'
+                text: 'Double-click me'
+                paletteTextOverride: '20px Normal'
+                style: {
+                    fontSize: 20
+                    textColor: '#000'
+                }
+            }
+            {
+                type: 'text'
+                text: 'Double-click me'
+                paletteTextOverride: '20px Bold'
+                style: {
+                    fontSize: 20
+                    fontBold: yes
+                    textColor: '#000'
+                }
+            }
+            {
+                type: 'text'
+                text: 'Double-click me'
+                paletteTextOverride: '14px Blue'
+                style: {
+                    fontSize: 14
+                    textColor: '#007fff'
+                }
+            }
+            {
+                type: 'text'
+                text: 'Double-click me'
+                paletteTextOverride: '14px Bold Blue'
+                style: {
+                    fontSize: 14
+                    textColor: '#007fff'
+                    fontBold: yes
+                }
+            }
+            {
+                type: 'text'
+                text: 'Double-click me'
+                paletteTextOverride: '14px Gray'
+                style: {
+                    fontSize: 14
+                    textColor: '#7f7f7f'
+                }
+            }
+            {
+                type: 'text'
+                text: 'Double-click me'
+                paletteTextOverride: '14px Bold Gray'
+                style: {
+                    fontSize: 14
+                    textColor: '#7f7f7f'
+                    fontBold: yes
+                }
+            }
+            {
+                type: 'text'
+                text: 'Double-click me'
+                paletteTextOverride: '12px Gray'
+                style: {
+                    fontSize: 12
+                    textColor: '#666666'
+                }
+            }
+            {
+                type: 'text'
+                text: 'Double-click me'
+                paletteTextOverride: '12px Bold Gray'
+                style: {
+                    fontSize: 12
+                    textColor: '#666666'
+                    fontBold: yes
                 }
             }
         ]
