@@ -609,6 +609,7 @@ jQuery ($) ->
                     undo.rollbackTransaction()
                 deactivateMode()
                 selectComponent(c) if ok
+                startComponentTextInPlaceEditing(c) if c.type.supportsText
                 true
 
             cancel: ->
