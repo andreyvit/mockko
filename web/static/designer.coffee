@@ -1018,6 +1018,7 @@ jQuery ($) ->
         setupUndoSystem()
         reloadApplication app
         switchToScreen application.screens[0]
+        saveAppToLocationHash appId
 
     reloadApplication: (app) ->
         application: app
@@ -1387,6 +1388,31 @@ jQuery ($) ->
         showUserProfileScreen()
 
     ##########################################################################################################
+    ##  Browser History and Back Button
+
+    loadStateFromLocationHash: ->
+        params: $.hashparam()
+        if appId: params['app']
+            appId: parseInt(appId, 10)
+            app: _(applicationList).detect (a) -> a.id == appId
+            if app
+                loadApplication app.content, app.id
+                switchToDesign()
+        else
+            switchToDashboard()
+
+    saveAppToLocationHash: (appId) ->
+        $.hashparam { 'app': appId }
+
+    saveDashboardToLocationHash: (appId) ->
+        $.hashparam {}
+
+    initBackButton: ->
+        $(window).bind 'hashchange', (e) ->
+            loadStateFromLocationHash()
+        loadStateFromLocationHash()
+
+    ##########################################################################################################
     ##  Help & Vote (Feedback) Buttons
 
     initFeedbackButton: ->
@@ -1512,6 +1538,7 @@ jQuery ($) ->
         $('#dashboard-screen').show()
         console.log "switchToDashboard"
         refreshApplicationList()
+        saveDashboardToLocationHash()
 
     $('#new-app-button').click (e) ->
         e.preventDefault(); e.stopPropagation()
@@ -1585,6 +1612,8 @@ jQuery ($) ->
 
     serverMode.getUserInfo (userInfo) ->
         loadDesigner userInfo
+        refreshApplicationList ->
+            initBackButton()
         updateUserProfile userInfo
         if not userInfo['profile-created']
             showUserProfileScreen()

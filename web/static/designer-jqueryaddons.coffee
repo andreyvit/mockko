@@ -389,3 +389,28 @@ $.fn.checked: (v) ->
             this.removeAttr('checked')
     else
         this.attr('checked')
+
+$.parseparam: (qs) ->
+    qs:     qs.replace(/\+/g, ' ')
+    params: {}
+    args:   qs.split('&')
+    index:  0
+    for i in [0 ... args.length]
+        pair: args[i].split('=');
+        name: decodeURIComponent(pair[0])
+        if pair.length == 2
+            value: decodeURIComponent(pair[1])
+        else
+            value: name
+            name: ""+index
+            index += 1
+        params[name] = value
+    params
+
+$.hashparam: (newValues) ->
+    if newValues?
+        newHash: '#' + $.param(newValues)
+        if location.hash != newHash
+            location.hash = '#' + $.param(newValues)
+    else
+        $.parseparam((location.hash || '#').substring(1))
