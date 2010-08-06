@@ -558,16 +558,18 @@ jQuery ($) ->
                 true
 
             mouseup: (e) ->
+                ok: no
                 if dragger isnt null
                     if dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
                         undo.endTransaction()
                         componentsChanged()
                         $('#hover-panel').show()
+                        ok: yes
                     else
                         undo.abandonTransaction()
                         deleteComponent c
                 deactivateMode()
-
+                selectComponent(c) if ok
                 true
 
             cancel: ->
@@ -606,6 +608,7 @@ jQuery ($) ->
                         $(c.node).remove()
                     undo.rollbackTransaction()
                 deactivateMode()
+                selectComponent(c) if ok
                 true
 
             cancel: ->
