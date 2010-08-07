@@ -1404,23 +1404,43 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Browser History and Back Button
 
-    applicationToLoadBasedOnLocationHash: ->
+    ignoreHashChanges: no
+
+    restoreAppFromLocationHash: (fallback) ->
+        fallback ||= switchToDashboard
+
         params: $.hashparam()
-        if appId: params['app']
-            parseInt(appId, 10)
+        appIdToLoad: if appIdString: params['app']
+            parseInt(appIdString, 10)
         else
             null
+        if appIdToLoad isnt null
+            refreshApplicationList ->
+                app: _(applicationList).detect (a) -> a.id == appIdToLoad
+                if app
+                    loadApplication app.content, app.id
+                    switchToDesign()
+                else
+                    fallback()
+        else
+            fallback()
 
     saveAppToLocationHash: (appId) ->
-        $.hashparam { 'app': appId }
+        ignoreHashChanges: yes
+        try
+            $.hashparam { 'app': appId }
+        finally
+            ignoreHashChanges: no
 
     saveDashboardToLocationHash: (appId) ->
+        ignoreHashChanges: yes
         $.hashparam {}
+        ignoreHashChanges: no
 
     initBackButton: ->
         $(window).bind 'hashchange', (e) ->
-            loadStateFromLocationHash()
-        applicationToLoadBasedOnLocationHash()
+            return if ignoreHashChanges
+            restoreAppFromLocationHash()
 
     ##########################################################################################################
     ##  Help & Vote (Feedback) Buttons
@@ -1559,30 +1579,11 @@ jQuery ($) ->
         switchToDashboard()
 
     startOnDashboardByDefault: ->
-        appIdToLoad: initBackButton()
-        if appIdToLoad isnt null
-            refreshApplicationList ->
-                app: _(applicationList).detect (a) -> a.id == appIdToLoad
-                if app
-                    loadApplication app.content, app.id
-                    switchToDesign()
-                else
-                    switchToDashboard()
-        else
-            switchToDashboard()
+        restoreAppFromLocationHash()
 
     startOnApplicationByDefault: (defaultApp) ->
         $('#design-screen').show()  # not sure why this is needed, must be some offsets problem
-        appIdToLoad: initBackButton()
-        if appIdToLoad isnt null
-            refreshApplicationList ->
-                app: _(applicationList).detect (a) -> a.id == appIdToLoad
-                if app
-                    loadApplication app.content, app.id
-                else
-                    loadApplication ser.internalizeApplication(defaultApp), null
-                switchToDesign()
-        else
+        restoreAppFromLocationHash ->
             loadApplication ser.internalizeApplication(defaultApp), null
             switchToDesign()
 
@@ -1642,6 +1643,7 @@ jQuery ($) ->
     initFeedbackButton()
     initComponentTypes()
     hookKeyboardShortcuts()
+    initBackButton()
 
     serverMode.getUserInfo (userInfo) ->
         loadDesigner userInfo
