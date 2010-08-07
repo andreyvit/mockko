@@ -747,9 +747,12 @@ jQuery ($) ->
         ctg.itemsNode: items: $('<div />').addClass('items').appendTo(group)
         func ||= ((ct, n) ->)
         for compTemplate in ctg.items
-            c: cloneTemplateComponent(ser.externalizePaletteComponent(compTemplate))
-            if compTemplate.paletteTextOverride?
-                c.text: compTemplate.paletteTextOverride
+            compTemplateForPaletteInstantiation: cloneObj compTemplate
+            if compTemplateForPaletteInstantiation.paletteOverride?
+                $.extend compTemplateForPaletteInstantiation, compTemplateForPaletteInstantiation.paletteOverride
+            if compTemplateForPaletteInstantiation.paletteTextOverride?
+                compTemplateForPaletteInstantiation.text: compTemplateForPaletteInstantiation.paletteTextOverride
+            c: cloneTemplateComponent(ser.externalizePaletteComponent(compTemplateForPaletteInstantiation))
             traverse c, (comp) ->
                 if comp.image?
                     ensureImageGroupLoaded comp.image.group

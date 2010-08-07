@@ -565,18 +565,8 @@ Pins.bottom.dependantPins.push Pins.secondBottom
                 type: 'rect'
                 style: {
                 }
-            }
-            {
-                type: 'rect'
-                label: 'Rounded Rectangle'
-                style: {
-                    borderRadius: 7
-                }
-            }
-            {
-                type: 'rect'
-                style: {
-                    background: 'metal'
+                paletteOverride: {
+                    size: { w: 70 }
                 }
             }
             {
@@ -584,7 +574,29 @@ Pins.bottom.dependantPins.push Pins.secondBottom
                 label: 'Rounded Rectangle'
                 style: {
                     borderRadius: 7
+                }
+                paletteOverride: {
+                    size: { w: 70 }
+                }
+            }
+            {
+                type: 'rect'
+                style: {
                     background: 'metal'
+                }
+                paletteOverride: {
+                    size: { w: 70 }
+                }
+            }
+            {
+                type: 'rect'
+                label: 'Rounded Rectangle'
+                style: {
+                    borderRadius: 7
+                    background: 'metal'
+                }
+                paletteOverride: {
+                    size: { w: 70 }
                 }
             }
         ]
