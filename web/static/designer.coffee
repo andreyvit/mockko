@@ -1025,6 +1025,9 @@ jQuery ($) ->
                     ensureImageGroupLoaded c.image.group
 
     loadApplication: (app, appId) ->
+        # if design screen has display:none, many inner components get zero effective size
+        $('#design-screen').show()
+
         app.name: createNewApplicationName() unless app.name
         applicationId: appId
         application: app
@@ -1505,7 +1508,6 @@ jQuery ($) ->
             names[Math.floor(Math.random() * names.length)]
 
     createNewApplication: ->
-        $('#design-screen').show()
         loadApplication ser.internalizeApplication(MakeApp.appTemplates.basic), null
         switchToDesign()
         startDesignScreenApplicationNameEditing()
@@ -1514,7 +1516,6 @@ jQuery ($) ->
         app.node: an
         $(an).bindContextMenu '#application-context-menu', app
         $('.content', an).click ->
-            $('#design-screen').show()
             loadApplication app.content, app.id
             switchToDesign()
         $('.caption', an).click ->
@@ -1587,7 +1588,6 @@ jQuery ($) ->
         restoreAppFromLocationHash()
 
     startOnApplicationByDefault: (defaultApp) ->
-        $('#design-screen').show()  # not sure why this is needed, must be some offsets problem
         restoreAppFromLocationHash ->
             loadApplication ser.internalizeApplication(defaultApp), null
             switchToDesign()
