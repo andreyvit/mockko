@@ -805,6 +805,14 @@ jQuery ($) ->
         $(node).append $("<div />", { className: 'customImagePlaceholder' })
         $('#palette').scrollToBottom()
 
+    storePaletteScrollPosition: ->
+        localStorage['paletteScrollOffset'] = $('#palette')[0].scrollTop
+
+    restorePaletteScrollPosition: ->
+        if offset: localStorage['paletteScrollOffset']
+            $('#palette')[0].scrollTop = offset
+        undefined
+
     paletteInitialized: no
     initPalette: ->
         return if paletteInitialized
@@ -813,6 +821,8 @@ jQuery ($) ->
         for ctg in Mockko.paletteDefinition
             renderPaletteGroup ctg, true
         updateImagesPalette()
+        restorePaletteScrollPosition()
+        $('#palette').scroll(storePaletteScrollPosition)
 
 
     ##########################################################################################################
@@ -1019,6 +1029,10 @@ jQuery ($) ->
         reloadApplication app
         switchToScreen application.screens[0]
         saveAppToLocationHash appId
+
+        # Not sure why, but palette scroll offset is reset every time an application
+        # is loaded from Dashboard screen. A workaround is to restore it here.
+        restorePaletteScrollPosition()
 
     reloadApplication: (app) ->
         application: app
