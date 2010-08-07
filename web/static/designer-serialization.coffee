@@ -66,6 +66,7 @@ internalizeStyle: (style) ->
         textShadowStyleName: style['textShadowStyleName']
         background: style['background']
         imageEffect: style['imageEffect']
+        borderRadius: style['borderRadius']
     }
 
 externalizeStyle: (style) ->
@@ -77,6 +78,7 @@ externalizeStyle: (style) ->
         'textShadowStyleName': style.textShadowStyleName
         'background': style.background
         'imageEffect': style.imageEffect
+        'borderRadius': style.borderRadius
     }
 
 externalizeImage: (image) ->

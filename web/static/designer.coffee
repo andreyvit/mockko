@@ -1482,6 +1482,8 @@ jQuery ($) ->
             unless ct.constrainProportionsByDefault?
                 ct.constrainProportionsByDefault: no
             ct.supportsText: ct.defaultText?
+            unless ct.canHazBorderRadius?
+                ct.canHazBorderRadius: ct.style.borderRadius?
             unless ct.canHazColor?
                 ct.canHazColor: yes
             unless ct.canHazLink?

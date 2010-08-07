@@ -98,6 +98,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         supportsBackground: yes
         style: {
             background: 'transparent'
+            borderRadius: 0
         }
     }
     'statusBar': {
@@ -562,6 +563,13 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         items: [
             {
                 type: 'rect'
+            }
+            {
+                type: 'rect'
+                label: 'Rounded Rectangle'
+                style: {
+                    borderRadius: 7
+                }
             }
         ]
     }

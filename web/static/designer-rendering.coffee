@@ -126,6 +126,13 @@ renderComponentStyle: (c, cn) ->
 
     $(textNodeOfComponent c, cn).css css
 
+    if c.type.canHazBorderRadius
+        if style.borderRadius?
+            console.log "borderRadius == ${style.borderRadius}"
+            borderCSS: {}
+            borderCSS['-webkit-border-radius']: borderCSS['border-radius']: "${style.borderRadius}px"
+            $(cn).css borderCSS
+
     if style.background?
         if not (Mockko.backgroundStylesByName[style.background])
             console.log "!! Unknown backgrond style ${style.background} for ${c.type.name}"
