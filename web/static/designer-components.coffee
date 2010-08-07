@@ -563,12 +563,28 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         items: [
             {
                 type: 'rect'
+                style: {
+                }
             }
             {
                 type: 'rect'
                 label: 'Rounded Rectangle'
                 style: {
                     borderRadius: 7
+                }
+            }
+            {
+                type: 'rect'
+                style: {
+                    background: 'metal'
+                }
+            }
+            {
+                type: 'rect'
+                label: 'Rounded Rectangle'
+                style: {
+                    borderRadius: 7
+                    background: 'metal'
                 }
             }
         ]
