@@ -1390,16 +1390,12 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Browser History and Back Button
 
-    loadStateFromLocationHash: ->
+    applicationToLoadBasedOnLocationHash: ->
         params: $.hashparam()
         if appId: params['app']
-            appId: parseInt(appId, 10)
-            app: _(applicationList).detect (a) -> a.id == appId
-            if app
-                loadApplication app.content, app.id
-                switchToDesign()
+            parseInt(appId, 10)
         else
-            switchToDashboard()
+            null
 
     saveAppToLocationHash: (appId) ->
         $.hashparam { 'app': appId }
@@ -1410,7 +1406,7 @@ jQuery ($) ->
     initBackButton: ->
         $(window).bind 'hashchange', (e) ->
             loadStateFromLocationHash()
-        loadStateFromLocationHash()
+        applicationToLoadBasedOnLocationHash()
 
     ##########################################################################################################
     ##  Help & Vote (Feedback) Buttons
@@ -1548,16 +1544,39 @@ jQuery ($) ->
         e.preventDefault(); e.stopPropagation()
         switchToDashboard()
 
+    startOnDashboardByDefault: ->
+        appIdToLoad: initBackButton()
+        if appIdToLoad isnt null
+            refreshApplicationList ->
+                app: _(applicationList).detect (a) -> a.id == appIdToLoad
+                if app
+                    loadApplication app.content, app.id
+                    switchToDesign()
+                else
+                    switchToDashboard()
+        else
+            switchToDashboard()
+
+    startOnApplicationByDefault: (defaultApp) ->
+        $('#design-screen').show()  # not sure why this is needed, must be some offsets problem
+        appIdToLoad: initBackButton()
+        if appIdToLoad isnt null
+            refreshApplicationList ->
+                app: _(applicationList).detect (a) -> a.id == appIdToLoad
+                if app
+                    loadApplication app.content, app.id
+                else
+                    loadApplication ser.internalizeApplication(defaultApp), null
+                switchToDesign()
+        else
+            loadApplication ser.internalizeApplication(defaultApp), null
+            switchToDesign()
+
     loadDesigner: (userData) ->
         $("body").removeClass("offline-user online-user").addClass("${userData['status']}-user")
         console.log serverMode
         serverMode.adjustUI userData
-        serverMode.startDesigner userData, switchToDashboard, (app) ->
-            $('#design-screen').show()
-            loadApplication ser.internalizeApplication(app), null
-            switchToDesign()
-
-        console.log "done"
+        serverMode.startDesigner userData, startOnDashboardByDefault, startOnApplicationByDefault
 
     adjustDeviceImagePosition: ->
         deviceOffset: $('#device-panel').offset()
@@ -1612,8 +1631,6 @@ jQuery ($) ->
 
     serverMode.getUserInfo (userInfo) ->
         loadDesigner userInfo
-        refreshApplicationList ->
-            initBackButton()
         updateUserProfile userInfo
         if not userInfo['profile-created']
             showUserProfileScreen()
