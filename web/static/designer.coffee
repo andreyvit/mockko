@@ -1225,6 +1225,7 @@ jQuery ($) ->
 
     hookKeyboardShortcuts: ->
         $('body').keydown (e) ->
+            return if e.target.tagName.toLowerCase() == 'input'
             return if activeMode()?.isInsideTextField
             act: componentToActUpon()
             switch e.which
