@@ -1417,10 +1417,11 @@ jQuery ($) ->
         fallback ||= switchToDashboard
 
         params: $.hashparam()
-        appIdToLoad: if appIdString: params['app']
-            parseInt(appIdString, 10)
+        if appIdString: params['app']
+            return if appIdString == 'undefined'
+            appIdToLoad: parseInt(appIdString, 10)
         else
-            null
+            appIdToLoad: null
         if appIdToLoad isnt null
             refreshApplicationList ->
                 app: _(applicationList).detect (a) -> a.id == appIdToLoad
