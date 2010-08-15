@@ -5,12 +5,22 @@ api_version: 1
 
 handlers:
 
+# Console
+
+- url: /console/static
+  static_dir: console/app/view/static
+  login: admin
+
+- url: /console.*
+  script: console/app/console.py
+  login: admin
+
 # Boring stuff
 
 - url: /favicon.ico
   static_files: static/favicon.ico
   upload: static/favicon.ico
-  
+
 - url: /robots.txt
   static_files: static/robots.txt
   upload: static/robots.txt
@@ -27,12 +37,12 @@ handlers:
   static_files: minified/designer.min.js
   upload: minified/designer.min.js
   expiration: "3650d"
-  
+
 - url: /static/theme/theme\.min\.css
   static_files: minified/theme.min.css
   upload: minified/theme.min.css
   expiration: "3650d"
-  
+
 - url: /static/iphone/iphone\.min\.css
   static_files: minified/iphone.min.css
   upload: minified/iphone.min.css
