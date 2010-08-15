@@ -3,11 +3,10 @@ This is the App Engine Console auto-executing module.  When you start a console 
 execute "from autoexec import *".  So you may place anything in here which you find useful.
 """
 
-# Examples:  Uncomment these if you want them in your console by default.
-#
-#from google.appengine.ext import db
-#from google.appengine.api import users
-#import logging
+from google.appengine.ext import db
+from google.appengine.api import users
+import logging
+# from makeapp.models import *
 
 # This allows you to run help(...) just like the standard console has.  For some
 # reason, setuptools is breaking this import as of SDK version 1.1.3.
