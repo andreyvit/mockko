@@ -33,7 +33,7 @@ import pygments.formatters
 
 import util
 import model
-import config
+import console_config as config
 
 from google.appengine.api        import users
 from google.appengine.api        import memcache
