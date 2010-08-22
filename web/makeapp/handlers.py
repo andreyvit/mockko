@@ -102,7 +102,7 @@ class GetAppListHandler(RequestHandler):
 
         accounts = Account.get(set([app._created_by for app in apps]))
         accounts_by_key = {}
-        for account in accounts: accounts_by_key[account.key()] = account
+        for acc in accounts: accounts_by_key[acc.key()] = acc
         apps_json = [ { 'id': app.key().id(),
                         'created_by': accounts_by_key[app._created_by].user.user_id(),
                         'nickname': accounts_by_key[app._created_by].user.nickname(),
