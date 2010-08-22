@@ -9,7 +9,7 @@ class Account(db.Model):
     updated_at = db.DateTimeProperty(auto_now=True)
 
     profile_created = db.BooleanProperty(required=True, default=False)
-    newsletter = db.BooleanProperty()
+    newsletter = db.BooleanProperty(default=True)
     full_name = db.StringProperty()
 
 class App(db.Model):
