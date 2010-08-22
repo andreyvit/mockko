@@ -1,10 +1,13 @@
-.PHONY: all clean optimize deploy watch
+.PHONY: all clean optimize deploy watch upload-stock
 .DEFAULT_GOAL := all
+
+DEVAPPSERVER_PORT = 7000
 
 DEVAPPSERVER_ARGS=--show_mail_body \
 	--datastore_path=$(CURDIR)/.dev_appserver.datastore \
 	--history_path=$(CURDIR)/.dev_appserver.datastore.history \
-	--disable_task_running
+	--disable_task_running \
+	--port $(DEVAPPSERVER_PORT)
 
 CLOSURE=java -jar scripts/closure-compiler/compiler.jar
 YUI=java -jar scripts/yuicompressor-2.4.2.jar
@@ -66,6 +69,7 @@ help:
 	@echo "  make run-opt  -- run application using dev. appserver (optimized)"
 	@echo "  make deploy   -- upload application to GAE"
 	@echo "  make deploy-playground -- upload 'playground' version to GAE"
+	@echo "  make upload-stock -- upload 'stock' images to local devserver or GAE"
 	@echo "  make clean    -- clean all generated files"
 
 # Rule[sz]
@@ -213,3 +217,6 @@ do-deploy-dottedmag:
 
 deploy-playground: APP_VERSION=$(shell id -un)-playground
 deploy-playground: do-deploy
+
+upload-stock:
+	python scripts/upload_stock --no-auth -s localhost:$(DEVAPPSERVER_PORT) mockkodesigner

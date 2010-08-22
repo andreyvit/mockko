@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+
+"""
+Usage:
+  upload_stock [--no-auth] [-s HOSTNAME] APPID [PATH]
+"""
+
+import os
+from os.path import dirname, realpath, join
+import sys
+
+basedir = dirname(dirname(realpath(__file__)))
+sys.path.append(join(basedir, 'scripts'))
+sys.path.append(join(basedir, 'web'))
+
+from findgae import findgae
+gaepath = findgae()
+sys.path.append(os.path.join(findgae()))
+
+sys.path += [
+    join(gaepath),
+    join(gaepath, 'lib', 'antlr3'),
+    join(gaepath, 'lib', 'django'),
+    join(gaepath, 'lib', 'fancy_urllib'),
+    join(gaepath, 'lib', 'ipaddr'),
+    join(gaepath, 'lib', 'webob'),
+    join(gaepath, 'lib', 'yaml', 'lib')
+]
+
+import optparse
+from google.appengine.ext.remote_api import remote_api_stub
+
+from google.appengine.api import datastore
+from google.appengine.api import memcache
+from google.appengine.api import urlfetch
+from google.appengine.api import users
+from google.appengine.ext import db
+from google.appengine.ext import search
+
+DEFAULT_PATH = '/remote_api'
+
+from makeapp.models import Image, ImageGroup, ImageData
+
+def auth_func():
+    return (raw_input('Email: '), getpass.getpass('Password: '))
+
+def no_auth_func():
+    return ('test@user.com', '')
+
+def drop_stock():
+    for group in ImageGroup.all().filter('owner', None):
+        for img in group.image_set:
+            try:
+                img.data.delete()
+            except Exception:
+                pass
+            img.delete()
+        group.delete()
+
+def upload_stock():
+    from PIL import Image as I
+
+    groups = [
+        {'key_name': 'glyphish-icons', 'effect': 'iphone-tabbar-active',
+        'name': 'Glyphish Tav Bar Icons', 'priority': 1},
+        {'key_name': 'glyphish-mini-icons', 'effect': 'iphone-tabbar-inactive',
+        'name': 'Glyphish Toolbar & Navbar Icons', 'priority': 2},
+        {'key_name': 'iphone-accessories', 'effect': None,
+        'name': 'iPhone Accessory Icons', 'priority': 3}
+    ]
+
+    for group in groups:
+        ig = ImageGroup(**group)
+        ig.put()
+
+        d = join(basedir, 'stock-media', group['key_name'])
+        for imgname in os.listdir(d):
+            imgfile = join(d, imgname)
+            img = I.open(imgfile)
+
+            ida = ImageData(data=open(imgfile).read())
+            ida.put()
+
+            i = Image(file_name=imgname, width=img.size[0], height=img.size[1],
+                      mime_type='image/png', group=ig, data=ida)
+            i.put()
+
+if __name__ == '__main__':
+    parser = optparse.OptionParser()
+    parser.add_option('-s', '--server', dest='server',
+                      help='The hostname your app is deployed on. '
+                           'Defaults to <app_id>.appspot.com.')
+    parser.add_option('--secure', dest='secure', action="store_true",
+                      default=False, help='Use HTTPS when communicating with the server.')
+    parser.add_option('--no-auth', dest='auth', action='store_false',
+                      default=True, help='Do not authenticate against server (e.g. local one)')
+    (options, args) = parser.parse_args()
+
+    if not args or len(args) > 2:
+        sys.stderr.write(__doc__)
+        if len(args) > 2:
+            sys.stderr.write('Unexpected arguments: %s\n' % args[2:])
+        sys.exit(1)
+
+    appid = args[0]
+    if len(args) == 2:
+        path = args[1]
+    else:
+        path = DEFAULT_PATH
+
+    remote_api_stub.ConfigureRemoteApi(appid, path, auth_func if options.auth else no_auth_func,
+                                       servername=options.server,
+                                       save_cookies=True, secure=options.secure)
+    remote_api_stub.MaybeInvokeAuthentication()
+
+    os.environ['SERVER_SOFTWARE'] = 'Development (remote_api_shell)/1.0'
+
+    drop_stock()
+    upload_stock()

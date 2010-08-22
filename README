@@ -11,6 +11,7 @@
 * JRE (for 'make optimize')
 * openssl(1) (for 'make optimize')
 * Perl (for 'make optimize')
+* PIL or Pillow (for 'make upload-stock')
 
 == Build ==
 
