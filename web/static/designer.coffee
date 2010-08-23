@@ -1414,6 +1414,8 @@ jQuery ($) ->
     ignoreHashChanges: no
 
     restoreAppFromLocationHash: (fallback) ->
+        return fallback() # restoring disabled b/c of Chrome 6 dev channel problem
+
         fallback ||= switchToDashboard
 
         params: $.hashparam()
@@ -1447,8 +1449,9 @@ jQuery ($) ->
 
     initBackButton: ->
         $(window).bind 'hashchange', (e) ->
+            return  # restoring disabled b/c of Chrome 6 dev channel problem
             return if ignoreHashChanges
-            restoreAppFromLocationHash()
+            restoreAppFromLocationHash ->
 
     ##########################################################################################################
     ##  Help & Vote (Feedback) Buttons
@@ -1587,7 +1590,7 @@ jQuery ($) ->
         switchToDashboard()
 
     startOnDashboardByDefault: ->
-        restoreAppFromLocationHash()
+        restoreAppFromLocationHash switchToDashboard
 
     startOnApplicationByDefault: (defaultApp) ->
         restoreAppFromLocationHash ->
