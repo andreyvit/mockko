@@ -1,0 +1,63 @@
+Not really INSTALL, but DEPLOYMENT :)
+
+Services
+========
+
+Public
+------
+
+* DomainSite
+
+mockko.com domain is registered in DomainSite
+
+* GAE
+
+Mockko is deployed to GAE as mockkodesigner
+
+* Tender (help/support)
+
+help.mockko.com is Tender instance
+
+* UserVoice (feedback)
+
+votebox.mockko.com is UserVoice instance
+
+Development
+-----------
+
+* github
+
+Source code is on github.com/mockko
+
+* Pivotal Tracker (bugtracking)
+
+https://www.pivotaltracker.com/projects/74356 is a bugtracker
+
+* Jaconda (chat)
+
+mockko@jaconda.im is internal development chat
+
+* Google Groups
+
+mockko-robots@ is a mailing list for all robot announcements (commits etc)
+
+* pivotal-jabber.appspot.com
+
+mockko-bot@pivotal-jabber.appspotchat.com is jabber account for all robot announcements
+
+bot for XMPP and PivotalTracker integration. Closes tickets after being pinged
+by github, reports changes and commits to mockko-bot@ chat.
+
+Integration
+===========
+
+* Mail submitted to mockko@mockko.com is redirected to Tender, except mails
+  originating from GAE
+
+* Tender posts updates to development chat
+
+* github post-commit hook sends email to robot announcement mailing list
+
+* github post-commit hook pings bot about commits.
+
+* PivotalTracker changes are posted to bot.
