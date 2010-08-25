@@ -147,9 +147,6 @@ class DeleteAppHandler(RequestHandler):
         app.delete()
         return render_json_response({ 'status': 'ok' })
 
-IMAGES_QUERY = \
-    "SELECT * FROM Image WHERE group = :1 ORDER BY created_at"
-
 def format_image(image):
     return {
         'id': image.key().id_or_name(),
