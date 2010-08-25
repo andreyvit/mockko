@@ -802,7 +802,8 @@ jQuery ($) ->
                 group.items.push(i)
             renderPaletteGroup group, false, (item, node) ->
                 item.imageEl.node: node
-                $(node).bindContextMenu '#custom-image-context-menu', item.imageEl
+                if group.writeable
+                    $(node).bindContextMenu '#custom-image-context-menu', item.imageEl
 
     addCustomImagePlaceholder: (node) ->
         $(node).append $("<div />", { className: 'customImagePlaceholder' })
