@@ -285,7 +285,11 @@ Mockko.setupInspector: (hooks) ->
     ##############################################################################################################
     ##  Integration
 
+    updateInspectorVisibility: ->
+        $('#inspector').alterClass 'visible', !!(componentToActUpon())
+
     updateInspector: ->
+        updateInspectorVisibility()
         updateBackgroundsInspector()
         updatePositionInspector()
         updateTextInspector()

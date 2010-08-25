@@ -25,7 +25,7 @@
         top: 44px;
         right: 360px;
         bottom: 50px;
-        overflow: hidden;
+        overflow: visible;
     }
     #design-area {
         position: absolute;
@@ -273,7 +273,7 @@
     position: absolute;
     right: 0;
     top: 44px;
-    bottom: 50px;
+    bottom: 0px;
     width: 360px;
 
     padding: 5px 5px;
@@ -641,7 +641,12 @@
     left: 105px;
     right: 0px;
     height: 70px;
+    -webkit-transform: translate(0px, 70px);
+    -webkit-transition: -webkit-transform 0.10s linear;
 
+    &.visible {
+        -webkit-transform: translate(0px, 0px);
+    }
 
     .tabs {
         position: absolute;
