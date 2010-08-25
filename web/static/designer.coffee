@@ -1534,8 +1534,7 @@ jQuery ($) ->
                 updateApplicationListWidth()
 
     updateApplicationListWidth: ->
-        # 250 is the width of #sample-apps-separator
-        $('#apps-list-container').css 'width', (160+60) * $('#apps-list-container .app').length + 250
+        #
 
     renderApplication: (appData, destination, show_name) ->
         appId: appData['id']
