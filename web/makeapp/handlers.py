@@ -171,7 +171,7 @@ def get_image_group_or_404(group_id):
     try:
         group = ImageGroup.get_by_id(int(group_id))
     except ValueError:
-        group =ImageGroup.get_by_key_name(group_id)
+        group = ImageGroup.get_by_key_name(group_id)
     if not group:
         raise NotFound()
     return group
