@@ -8,11 +8,6 @@
         min-width: 70px;
     }
 
-    #screens-list {
-    	background: rgba(255, 255, 255, 0.5);
-    	border-right: 3px solid rgba(0, 0, 0, 0.3);
-    }
-    
     #palette {
     	background: rgba(255, 255, 255, 0.5);
     	border-left: 3px solid rgba(0, 0, 0, 0.4);
@@ -415,15 +410,30 @@
     }
 }
 
-#screens-list {
+#screens-pane {
+	background: rgba(255, 255, 255, 0.5);
+	border-right: 3px solid rgba(0, 0, 0, 0.3);
+
     position: absolute;
     width: 105px;
     top: 44px;
-    bottom: 50px;
-	color: #656C73;
+    bottom: 0px;
     padding-top: 5px;
+
+	color: #656C73;
 	text-shadow: rgba(255, 255, 255, 0.746094) 0px 1px 0px;
-	overflow-x: hidden;
+
+/*  overflow-x: hidden;
+    overflow-y: auto;
+*/}
+
+#screens-list {
+    position: absolute;
+    width: 105px;
+    top: 35px;
+    bottom: 0px;
+
+    overflow-x: hidden;
 	overflow-y: auto;
 }
 
@@ -433,6 +443,21 @@
 
 #screens-list.prominent .app-screen .content {
     -webkit-box-shadow: 0px 0px 20px #770000;
+}
+
+#add-screen-button {
+    .silver-bar-button;
+    cursor: pointer;
+    position: absolute;
+    z-index: 1000;
+    top: 5px;
+    height: 30px;
+    text-align: center;
+    line-height: 30px;
+    width: 90px;
+	font-size: 12px;
+	font-weight: bold;
+	margin: 0px 5px 0px 6px;
 }
 
 .app-screen {
@@ -497,25 +522,6 @@
     background: url(images/background-inspector.png) repeat-x;
     border-top: 1px solid @tab-border-color;
 }
-
-#add-screen-button {
-    .silver-bar-button;
-    cursor: pointer;
-    position: absolute;
-    z-index: 1000;
-    bottom: 10px;
-    height: 30px;
-    text-align: center;
-    line-height: 30px;
-    width: 90px;
-	font-size: 12px;
-	font-weight: bold;
-	margin: 0px 5px 0px 5px;
-/*    font-size: 14px;
-    background: black;
-    color: white;
-    border: 1px solid #ccc;
-*/}
 
 
 #profile-screen {
@@ -633,7 +639,7 @@
 #inspector {
     position: absolute;
     bottom: 0px;
-    left: 100px;
+    left: 105px;
     right: 0px;
     height: 70px;
     
