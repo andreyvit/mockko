@@ -27,6 +27,9 @@
 sizeOf: (c) -> { w: c.effsize.w, h: c.effsize.h }
 rectOf: (c) -> { x: c.abspos.x, y: c.abspos.y, w: c.effsize.w, h: c.effsize.h }
 
+__lastUID = 0
+uidOf: (c) -> c.uid ||= (__lastUID += 1)
+
 skipTraversingChildren: {}
 # traverse(comp-or-array-of-comps, [parent], func)
 traverse: (comp, parent, func) ->
@@ -205,7 +208,7 @@ dumpComponentTree: (component, indentStep, indent) ->
 
 
 (window.Mockko ||= {}).model: {
-    sizeOf, rectOf, friendlyComponentName
+    sizeOf, rectOf, friendlyComponentName, uidOf
     traverse, skipTraversingChildren
     findChildByType, findBestTargetContainerForRect, findComponentByRect, findComponentByTypeIntersectingRect
     compWithChildrenAndParents, isComponentOrDescendant, findComponentOccupyingRect

@@ -48,7 +48,7 @@ jQuery ($) ->
     }: Mockko.renderer
 
     {
-        sizeOf, rectOf, friendlyComponentName
+        sizeOf, rectOf, friendlyComponentName, uidOf
         traverse, skipTraversingChildren
         compWithChildrenAndParents, isComponentOrDescendant
         findChildByType
@@ -79,6 +79,9 @@ jQuery ($) ->
         change()
         undo.endTransaction()
         componentsChanged()
+
+    setUndoChangeComponent: (comp) ->
+        undo.setUndoChangeMergeMarker uidOf(comp)
 
     setupUndoSystem: ->
         createApplicationMemento: ->
@@ -234,6 +237,7 @@ jQuery ($) ->
         return if offset.x == 0 and offset.y == 0
         # warning: this prefix (“keyboard moving of”) is also used in designer-undo.coffee
         runTransaction "keyboard moving of ${friendlyComponentName comp}", ->
+            setUndoChangeComponent comp
             traverse comp, (c) -> c.abspos: ptSum(c.abspos, offset)
             traverse comp, componentPositionChanged
 

@@ -19,6 +19,8 @@ DONT_MERGE_UNDO_STEPS_AFTER_MS: 5000
 
     setCurrentChangeName: (changeName) -> lastChange.name: changeName
 
+    setUndoChangeMergeMarker: (mergeMarker) -> lastChange.mergeMarker = mergeMarker
+
     endTransaction: ->
         return if lastChange is null
         if lastChange.memento != createApplicationMemento()
@@ -35,9 +37,8 @@ DONT_MERGE_UNDO_STEPS_AFTER_MS: 5000
         lastChange = null
 
     mergableChanges: (previous, current) ->
-        name: current.name
-        if previous.name == name
-            if name.match(/^keyboard moving of/)
+        if current.mergeMarker? and previous.mergeMarker? and previous.mergeMarker == current.mergeMarker
+            if current.name.match(/^keyboard moving of/)
                 return yes
         no
 
@@ -63,8 +64,8 @@ DONT_MERGE_UNDO_STEPS_AFTER_MS: 5000
         undoStackChanged()
 
     undoStackChanged()
-    
+
     {
         beginTransaction, endTransaction, rollbackTransaction, abandonTransaction
-        setCurrentChangeName, undoLastChange
+        setCurrentChangeName, undoLastChange, setUndoChangeMergeMarker
     }
