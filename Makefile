@@ -199,7 +199,7 @@ deploy-production: check-branches do-deploy
 check-branches:
 	@echo "  CHECK BRANCHES"
 	@git fetch origin
-	@CUR_BRANCH=$$(git branch | awk '/^*/ { print $$2 }'); \
+	@CUR_BRANCH=$$(git branch | awk '/^\*/ { print $$2 }'); \
 	HEAD=$$(git show-ref -s refs/heads/$$CUR_BRANCH); \
 	REMOTE_HEAD=$$(git show-ref -s refs/remotes/origin/$$CUR_BRANCH); \
 	if [ x"$$HEAD" != x"$$REMOTE_HEAD" ]; then \
