@@ -157,7 +157,7 @@ a {
     overflow: hidden;
 }
 
-#feedback {
+/*#feedback {
     right: 85px;
 }
 #help {
@@ -191,6 +191,17 @@ a {
     position: absolute;
     width: 0px; height: 0px;
     background: url(images/feedback-button-hover.png), url(images/feedback-button-active.png);
+}
+*/
+
+#help, #feedback {
+    -webkit-border-image: url(images/feedback-button.png) 0 5 0 5 stretch stretch;
+    &:hover {
+        -webkit-border-image: url(images/feedback-button-hover.png) 0 5 0 5 stretch stretch;
+    }
+    &.active {
+        -webkit-border-image: url(images/feedback-button-active.png) 0 5 0 5 stretch stretch;
+    }
 }
 
 ::-webkit-scrollbar {
