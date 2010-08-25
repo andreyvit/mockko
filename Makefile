@@ -23,7 +23,7 @@ JS = $(patsubst %.coffee,%.js,${COFFEE})
 CSS = $(patsubst %.less,%.css,${LESS})
 HTML = $(patsubst %.haml,%.html,${HAML})
 
-LESS_D = $(foreach f,${LESS},$(dir $(f)).$(notdir $(f)).d) 
+LESS_D = $(foreach f,${LESS},$(dir $(f)).$(notdir $(f)).d)
 
 -include ${LESS_D}
 
@@ -67,8 +67,8 @@ help:
 	@echo "  make optimize -- prepare optimized and obfuscated version"
 	@echo "  make run      -- run application using dev. appserver (non-optimized, /dev only)"
 	@echo "  make run-opt  -- run application using dev. appserver (optimized)"
-	@echo "  make deploy   -- upload application to GAE"
-	@echo "  make deploy-playground -- upload 'playground' version to GAE"
+	@echo "  make deploy-production -- upload application to GAE"
+	@echo "  make deploy   -- upload 'playground' version to GAE"
 	@echo "  make upload-stock -- upload 'stock' images to local devserver or GAE"
 	@echo "  make clean    -- clean all generated files"
 
@@ -194,7 +194,7 @@ run-opt: all optimize
 
 # Deployment
 
-deploy: check-branches do-deploy
+deploy-production: check-branches do-deploy
 
 check-branches:
 	@echo "  CHECK BRANCHES"
@@ -215,8 +215,8 @@ do-deploy-andreyvit:
 do-deploy-dottedmag:
 	appcfg.py $(VER_ARG) -e dottedmag@dottedmag.net update web
 
-deploy-playground: APP_VERSION=$(shell id -un)-playground
-deploy-playground: do-deploy
+deploy: APP_VERSION=$(shell id -un)-playground
+deploy: do-deploy
 
 upload-stock:
 	python scripts/upload_stock --no-auth -s localhost:$(DEVAPPSERVER_PORT) mockkodesigner
