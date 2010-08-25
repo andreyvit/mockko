@@ -18,9 +18,9 @@ insertIntoTree: (newComponent, treeComponent) ->
     candidateChildren: []
     for child in treeComponent.children
         childR: rectOf child
-        if isRectStrictlyInsideRect(newComponentR, childR) and layouting.containerAcceptsChild(child, newComponent)
+        if isRectStrictlyInsideRect(newComponentR, childR) and layouting.containerAcceptsChild(child, newComponent) and layouting.containerSatisfiesChild(child, newComponent)
             return insertIntoTree newComponent, child
-        if isRectStrictlyInsideRect(childR, newComponentR) and layouting.containerAcceptsChild(newComponent, child)
+        if isRectStrictlyInsideRect(childR, newComponentR) and layouting.containerAcceptsChild(newComponent, child) and layouting.containerSatisfiesChild(newComponent, child)
             candidateChildren.push child
     for child in candidateChildren
         pushChild child, newComponent

@@ -208,6 +208,12 @@ containerAcceptsChild: (container, candidateChild) ->
     else
         return true
 
+containerSatisfiesChild: (container, candidateChild) ->
+    if allowed = candidateChild.type.allowedContainers
+        container.type.name in allowed
+    else
+        yes
+
 # either target or rect is specified
 # (note: I'd really want to split up this function into determineDropTarget(comp, rect) and
 # then use computeContainerLayout(target), but I expect that for some target containers,
@@ -292,5 +298,5 @@ Mockko.layouting: {
     computeDeletionEffect
     hasNonFlexiblePosition
     adjustChildAfterPasteOrDuplication
-    containerAcceptsChild
+    containerAcceptsChild, containerSatisfiesChild
 }

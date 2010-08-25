@@ -162,6 +162,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
                 imageEffect: if comp.state then 'iphone-tabbar-active' else 'iphone-tabbar-inactive'
                 textColor: if comp.state then '#fff' else '#eee'
             }
+        allowedContainers: ['tabBar']
     }
     'navBar': {
         label: 'Navigation Bar'

@@ -1501,6 +1501,8 @@ jQuery ($) ->
             unless ct.canHazLink?
                 ct.canHazLink: yes
             ct.adjustChildAfterPasteOrDuplication ||= (->)
+            if ct.pin?
+                ct.allowedContainers = ['background']
 
     createNewApplicationName: ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
