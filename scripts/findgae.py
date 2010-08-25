@@ -4,7 +4,11 @@ from sys import stderr, exit
 
 def findgae():
     for d in environ['PATH'].split(':'):
-        for f in listdir(d):
+        try:
+            items = listdir(d)
+        except OSError:
+            continue
+        for f in items:
             if f == 'dev_appserver.py' or f == 'appcfg.py':
                 if exists(join(d, f)):
                     return dirname(realpath(join(d, f)))
