@@ -1562,9 +1562,12 @@ jQuery ($) ->
             myApps          = users[apps['current_user']]['apps']
 
             renderApplicationGroup("My Applications", myApps)
-            for userId, userInfo of users when userId isnt apps['current_user']
-                userDisplayName = "${userInfo['full_name']} <${userInfo['email']}>"
-                renderApplicationGroup("Shared By ${userDisplayName}", userInfo['apps'])
+
+            users = info for userId, info of users when userId isnt apps['current_user']
+            users = (_(users).sortBy (user) -> -user['created_at'])
+            for user in users
+                userDisplayName = "${user['full_name']} <${user['email']}>"
+                renderApplicationGroup("Shared By ${userDisplayName}", user['apps'])
             renderApplicationGroup("Sample Applications", samples)
             callback(applicationList) if callback
 

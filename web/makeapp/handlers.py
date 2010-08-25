@@ -6,6 +6,7 @@ import logging
 import mimetypes
 import re
 import hashlib
+import time
 
 from tipfy import RequestHandler, url_for, redirect, redirect_to, render_json_response, request, BadRequest, NotFound, Response
 from tipfy.ext.jinja2 import render_response
@@ -111,6 +112,7 @@ class GetAppListHandler(RequestHandler):
                 'apps': [],
                 'full_name': acc.full_name or '',
                 'email': acc.user.email(),
+                'created_at': time.mktime(acc.created_at.timetuple()),
             }
 
         for app in app_query:
