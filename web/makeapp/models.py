@@ -29,6 +29,9 @@ class ImageGroup(db.Model):
 
     effect = db.StringProperty()
 
+    def memcache_key(self):
+        return 'ImageGroup/%s' % self.key().id_or_name()
+
 class ImageData(db.Model):
     data = db.BlobProperty()
 

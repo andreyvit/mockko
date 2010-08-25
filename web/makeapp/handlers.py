@@ -15,6 +15,7 @@ from django.utils import simplejson as json
 
 from google.appengine.api import users
 from google.appengine.api import images, mail
+from google.appengine.api import memcache
 from google.appengine.ext import db
 from google.appengine.ext.deferred import defer
 from google.appengine.ext.webapp.util import login_required
@@ -160,12 +161,24 @@ def format_images(group):
     for image in group.image_set.order('created_at').fetch(1000):
         yield format_image(image)
 
-def format_group(group, read_write):
+def format_group_without_caching(group):
     return {'id': group.key().id_or_name(),
             'name': group.name,
-            'writeable': read_write,
             'effect': group.effect,
             'images': list(format_images(group))}
+
+def format_group(group, read_write):
+    # only cache unowned groups because we can't afford other groups being stale
+    if group.owner is None:
+        memcache_key = group.memcache_key()
+        group_info = memcache.get(memcache_key)
+        if group_info is None:
+            group_info = format_group_without_caching(group)
+            memcache.add(memcache_key, group_info, 60)
+    else:
+        group_info = format_group_without_caching(group)
+    group_info['writeable'] = read_write
+    return group_info
 
 def get_image_group_or_404(group_id):
     try:
@@ -222,6 +235,8 @@ class SaveImageHandler(RequestHandler):
                       data=imgdata,
                       digest=hashlib.sha1(data).hexdigest())
         image.put()
+
+        memcache.delete(group.memcache_key())
 
         return render_json_response({ 'name': image.file_name })
 
@@ -336,6 +351,8 @@ class DeleteImageHandler(RequestHandler):
         if img.data:
             img.data.delete()
         img.delete()
+
+        memcache.delete(group.memcache_key())
 
         return render_json_response({'status': 'ok'})
 
