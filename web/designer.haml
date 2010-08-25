@@ -71,16 +71,17 @@
           %a(href="http://files.tarantsov.com/Mockko.msi") Mockko for Windows
           •
           %a(href="http://files.tarantsov.com/Mockko.dmg") Mockko for Mac OS X
-        
+
       #apps-list
-        #apps-list-container.apps-list-container
-          #app-template.app.template
-            .pile1
-            .pile2
-            .content
-              .rendered
-            .caption
-              My Frickin' App
+        #group-header-template.group-header.template
+        #app-template.app.template
+          .pile1
+          .pile2
+          .content
+            .rendered
+          .caption
+            My Frickin' App
+
 
     #design-screen.screen
 
@@ -100,7 +101,7 @@
         %h1#app-name
           %span#app-name-content My Great App
           .mockko-logo-titlebar
-        
+
       #screens-pane.left-pane
         #screens-list
           #app-screen-template.app-screen.template
@@ -110,7 +111,7 @@
       #add-screen-pane
         #add-screen-button
           Add Screen
-      
+
       #design-pane
         #device-panel.d-iphone-po
           #design-area
@@ -141,7 +142,7 @@
           %h1 Copy or paste JSON data
         .content
           %textarea
-          
+
       #inspector
         .tabs
           #insp-backgrounds-tab.tab Backgrounds
@@ -209,8 +210,8 @@
       #run-stop-button Back to Designer
       #run-address-label Visit from an iPhone/iPad, or share this link: <a href="#" target="_new">http://example.com/</a>
       %iframe#run-iframe
-      
-          
+
+
     %ul#component-context-menu.context-menu
       %li#delete-component-menu-item Delete
       %li#duplicate-component-menu-item Duplicate

@@ -1531,34 +1531,41 @@ jQuery ($) ->
         serverMode.deleteApplication app.id, ->
             $(app.node).fadeOut 250, ->
                 $(app.node).remove()
-                updateApplicationListWidth()
 
-    updateApplicationListWidth: ->
-        #
-
-    renderApplication: (appData, destination, show_name) ->
+    renderApplication: (appData) ->
         appId: appData['id']
         app: JSON.parse(appData['body'])
         app: ser.internalizeApplication(app)
         loadImageGroupsUsedInApplication app
         an: domTemplate('app-template')
-        $('.caption', $(an)).html(if show_name then app.name + ' (' + appData['nickname'] + ')' else app.name)
+        $('.caption', $(an)).html(app.name)
         renderScreenComponents(app.screens[0], $('.content .rendered', an))
-        $(an).appendTo(destination)
+        $(an).appendTo($('#apps-list'))
         app: { id: appId, content: app }
         bindApplication app, an
         app
 
+    renderApplicaitonListGroupHeader: (name) ->
+        $(domTemplate('group-header-template')).text(name).appendTo($('#apps-list'))
+
+    renderApplicationGroup: (name, apps) ->
+        renderApplicaitonListGroupHeader(name)
+        renderApplication(app) for app in apps
+
     refreshApplicationList: (callback) ->
         serverMode.loadApplications (apps) ->
-            $('#apps-list .app').remove()
-            applicationList: for appData in apps['apps'] when not appData['sample']
-                renderApplication appData, '#apps-list-container',
-                    apps['current_user'] != appData['created_by']
-            $('#sample-apps-separator').detach().appendTo('#apps-list-container')
-            for appData in apps['apps'].concat(Mockko.sampleApplications) when appData['sample']
-                renderApplication appData, '#apps-list-container', false
-            updateApplicationListWidth()
+            $('#apps-list *').remove()
+
+            users = apps['users']
+
+            samples         = appData for appData in Mockko.sampleApplications
+            myApps          = users[apps['current_user']]['apps']
+
+            renderApplicationGroup("My Applications", myApps)
+            for userId, userInfo of users when userId isnt apps['current_user']
+                userDisplayName = "${userInfo['full_name']} <${userInfo['email']}>"
+                renderApplicationGroup("Shared By ${userDisplayName}", userInfo['apps'])
+            renderApplicationGroup("Sample Applications", samples)
             callback(applicationList) if callback
 
     switchToDesign: ->

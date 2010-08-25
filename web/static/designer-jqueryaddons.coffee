@@ -414,3 +414,11 @@ $.hashparam: (newValues) ->
             location.hash = '#' + $.param(newValues)
     else
         $.parseparam((location.hash || '#').substring(1))
+
+_.mixin {
+    groupBy: (arr, func) ->
+        dict = {}
+        for item in arr
+            dict[func(item)] = item
+        dict
+}

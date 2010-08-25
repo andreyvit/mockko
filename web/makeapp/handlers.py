@@ -96,19 +96,29 @@ class GetAppListHandler(RequestHandler):
 
     @auth
     def get(self, user, account, **kwargs):
-        apps = App.all()
-        if not users.is_current_user_admin():
-            apps = apps.filter('editors', account.key())
-        apps = apps.order('-updated_at').fetch(100)
+        users_info = {}
 
-        accounts = Account.get(set([app._created_by for app in apps]))
+        app_query = App.all()
+        if not users.is_current_user_admin():
+            app_query = app_query.filter('editors', account.key())
+        app_query = app_query.fetch(1000)
+
         accounts_by_key = {}
-        for acc in accounts: accounts_by_key[acc.key()] = acc
-        apps_json = [ { 'id': app.key().id(),
-                        'created_by': accounts_by_key[app._created_by].user.user_id(),
-                        'nickname': accounts_by_key[app._created_by].user.nickname(),
-                        'body': app.body } for app in apps]
-        return render_json_response({ 'apps': apps_json, 'current_user': account.user.user_id() if account else None })
+        for acc in Account.get(set([app._created_by for app in app_query])):
+            accounts_by_key[acc.key()] = acc
+
+            users_info[acc.user.user_id()] = {
+                'apps': [],
+                'full_name': acc.full_name or '',
+                'email': acc.user.email(),
+            }
+
+        for app in app_query:
+            users_info[accounts_by_key[app._created_by].user.user_id()]['apps'].append(
+                { 'id': app.key().id(), 'body': app.body, }
+            )
+
+        return render_json_response({ 'users': users_info, 'current_user': account.user.user_id() if account else None })
 
 class SaveAppHandler(RequestHandler):
 
