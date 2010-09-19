@@ -5,14 +5,14 @@
 # Copyright (C) 2010, Andrey Tarantsov, Mikhail Gusarov
 #
 
-{ rectOf, findComponentByRect, compWithChildrenAndParents }: Mockko.model
-{ centerOfRect }: Mockko.geom
+{ rectOf, findComponentByRect, compWithChildrenAndParents } = Mockko.model
+{ centerOfRect } = Mockko.geom
 
 
-ALIGNMENT_DETECTION_CENTER_FUZZINESS_PX: 2
-ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX: 17
-ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX: 12
-Alignments: {
+ALIGNMENT_DETECTION_CENTER_FUZZINESS_PX = 2
+ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX = 17
+ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX = 12
+Alignments = {
     left: {
         bestDefiniteGuess: -> this
         cssValue: 'left'
@@ -40,9 +40,9 @@ Alignments: {
 }
 (->
     for name, al of Alignments
-        al.name: name
+        al.name = name
 )()
-Edges: {
+Edges = {
     top: {
         siblingRect: (r, distance) -> { x: r.x, w: r.w, h: distance, y: r.y - distance }
     }
@@ -57,20 +57,20 @@ Edges: {
     }
 }
 
-possibleAlignmentOf: (comp, screen) ->
+possibleAlignmentOf = (comp, screen) ->
     return Alignments.unknown unless comp.parent
 
-    pr: rectOf comp.parent
-    cr: rectOf comp
+    pr = rectOf comp.parent
+    cr = rectOf comp
 
     return Alignments.left  if pr.x <= cr.x <= pr.x + ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX
     return Alignments.right if pr.x+pr.w - ALIGNMENT_DETECTION_EDGE_FUZZINESS_PX <= cr.x+cr.w <= pr.x+pr.w
 
-    nonSiblings: setOf compWithChildrenAndParents comp
-    findConstrainingSibling: (edge) -> findComponentByRect(screen.rootComponent, edge.siblingRect(cr, ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX), nonSiblings)
+    nonSiblings = setOf compWithChildrenAndParents comp
+    findConstrainingSibling = (edge) -> findComponentByRect(screen.rootComponent, edge.siblingRect(cr, ALIGNMENT_DETECTION_SIBLING_FUZZINESS_PX), nonSiblings)
 
-    leftSibling:  findConstrainingSibling Edges.left
-    rightSibling: findConstrainingSibling Edges.right
+    leftSibling =  findConstrainingSibling Edges.left
+    rightSibling = findConstrainingSibling Edges.right
     return Alignments.tight if leftSibling and rightSibling
     return Alignments.right if rightSibling
     return Alignments.left  if leftSibling
@@ -81,4 +81,4 @@ possibleAlignmentOf: (comp, screen) ->
     return Alignments.unknown
 
 
-Mockko.possibleAlignmentOf: possibleAlignmentOf
+Mockko.possibleAlignmentOf = possibleAlignmentOf

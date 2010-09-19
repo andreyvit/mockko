@@ -4,8 +4,8 @@
 * Python >= 2.5
 * ruby-haml
 * less.js
-* coffeescript [>= 0.7, < 0.9]
-* nodejs [>= 0.1.99]
+* coffeescript [>= 0.9]
+* nodejs [>= 0.2.2]
 * GAE Python SDK (for 'make run' and 'make deploy')
 * ruby-fssm (for 'make watch')
 * JRE (for 'make optimize')

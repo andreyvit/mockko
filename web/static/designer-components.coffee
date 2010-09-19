@@ -17,37 +17,37 @@
     #  Line / Segment
     lineFromPtPt, lineFromABPt, signum, classifyPtLine, perpendicularLineThroughPoint, distancePtLine
     distancePtSegment
-}: Mockko.geom
+} = Mockko.geom
 
 
-window.Pins: {
-    bottom: {
+window.Pins = {
+    bottom:{
         computeRect: (area, comp, findRectOfPinned) ->
-            hp: comp.type.heightPolicy
-            h: hp.fixedSize.portrait || hp.fixedSize
+            hp = comp.type.heightPolicy
+            h = hp.fixedSize.portrait || hp.fixedSize
             { x: area.x, w: area.w, y: area.y+area.h-h, h: h }
         dependantPins: []
     }
     top: {
         computeRect: (area, comp, findRectOfPinned) ->
-            hp: comp.type.heightPolicy
-            h: hp.fixedSize.portrait || hp.fixedSize
+            hp = comp.type.heightPolicy
+            h = hp.fixedSize.portrait || hp.fixedSize
             { x: area.x, w: area.w, y: area.y, h: h }
         dependantPins: []
     }
     secondTop: {
         computeRect: (area, comp, findRectOfPinned) ->
-            hp: comp.type.heightPolicy
-            h: hp.fixedSize.portrait || hp.fixedSize
-            pinned: findRectOfPinned(Pins.top)
+            hp = comp.type.heightPolicy
+            h = hp.fixedSize.portrait || hp.fixedSize
+            pinned = findRectOfPinned(Pins.top)
             { x: area.x, w: area.w, y: (if pinned then pinned.y+pinned.h else area.y), h: h }
         dependantPins: []
     }
     secondBottom: {
         computeRect: (area, comp, findRectOfPinned) ->
-            hp: comp.type.heightPolicy
-            h: hp.fixedSize.portrait || hp.fixedSize
-            pinned: findRectOfPinned(Pins.bottom)
+            hp = comp.type.heightPolicy
+            h = hp.fixedSize.portrait || hp.fixedSize
+            pinned = findRectOfPinned(Pins.bottom)
             { x: area.x, w: area.w, y: (if pinned then pinned.y else area.y+area.h)-h, h: h }
         dependantPins: []
     }
@@ -55,7 +55,7 @@ window.Pins: {
 Pins.top.dependantPins.push Pins.secondTop
 Pins.bottom.dependantPins.push Pins.secondBottom
 
-(window.Mockko ||= {}).componentTypes: {
+(window.Mockko ||= {}).componentTypes = {
     'background': {
         type: 'background'
         label: 'Background'
@@ -78,7 +78,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         supportsImageReplacement: no
         tagName: 'img'
         renderImage: (comp, node, imageUrl) ->
-          node.src: imageUrl
+          node.src = imageUrl
         tooltip: (comp) ->
             comp.image.name
         constrainProportionsByDefault: yes
@@ -121,26 +121,27 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         canHazLink: no
 
         layoutChildren: (children, tabBarRect) ->
-            count: children.length
-            [hinset, hgap, vinset]: [5, 2, 3]
-            tabHeight: 44
-            itemSize: { w: (tabBarRect.w - 2*hinset - hgap*(count-1)) / count
-                        h: tabHeight }
-            pt: { x: tabBarRect.x + hinset, y: tabBarRect.y + vinset }
+            count = children.length
+            [hinset, hgap, vinset] = [5, 2, 3]
+            tabHeight = 44
+            itemSize =
+                w: (tabBarRect.w - 2*hinset - hgap*(count-1)) / count
+                h: tabHeight
+            pt = { x: tabBarRect.x + hinset, y: tabBarRect.y + vinset }
             switch count
                 when 0 then []
                 when 1 then [rectFromPtAndSize(pt, itemSize)]
                 else
-                    index: 0
+                    index = 0
                     while index++ < count
-                        r: rectFromPtAndSize(pt, itemSize)
+                        r = rectFromPtAndSize(pt, itemSize)
                         pt.x += itemSize.w + hgap
                         r
 
         adjustChildAfterPasteOrDuplication: (screen, child, container) ->
             if child.state
                 if _(container.children).any((c) -> c.state && c isnt child)
-                    child.state: off
+                    child.state = off
 
         allowedChildren: ['tab-bar-item']
     }
@@ -213,12 +214,12 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         layoutChildren: (children, outerRect) ->
             return [] if children.length is 0
 
-            totalW: _(children).reduce 0, (memo, child) -> memo + child.effsize.w
+            totalW = _(children).reduce 0, (memo, child) -> memo + child.effsize.w
             hgap = (outerRect.w - totalW) / (children.length + 1)
 
-            x: outerRect.x + hgap
+            x = outerRect.x + hgap
             for child in children
-                r: rectFromPtAndSize { x: x, y: outerRect.y + (outerRect.h-child.effsize.h)/2 }, child.effsize
+                r = rectFromPtAndSize { x: x, y: outerRect.y + (outerRect.h-child.effsize.h)/2 }, child.effsize
                 x += child.effsize.w + hgap
                 r
     }
@@ -425,13 +426,13 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         layoutChildren: (children, outerRect) ->
             return [] if children.length is 0
 
-            remainingContainerW: outerRect.w
-            remainingChildrenCount: children.length
+            remainingContainerW = outerRect.w
+            remainingChildrenCount = children.length
 
-            x: outerRect.x
+            x = outerRect.x
             for child in children
-                w: remainingContainerW / remainingChildrenCount
-                r: { x: x, y: outerRect.y, w, h: outerRect.h }
+                w = remainingContainerW / remainingChildrenCount
+                r = { x: x, y: outerRect.y, w, h: outerRect.h }
                 x += w
                 remainingContainerW -= w
                 remainingChildrenCount -= 1
@@ -448,7 +449,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
     }
 }
 
-(window.Mockko ||= {}).paletteDefinition: [
+(window.Mockko ||= {}).paletteDefinition = [
     {
         name: "Text"
         items: [
@@ -1491,7 +1492,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
     }
 ]
 
-(window.Mockko ||= {}).textShadowStyles: {
+(window.Mockko ||= {}).textShadowStyles = {
     'none': {
         label: 'none'
         css: {
@@ -1519,7 +1520,7 @@ Pins.bottom.dependantPins.push Pins.secondBottom
 
 }
 
-(window.Mockko ||= {}).backgroundStyles: [
+(window.Mockko ||= {}).backgroundStyles = [
     {
         name: 'transparent'
         label: 'Transparent'
@@ -1549,9 +1550,9 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         label: "Dark"
     }
 ]
-(window.Mockko ||= {}).backgroundStylesByName: (->
-    result: {}
+(window.Mockko ||= {}).backgroundStylesByName = (->
+    result = {}
     for bg in Mockko.backgroundStyles
-        result[bg.name]: bg
+        result[bg.name] = bg
     result
 )()

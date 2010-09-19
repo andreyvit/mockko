@@ -1,9 +1,9 @@
 jQuery ($) ->
 
-    MAX_IMAGE_UPLOAD_SIZE: 1024*1024
-    MAX_IMAGE_UPLOAD_SIZE_DESCR: '1 Mb'
+    MAX_IMAGE_UPLOAD_SIZE = 1024*1024
+    MAX_IMAGE_UPLOAD_SIZE_DESCR = '1 Mb'
 
-    DEFAULT_ROOT_COMPONENT: {
+    DEFAULT_ROOT_COMPONENT = {
         type: "background"
         size: { w: 320, h: 480 }
         abspos: { x: 0, y: 0 }
@@ -29,14 +29,14 @@ jQuery ($) ->
         #  Line / Segment
         lineFromPtPt, lineFromABPt, signum, classifyPtLine, perpendicularLineThroughPoint, distancePtLine
         distancePtSegment
-    }: Mockko.geom
+    } = Mockko.geom
 
-    Types: Mockko.componentTypes
-    ser: Mockko.serialization
-    hover: null
-    inspector: null
-    layouting: Mockko.layouting
-    componentTree: Mockko.componentTree
+    Types = Mockko.componentTypes
+    ser = Mockko.serialization
+    hover = null
+    inspector = null
+    layouting = Mockko.layouting
+    componentTree = Mockko.componentTree
 
     {
         renderComponentNode
@@ -45,7 +45,7 @@ jQuery ($) ->
         renderComponentStyle, textNodeOfComponent, childrenNodeOfComponent
         renderComponentVisualProperties, renderComponentProperties
         renderComponentHierarchy, renderComponentParentship
-    }: Mockko.renderer
+    } = Mockko.renderer
 
     {
         sizeOf, rectOf, friendlyComponentName, uidOf
@@ -53,51 +53,51 @@ jQuery ($) ->
         compWithChildrenAndParents, isComponentOrDescendant
         findChildByType
         moveComponent
-    }: Mockko.model
+    } = Mockko.model
 
-    { commitMoves, commitMovesImmediately, STACKED_COMP_TRANSITION_DURATION }: Mockko.applicator
+    { commitMoves, commitMovesImmediately, STACKED_COMP_TRANSITION_DURATION } = Mockko.applicator
 
 
     ##########################################################################################################
     ## global variables
 
-    applicationList: null
-    serverMode: null
-    applicationId: null
-    application: null
-    activeScreen: null
-    mode: null
-    componentBeingDoubleClickEdited: null
-    undo: null
+    applicationList = null
+    serverMode = null
+    applicationId = null
+    application = null
+    activeScreen = null
+    mode = null
+    componentBeingDoubleClickEdited = null
+    undo = null
 
 
     ##########################################################################################################
     ##  undo support
 
-    runTransaction: (changeName, change) ->
+    runTransaction = (changeName, change) ->
         undo.beginTransaction changeName
         change()
         undo.endTransaction()
         componentsChanged()
 
-    setUndoChangeComponent: (comp) ->
+    setUndoChangeComponent = (comp) ->
         undo.setUndoChangeMergeMarker uidOf(comp)
 
-    setupUndoSystem: ->
-        createApplicationMemento: ->
+    setupUndoSystem = ->
+        createApplicationMemento = ->
             JSON.stringify(ser.externalizeApplication(application))
-        revertToMemento: (memento) ->
-            screenIndex: _(application.screens).indexOf activeScreen
+        revertToMemento = (memento) ->
+            screenIndex = _(application.screens).indexOf activeScreen
             reloadApplication ser.internalizeApplication(JSON.parse(memento))
             saveApplicationChanges()
             if application.screens.length > 0
-                screenIndex: Math.max(0, Math.min(application.screens.length - 1, screenIndex))
+                screenIndex = Math.max(0, Math.min(application.screens.length - 1, screenIndex))
                 switchToScreen application.screens[screenIndex]
-        lastUndoCommandChanged: (lastChangeDescription) ->
+        lastUndoCommandChanged = (lastChangeDescription) ->
             $('#undo-button').alterClass('disabled', lastChangeDescription is null)
             if lastChangeDescription
                 $('#undo-hint span').html lastChangeDescription
-        undo: Mockko.newUndoManager createApplicationMemento, revertToMemento, saveApplicationChanges, lastUndoCommandChanged
+        undo = Mockko.newUndoManager createApplicationMemento, revertToMemento, saveApplicationChanges, lastUndoCommandChanged
 
     $('#undo-button').click (e) ->
         e.preventDefault(); e.stopPropagation()
@@ -107,7 +107,7 @@ jQuery ($) ->
     ##########################################################################################################
     ##  global events
 
-    componentsChanged: ->
+    componentsChanged = ->
         componentTree.rebuildComponentTree(activeScreen.rootComponent)
         traverse activeScreen.rootComponent, (child) ->
             if child.componentTree_oldParent != child.parent
@@ -119,32 +119,32 @@ jQuery ($) ->
 
         reassignZIndexes()
 
-        activeScreen.allStacks: Mockko.stacking.discoverStacks(activeScreen.rootComponent)
+        activeScreen.allStacks = Mockko.stacking.discoverStacks(activeScreen.rootComponent)
 
         inspector.updateInspector()
         updateScreenPreview(activeScreen)
 
-    componentPositionChanged: (c) ->
+    componentPositionChanged = (c) ->
         renderComponentPosition c
         updateEffectiveSizesAndRelayoutHierarchy c  # only needed if size has changed -- TODO check for this
         if c is hover.currentlyHovered()
             hover.updateHoverPanelPosition()
             inspector.updatePositionInspector()
 
-    componentStyleChanged: (c) ->
+    componentStyleChanged = (c) ->
         renderComponentStyle c
 
-    componentActionChanged: (c) ->
+    componentActionChanged = (c) ->
         renderComponentStyle c
         if c is componentToActUpon()
             inspector.updateActionInspector()
         if c is hover.currentlyHovered()
             hover.updateHoverPanelPosition()
 
-    containerChildrenChanged: (container) ->
-        sorted: _(container.children).sortBy (child) -> child.abspos.x
+    containerChildrenChanged = (container) ->
+        sorted = _(container.children).sortBy (child) -> child.abspos.x
         if _(_(sorted).zip(container.children)).any((a, b) -> a isnt b)
-            childrenNode: childrenNodeOfComponent container
+            childrenNode = childrenNodeOfComponent container
             for node in (n for n in childrenNode.childNodes)
                 childrenNode.removeChild node
             for node in (child.node for child in sorted)
@@ -154,54 +154,54 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Hit Testing
 
-    findComponentAt: (pt) ->
-        if linkOverlay: hover.currentLinkOverlay()
+    findComponentAt = (pt) ->
+        if linkOverlay = hover.currentLinkOverlay()
             if linkOverlay.justAdded
-                pagePt: addPtPt(pt, ptFromNode('#design-area'))
-                if (d: hover.distanceToLinkOverlay(pagePt)) < linkOverlay.safeDistance
+                pagePt = addPtPt(pt, ptFromNode('#design-area'))
+                if (d = hover.distanceToLinkOverlay(pagePt)) < linkOverlay.safeDistance
                     return linkOverlay.comp
 
-        result: null
-        visitor: (child) ->
-            rect: rectOf(child)
-            hitRect: if o: child.type.hitAreaOutset then insetRect rect, { l: -o, r: -o, t: -o, b: -o } else rect
+        result = null
+        visitor = (child) ->
+            rect = rectOf(child)
+            hitRect = if o = child.type.hitAreaOutset then insetRect rect, { l: -o, r: -o, t: -o, b: -o } else rect
             unless ptInRect(pt, hitRect)
                 return skipTraversingChildren
-            result: child
-            if o: child.type.hitAreaInset
+            result = child
+            if o = child.type.hitAreaInset
                 # hit the container instead of children if the mouse is within o px from its border
-                hitRect: insetRect rect, { l: o, r: o, t: o, b: o }
+                hitRect = insetRect rect, { l: o, r: o, t: o, b: o }
                 unless ptInRect(pt, hitRect)
                     return skipTraversingChildren
 
-        if hovered: hover.currentlyHovered()
-            rect: insetRect rectOf(hovered), { l: -7, r: -7, t: -20, b: -7 }
+        if hovered = hover.currentlyHovered()
+            rect = insetRect rectOf(hovered), { l: -7, r: -7, t: -20, b: -7 }
             if ptInRect(pt, rect)
-                result: hovered
+                result = hovered
                 traverse hovered, visitor
                 return result
 
         traverse activeScreen.rootComponent, visitor
         result
 
-    findComponentByEvent: (e) ->
-        origin: ptFromLT $('#design-area').offset()
+    findComponentByEvent = (e) ->
+        origin = ptFromLT $('#design-area').offset()
         findComponentAt subPtPt({ x: e.pageX, y: e.pageY }, origin)
 
 
     ##########################################################################################################
     ##  component management
 
-    cloneTemplateComponent: (compTemplate) ->
-        c: ser.internalizeComponent compTemplate, null
-        traverse c, (comp) -> comp.inDocument: no
+    cloneTemplateComponent = (compTemplate) ->
+        c = ser.internalizeComponent compTemplate, null
+        traverse c, (comp) -> comp.inDocument = no
         return c
 
-    deleteComponentWithoutTransaction: (rootc, animated) ->
+    deleteComponentWithoutTransaction = (rootc, animated) ->
         return if rootc.type.unmovable
 
-        effect: layouting.computeDeletionEffect activeScreen, rootc
-        stacking: Mockko.stacking.handleStacking rootc, null, activeScreen.allStacks
+        effect = layouting.computeDeletionEffect activeScreen, rootc
+        stacking = Mockko.stacking.handleStacking rootc, null, activeScreen.allStacks
 
         commitMoves stacking.moves.concat(effect.moves), [rootc], animated && STACKED_COMP_TRANSITION_DURATION, activeScreen, componentPositionChanged
 
@@ -214,13 +214,13 @@ jQuery ($) ->
         deselectComponent() if isComponentOrDescendant selectedComponent, rootc
         hover.componentUnhovered() if isComponentOrDescendant hover.currentlyHovered(), rootc
 
-    deleteComponent: (rootc) ->
-        runTransaction "deletion of ${friendlyComponentName rootc}", ->
+    deleteComponent = (rootc) ->
+        runTransaction "deletion of #{friendlyComponentName rootc}", ->
             deleteComponentWithoutTransaction rootc, true
 
-    insetsToEdges: (screen, comp) ->
-        r: rectOf comp
-        a: screen.allowedArea
+    insetsToEdges = (screen, comp) ->
+        r = rectOf comp
+        a = screen.allowedArea
         {
             l: Math.max(0, r.x - a.x)
             t: Math.max(0, r.y - a.y)
@@ -228,42 +228,42 @@ jQuery ($) ->
             b: Math.max(0, (a.y+a.h) - (r.y+r.h))
         }
 
-    moveComponentBy: (comp, offset) ->
-        insets: insetsToEdges(activeScreen, comp)
-        offset: {
+    moveComponentBy = (comp, offset) ->
+        insets = insetsToEdges(activeScreen, comp)
+        offset = {
             x: if offset.x < 0 then -Math.min(-offset.x, insets.l) else Math.min( offset.x, insets.r)
             y: if offset.y < 0 then -Math.min(-offset.y, insets.t) else Math.min( offset.y, insets.b)
         }
         return if offset.x == 0 and offset.y == 0
         # warning: this prefix (“keyboard moving of”) is also used in designer-undo.coffee
-        runTransaction "keyboard moving of ${friendlyComponentName comp}", ->
+        runTransaction "keyboard moving of #{friendlyComponentName comp}", ->
             setUndoChangeComponent comp
-            traverse comp, (c) -> c.abspos: ptSum(c.abspos, offset)
+            traverse comp, (c) -> c.abspos = ptSum(c.abspos, offset)
             traverse comp, componentPositionChanged
 
-    duplicateComponent: (comp) ->
+    duplicateComponent = (comp) ->
         return if comp.type.unmovable || comp.type.singleInstance
 
-        newComp: ser.internalizeComponent(ser.externalizeComponent(comp), comp.parent)
+        newComp = ser.internalizeComponent(ser.externalizeComponent(comp), comp.parent)
 
         $(childrenNodeOfComponent comp.parent).append renderInteractiveComponentHeirarchy newComp
         updateEffectiveSizesAndRelayoutHierarchy newComp
 
-        effect: layouting.computeDuplicationEffect activeScreen, newComp, comp
+        effect = layouting.computeDuplicationEffect activeScreen, newComp, comp
         if effect is null
             $(newComp.node).remove()
             alert "Cannot duplicate the component because another copy does not fit into the designer"
             return
 
-        runTransaction "duplicate ${friendlyComponentName comp}", ->
+        runTransaction "duplicate #{friendlyComponentName comp}", ->
             comp.parent.children.push newComp
 
             layouting.adjustChildAfterPasteOrDuplication activeScreen, newComp, newComp.parent
             renderComponentStyle newComp
 
-            newRect: effect.rect
+            newRect = effect.rect
             if newRect.w != comp.effsize.w or newRect.h != comp.effsize.h
-                newComp.size: { w: newRect.w, h: newRect.h }
+                newComp.size = { w: newRect.w, h: newRect.h }
             moveComponent newComp, newRect
             componentPositionChanged newComp
 
@@ -275,74 +275,74 @@ jQuery ($) ->
     ##########################################################################################################
     ##  DOM rendering
 
-    renderStaticComponentHierarchy: (c) -> renderComponentHierarchy c, false, false
-    renderPaletteComponentHierarchy: (c) -> renderComponentHierarchy c, true, false
-    renderInteractiveComponentHeirarchy: (c) -> renderComponentHierarchy c, true, true
+    renderStaticComponentHierarchy = (c) -> renderComponentHierarchy c, false, false
+    renderPaletteComponentHierarchy = (c) -> renderComponentHierarchy c, true, false
+    renderInteractiveComponentHeirarchy = (c) -> renderComponentHierarchy c, true, true
 
-    relayoutHierarchy: (c) ->
+    relayoutHierarchy = (c) ->
         traverse c, (child) ->
-            if effect: layouting.computeRelayoutEffect activeScreen, child
+            if effect = layouting.computeRelayoutEffect activeScreen, child
                 commitMovesImmediately effect.moves, componentPositionChanged
                 containerChildrenChanged child
 
-    updateEffectiveSizesAndRelayoutHierarchy: (c) ->
+    updateEffectiveSizesAndRelayoutHierarchy = (c) ->
         traverse c, (child) -> updateEffectiveSize child
         relayoutHierarchy c
 
-    reassignZIndexes: ->
+    reassignZIndexes = ->
         traverse activeScreen.rootComponent, (comp) ->
-            ordered: _(comp.children).sortBy (c) -> r: rectOf c; -r.w * r.h
+            ordered = _(comp.children).sortBy (c) -> r = rectOf c; -r.w * r.h
             _.each ordered, (c, i) -> $(c.node).css('z-index', i)
 
 
     ##########################################################################################################
     ##  Images
 
-    imageSizeForImage: (image, effect) ->
+    imageSizeForImage = (image, effect) ->
         return image.size unless serverMode.supportsImageEffects
         switch effect
             when 'iphone-tabbar-active'   then { w: 35, h: 35 }
             when 'iphone-tabbar-inactive' then { w: 35, h: 32 }
             else image.size
 
-    _imageEffectName: (image, effect) ->
-        splitext: /^(.*)\.([^.]+)$/
-        split: splitext.exec image
+    _imageEffectName = (image, effect) ->
+        splitext = /^(.*)\.([^.]+)$/
+        split = splitext.exec image
         if split?
-            "${split[1]}.${effect}.${split[2]}"
+            "#{split[1]}.#{effect}.#{split[2]}"
         else
-            throw "Unable to split ${image} into filename and extensions"
+            throw "Unable to split #{image} into filename and extensions"
 
     #
     # UI may request URLs for many images belonging to the same image group.
     #
     # To avoid issuing sheer amount of requests to server, first call will mark
     # image group as "pending", so subsequent calls will add callback to the
-    # list of "waiting for image group $foo". All callbacks will be executed
+    # list of "waiting for image group #{foo}". All callbacks will be executed
     # when AJAX handler is executed.
     #
 
-    groups: {}
-    pending: {}
+    groups = {}
+    pending = {}
 
-    _returnImageUrl: (image, effect, cb) ->
-        throw "image group URLs not cached: ${image.group}" unless image.group of groups
-        digest: groups[image.group][image.name]
+    _returnImageUrl = (image, effect, cb) ->
+        throw "image group URLs not cached = #{image.group}" unless image.group of groups
+        digest = groups[image.group][image.name]
         if effect
-            cb "images/${encodeURIComponent image.group}/${encodeURIComponent (_imageEffectName image.name, effect)}?${digest}"
+            cb "images/#{encodeURIComponent image.group}/#{encodeURIComponent (_imageEffectName image.name, effect)}?#{digest}"
         else
-            cb "images/${encodeURIComponent image.group}/${encodeURIComponent image.name}?${digest}"
+            cb "images/#{encodeURIComponent image.group}/#{encodeURIComponent image.name}?#{digest}"
 
-    _updateGroup: (groupName, group) ->
-        info: {}
+    _updateGroup = (groupName, group) ->
+        info = {}
         for imginfo in group
-            info[imginfo['fileName']]: imginfo['digest']
-        groups[groupName]: info
+            info[imginfo['fileName']] = imginfo['digest']
+        groups[groupName] = info
 
-    ensureImageGroupLoaded: (group) ->
+    ensureImageGroupLoaded = (group) ->
         unless group of groups
             unless group of pending
-                pending[group]: []
+                pending[group] = []
                 serverMode.loadImageGroup group, (info) ->
                     if info
                         _updateGroup group, info['images']
@@ -353,9 +353,9 @@ jQuery ($) ->
                             callback null
                     delete pending[group]
 
-    getImageUrl: (image, effect, callback) ->
+    getImageUrl = (image, effect, callback) ->
         unless image.group of groups or image.group of pending
-            console.error "getImageUrl - image group not loaded and not loading: ${image.group}"
+            console.error "getImageUrl - image group not loaded and not loading = #{image.group}"
             return
         if image.group of pending
             pending[image.group].push([image, effect, callback])
@@ -363,67 +363,67 @@ jQuery ($) ->
             _returnImageUrl image, effect, callback
 
     # TODO: remove this hack for circular dependency on designer-rendering
-    window.getImageUrl: getImageUrl
+    window.getImageUrl = getImageUrl
 
 
     ##########################################################################################################
     ##  selection
 
-    selectedComponent: null
+    selectedComponent = null
 
-    selectComponent: (comp) ->
+    selectComponent = (comp) ->
         return if comp is selectedComponent
         deselectComponent()
-        selectedComponent: comp
+        selectedComponent = comp
         $(selectedComponent.node).addClass 'selected'
         inspector.updateInspector()
 
-    deselectComponent: ->
+    deselectComponent = ->
         return if selectedComponent is null
         $(selectedComponent.node).removeClass 'selected'
-        selectedComponent: null
+        selectedComponent = null
         inspector.updateInspector()
 
-    componentToActUpon: -> selectedComponent || hover.currentlyHovered()
+    componentToActUpon = -> selectedComponent || hover.currentlyHovered()
 
 
     ##########################################################################################################
     ##  double-click editing
 
-    handleComponentDoubleClick: (c) ->
+    handleComponentDoubleClick = (c) ->
         switch c.type.name
             when 'tab-bar-item'
-                runTransaction "activation of ${friendlyComponentName c}", ->
+                runTransaction "activation of #{friendlyComponentName c}", ->
                     _(c.parent.children).each (child) ->
-                        newState: if c is child then on else off
+                        newState = if c is child then on else off
                         if child.state isnt newState
-                            child.state: newState
+                            child.state = newState
                             componentStyleChanged child
             when 'switch'
-                c.state: c.type.state unless c.state?
-                newStateDesc: if c.state then 'off' else 'on'
-                runTransaction "turning ${friendlyComponentName c} ${newStateDesc}", ->
-                    c.state: !c.state
+                c.state = c.type.state unless c.state?
+                newStateDesc = if c.state then 'off' else 'on'
+                runTransaction "turning #{friendlyComponentName c} #{newStateDesc}", ->
+                    c.state = !c.state
                     componentStyleChanged c
         startComponentTextInPlaceEditing c
 
-    startComponentTextInPlaceEditing: (c) ->
+    startComponentTextInPlaceEditing = (c) ->
         return unless c.type.supportsText
 
         if c.type.wantsSmartAlignment
-            alignment: Mockko.possibleAlignmentOf(c, activeScreen).bestDefiniteGuess()
-            originalRect: rectOf c
+            alignment = Mockko.possibleAlignmentOf(c, activeScreen).bestDefiniteGuess()
+            originalRect = rectOf c
 
-        realign: ->
+        realign = ->
             if c.type.wantsSmartAlignment
                 updateEffectiveSize c
-                if newPos: alignment.adjustedPosition(originalRect, c.effsize)
-                    c.abspos: newPos
+                if newPos = alignment.adjustedPosition(originalRect, c.effsize)
+                    c.abspos = newPos
                     componentPositionChanged c
 
         $(textNodeOfComponent c).startInPlaceEditing {
             before: ->
-                c.dirtyText: yes;
+                c.dirtyText = yes;
                 $(c.node).addClass 'editing';
                 activateMode {
                     isInsideTextField: yes
@@ -432,19 +432,19 @@ jQuery ($) ->
                     mousemove: -> false
                     mouseup: -> false
                 }
-                componentBeingDoubleClickEdited: c
+                componentBeingDoubleClickEdited = c
             after:  ->
-                c.dirtyText: no
+                c.dirtyText = no
                 $(c.node).removeClass 'editing'
                 deactivateMode()
                 if componentBeingDoubleClickEdited is c
-                    componentBeingDoubleClickEdited: null
+                    componentBeingDoubleClickEdited = null
             accept: (newText) ->
                 if newText is ''
-                    newText: "Text"
-                runTransaction "text change in ${friendlyComponentName c}", ->
-                    c.text: newText
-                    c.dirtyText: no
+                    newText = "Text"
+                runTransaction "text change in #{friendlyComponentName c}", ->
+                    c.text = newText
+                    c.dirtyText = no
                     renderComponentVisualProperties c
                     realign()
             changed: ->
@@ -456,14 +456,14 @@ jQuery ($) ->
     ##  context menu
 
     $('#delete-component-menu-item').bind {
-        update:   (e, comp) -> e.enabled: !comp.type.unmovable
+        update:   (e, comp) -> e.enabled = !comp.type.unmovable
         selected: (e, comp) -> deleteComponent comp
     }
     $('#duplicate-component-menu-item').bind {
-        update:   (e, comp) -> e.enabled: !comp.type.unmovable
+        update:   (e, comp) -> e.enabled = !comp.type.unmovable
         selected: (e, comp) -> duplicateComponent comp
     }
-    showComponentContextMenu: (comp, pt) -> $('#component-context-menu').showAsContextMenuAt pt, comp
+    showComponentContextMenu = (comp, pt) -> $('#component-context-menu').showAsContextMenuAt pt, comp
 
     $('#delete-custom-image-menu-item').bind {
         selected: (e, image) -> deleteImage image
@@ -473,15 +473,15 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Mode Engine
 
-    modeEngine: newModeEngine {
+    modeEngine = newModeEngine {
         modeDidChange: (mode) ->
             if mode
-                console.log "Mode: ${mode?.debugname}"
+                console.log "Mode: #{mode?.debugname}"
             else
                 console.log "Mode: None"
     }
-    { activateMode, deactivateMode, cancelMode, dispatchToMode, activeMode }: modeEngine
-    ModeMethods: {
+    { activateMode, deactivateMode, cancelMode, dispatchToMode, activeMode } = modeEngine
+    ModeMethods = {
         mouseup:      (m) -> m.mouseup
         contextmenu:  (m) -> m.contextmenu
         mousedown:    (m) -> m.mousedown
@@ -494,13 +494,13 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Dragging
 
-    computeDropAction: (comp, target, originalSize, originalEffSize) ->
+    computeDropAction = (comp, target, originalSize, originalEffSize) ->
         if comp.type is Types['image'] and target.type.supportsImageReplacement
             newSetImageAction target, comp
         else
             newDropOnTargetAction comp, target, originalSize, originalEffSize
 
-    newDropOnTargetAction: (c, target, originalSize, originalEffSize) ->
+    newDropOnTargetAction = (c, target, originalSize, originalEffSize) ->
         {
             execute: ->
                 if c.parent != target
@@ -513,36 +513,36 @@ jQuery ($) ->
                 (childrenNodeOfComponent c.parent).appendChild(c.node)
 
                 if c.dragsize
-                    c.size: {
+                    c.size = {
                         w: if c.dragsize.w is originalEffSize.w then originalSize.w else c.dragsize.w
                         h: if c.dragsize.h is originalEffSize.h then originalSize.h else c.dragsize.h
                     }
-                shift: ptDiff c.dragpos, c.abspos
-                traverse c, (cc) -> cc.abspos: ptSum cc.abspos, shift
-                c.dragpos: null
-                c.dragsize: null
-                c.dragParent: null
+                shift = ptDiff c.dragpos, c.abspos
+                traverse c, (cc) -> cc.abspos = ptSum cc.abspos, shift
+                c.dragpos = null
+                c.dragsize = null
+                c.dragParent = null
 
-                traverse c, (child) -> child.inDocument: yes
+                traverse c, (child) -> child.inDocument = yes
 
                 componentPositionChanged c
         }
 
-    newSetImageAction: (target, c) ->
+    newSetImageAction = (target, c) ->
         {
             execute: ->
-                target.image: c.image
+                target.image = c.image
                 $(c.node).remove()
                 renderComponentVisualProperties target
         }
 
-    computeMoveOptions: (e) ->
+    computeMoveOptions = (e) ->
         {
             disableSnapping: !!e.ctrlKey
         }
 
-    activateExistingComponentDragging: (c, startPt) ->
-        dragger: null
+    activateExistingComponentDragging = (c, startPt) ->
+        dragger = null
 
         window.status = "Dragging a component."
 
@@ -551,24 +551,24 @@ jQuery ($) ->
             cancelOnMouseUp: yes
             mousemove: (e) ->
 
-                pt: { x: e.pageX, y: e.pageY }
+                pt = { x: e.pageX, y: e.pageY }
                 if dragger is null
                     return if Math.abs(pt.x - startPt.x) <= 1 and Math.abs(pt.y - startPt.y) <= 1
-                    undo.beginTransaction "movement of ${friendlyComponentName c}"
-                    dragger: Mockko.startDragging activeScreen, c, { startPt: startPt }, computeMoveOptions(e),
+                    undo.beginTransaction "movement of #{friendlyComponentName c}"
+                    dragger = Mockko.startDragging activeScreen, c, { startPt: startPt }, computeMoveOptions(e),
                             computeDropAction, componentPositionChanged, containerChildrenChanged, updateEffectiveSizesAndRelayoutHierarchy
                     $('#hover-panel').hide()
                 dragger.moveTo pt, computeMoveOptions(e)
                 true
 
             mouseup: (e) ->
-                ok: no
+                ok = no
                 if dragger isnt null
                     if dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
                         undo.endTransaction()
                         componentsChanged()
                         $('#hover-panel').show()
-                        ok: yes
+                        ok = yes
                     else
                         undo.abandonTransaction()
                         deleteComponent c
@@ -580,17 +580,17 @@ jQuery ($) ->
                 if dragger isnt null
                     dragger.cancel()
                     undo.rollbackTransaction()
-                c.dragsize: null
-                c.dragpos: null
-                c.dragParent: null
+                c.dragsize = null
+                c.dragpos = null
+                c.dragParent = null
                 componentPositionChanged c
         }
 
-    activateNewComponentDragging: (startPt, c, e) ->
-        undo.beginTransaction "creation of ${friendlyComponentName c}"
-        cn: renderInteractiveComponentHeirarchy c
+    activateNewComponentDragging = (startPt, c, e) ->
+        undo.beginTransaction "creation of #{friendlyComponentName c}"
+        cn = renderInteractiveComponentHeirarchy c
 
-        dragger: Mockko.startDragging activeScreen, c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }, computeMoveOptions(e),
+        dragger = Mockko.startDragging activeScreen, c, { hotspot: { x: 0.5, y: 0.5 }, startPt: startPt }, computeMoveOptions(e),
                 computeDropAction, componentPositionChanged, containerChildrenChanged, updateEffectiveSizesAndRelayoutHierarchy
 
         window.status = "Dragging a new component."
@@ -603,7 +603,7 @@ jQuery ($) ->
                 true
 
             mouseup: (e) ->
-                ok: dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
+                ok = dragger.dropAt { x: e.pageX, y: e.pageY }, computeMoveOptions(e)
                 if ok
                     undo.endTransaction()
                     componentsChanged()
@@ -622,14 +622,14 @@ jQuery ($) ->
                     undo.rollbackTransaction()
         }
 
-    resizingOptionsFromEvent: (e) ->
+    resizingOptionsFromEvent = (e) ->
         { toggleConstrainMode: !!e.shiftKey }
 
-    activateResizingMode: (comp, e, options) ->
-        undo.beginTransaction "resizing of ${friendlyComponentName comp}"
-        console.log "activating resizing mode for ${friendlyComponentName comp}"
-        startPt: { x: e.pageX, y: e.pageY }
-        resizer: Mockko.startResizing activeScreen, comp, startPt, options, componentPositionChanged
+    activateResizingMode = (comp, e, options) ->
+        undo.beginTransaction "resizing of #{friendlyComponentName comp}"
+        console.log "activating resizing mode for #{friendlyComponentName comp}"
+        startPt = { x: e.pageX, y: e.pageY }
+        resizer = Mockko.startResizing activeScreen, comp, startPt, options, componentPositionChanged
         activateMode {
             debugname: "Resizing"
             cancelOnMouseUp: yes
@@ -650,7 +650,7 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Mouse Event Handling
 
-    defaultMouseDown: (e, comp) ->
+    defaultMouseDown = (e, comp) ->
         if comp
             selectComponent comp
             if not comp.type.unmovable
@@ -659,7 +659,7 @@ jQuery ($) ->
             deselectComponent()
         true
 
-    defaultMouseMove: (e, comp) ->
+    defaultMouseMove = (e, comp) ->
         if comp
             hover.componentHovered comp
         else if $(e.target).closest('.hover-panel').length
@@ -668,45 +668,45 @@ jQuery ($) ->
             hover.componentUnhovered()
         true
 
-    defaultContextMenu: (e, comp) ->
+    defaultContextMenu = (e, comp) ->
         if comp then showComponentContextMenu comp, { x: e.pageX, y: e.pageY }; true
         else         false
 
-    defaultMouseUp: (e, comp) -> false
+    defaultMouseUp = (e, comp) -> false
 
     $('#design-pane, #link-overlay').bind {
         mousedown: (e) ->
             if e.button is 0
-                comp: findComponentByEvent(e)
+                comp = findComponentByEvent(e)
                 e.preventDefault(); e.stopPropagation()
                 dispatchToMode(ModeMethods.mousedown, e, comp) || defaultMouseDown(e, comp)
             undefined
 
         mousemove: (e) ->
-            comp: findComponentByEvent(e)
+            comp = findComponentByEvent(e)
             e.preventDefault(); e.stopPropagation()
             dispatchToMode(ModeMethods.mousemove, e, comp) || defaultMouseMove(e, comp)
             undefined
 
         mouseup: (e) ->
-            comp: findComponentByEvent(e)
+            comp = findComponentByEvent(e)
             if e.which is 3
                 return if e.shiftKey
                 e.stopPropagation()
             else
-                handled: dispatchToMode(ModeMethods.mouseup, e, comp) || defaultMouseUp(e, comp)
+                handled = dispatchToMode(ModeMethods.mouseup, e, comp) || defaultMouseUp(e, comp)
                 e.preventDefault() if handled
             undefined
 
         'dblclick': (e) ->
-            comp: findComponentByEvent(e)
+            comp = findComponentByEvent(e)
             if comp
                 return if componentBeingDoubleClickEdited is comp
                 handleComponentDoubleClick comp; false
 
         'contextmenu': (e) ->
             return if e.shiftKey
-            comp: findComponentByEvent(e)
+            comp = findComponentByEvent(e)
             console.log ["contextmenu", e]
             setTimeout (-> dispatchToMode(ModeMethods.contextmenu, e, comp) || defaultContextMenu(e, comp)), 1
             false
@@ -724,77 +724,77 @@ jQuery ($) ->
     ##########################################################################################################
     ##  palette
 
-    imageGroups: []
+    imageGroups = []
 
-    bindPaletteItem: (item, compTemplate) ->
+    bindPaletteItem = (item, compTemplate) ->
         $(item).mousedown (e) ->
             if e.which is 1
                 e.preventDefault()
-                c: cloneTemplateComponent compTemplate
+                c = cloneTemplateComponent compTemplate
                 activateNewComponentDragging { x: e.pageX, y: e.pageY }, c, e
 
-    renderPaletteGroupContent: (ctg, group, func) ->
-        # FIXME: sometimes `group` is `undefined` (at startup)
+    renderPaletteGroupContent = (ctg, group, func) ->
+        # FIXME = sometimes `group` is `undefined` (at startup)
         $('<div />').addClass('header').html(ctg.name).appendTo(group)
         if ctg.isImageGroup && ctg.writeable
             $("<div />").addClass('image-upload-prompt').html("Click to upload an image (or just drop your image files here).").appendTo(group).click (e) ->
                 e.preventDefault()
-                fileField: $("<input />").attr({ 'type': 'file', 'multiple': 'multiple'})[0]
+                fileField = $("<input />").attr({ 'type': 'file', 'multiple': 'multiple'})[0]
                 document.body.appendChild(fileField)
                 fileField.click()
                 $(fileField).change ->
-                    console.log "Got ${fileField.files.length} files"
+                    console.log "Got #{fileField.files.length} files"
                     if fileField.files && fileField.files.length > 0
                         uploadFiles fileField.files, ctg, (err) ->
                             $(fileField).remove()
 
-        ctg.itemsNode: items: $('<div />').addClass('items').appendTo(group)
+        ctg.itemsNode = items = $('<div />').addClass('items').appendTo(group)
         func ||= ((ct, n) ->)
         for compTemplate in ctg.items
-            compTemplateForPaletteInstantiation: cloneObj compTemplate
+            compTemplateForPaletteInstantiation = cloneObj compTemplate
             if compTemplateForPaletteInstantiation.paletteOverride?
                 $.extend compTemplateForPaletteInstantiation, compTemplateForPaletteInstantiation.paletteOverride
             if compTemplateForPaletteInstantiation.paletteTextOverride?
-                compTemplateForPaletteInstantiation.text: compTemplateForPaletteInstantiation.paletteTextOverride
-            c: cloneTemplateComponent(ser.externalizePaletteComponent(compTemplateForPaletteInstantiation))
+                compTemplateForPaletteInstantiation.text = compTemplateForPaletteInstantiation.paletteTextOverride
+            c = cloneTemplateComponent(ser.externalizePaletteComponent(compTemplateForPaletteInstantiation))
             traverse c, (comp) ->
                 if comp.image?
                     ensureImageGroupLoaded comp.image.group
-            n: renderPaletteComponentHierarchy c
+            n = renderPaletteComponentHierarchy c
             $(n).attr('title', compTemplate.label || c.type.label)
             $(n).addClass('item').appendTo(items)
             updateEffectiveSizesAndRelayoutHierarchy c
             bindPaletteItem n, ser.externalizePaletteComponent(compTemplate)
             func compTemplate, n
 
-    renderPaletteGroup: (ctg, permanent, itemRenderedCallback) ->
-        group: $('<div />').addClass('group').appendTo($('#palette-container'))
-        ctg.node: group
+    renderPaletteGroup = (ctg, permanent, itemRenderedCallback) ->
+        group = $('<div />').addClass('group').appendTo($('#palette-container'))
+        ctg.node = group
         renderPaletteGroupContent ctg, group, itemRenderedCallback
         if not permanent
             group.addClass('transient-group')
         group
 
-    constrainImageSize: (imageSize, maxSize) ->
+    constrainImageSize = (imageSize, maxSize) ->
       if imageSize.w <= maxSize.w and imageSize.h <= maxSize.h
         imageSize
       else
         # need to scale up this number of times
-        ratio: { x: maxSize.w / imageSize.w ; y: maxSize.h / imageSize.h }
+        ratio = { x: maxSize.w / imageSize.w ; y: maxSize.h / imageSize.h }
         if ratio.x > ratio.y
           { h: maxSize.h; w: imageSize.w * ratio.y }
         else
           { w: maxSize.w; h: imageSize.h * ratio.x }
 
-    updateImagesPalette: ->
+    updateImagesPalette = ->
         $('.transient-group').remove()
         for group in imageGroups
-            group.isImageGroup: yes
-            group.items: []
+            group.isImageGroup = yes
+            group.items = []
             for image in group.images
-                i: {
+                i = {
                     type: 'image'
-                    label: "${image.fileName} ${image.width}x${image.height}"
+                    label: "#{image.fileName} #{image.width}x#{image.height}"
                     image: { name: image.fileName, group: group.id }
                     # TODO landscape
                     size: constrainImageSize { w: image.width, h: image.height }, { w: 320, h: 480 }
@@ -805,26 +805,26 @@ jQuery ($) ->
                     i.size = imageSizeForImage i, group.effect
                 group.items.push(i)
             renderPaletteGroup group, false, (item, node) ->
-                item.imageEl.node: node
+                item.imageEl.node = node
                 if group.writeable
                     $(node).bindContextMenu '#custom-image-context-menu', item.imageEl
 
-    addCustomImagePlaceholder: (node) ->
+    addCustomImagePlaceholder = (node) ->
         $(node).append $("<div />", { className: 'customImagePlaceholder' })
         $('#palette').scrollToBottom()
 
-    storePaletteScrollPosition: ->
+    storePaletteScrollPosition = ->
         localStorage['paletteScrollOffset'] = $('#palette')[0].scrollTop
 
-    restorePaletteScrollPosition: ->
-        if offset: localStorage['paletteScrollOffset']
+    restorePaletteScrollPosition = ->
+        if offset = localStorage['paletteScrollOffset']
             $('#palette')[0].scrollTop = offset
         undefined
 
-    paletteInitialized: no
-    initPalette: ->
+    paletteInitialized = no
+    initPalette = ->
         return if paletteInitialized
-        paletteInitialized: yes
+        paletteInitialized = yes
 
         for ctg in Mockko.paletteDefinition
             renderPaletteGroup ctg, true
@@ -836,30 +836,30 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Screen List
 
-    renderScreenComponents: (screen, node) ->
-        cn: renderStaticComponentHierarchy screen.rootComponent
+    renderScreenComponents = (screen, node) ->
+        cn = renderStaticComponentHierarchy screen.rootComponent
         renderComponentPosition screen.rootComponent, cn
         $(node).append(cn)
 
-    renderScreen: (screen) ->
-        sn: screen.node: domTemplate 'app-screen-template'
+    renderScreen = (screen) ->
+        sn = screen.node = domTemplate 'app-screen-template'
         $(sn).setdata('makeapp.screen', screen)
         rerenderScreenContent screen
         sn
 
-    renderScreenRootComponentId: (screen) ->
+    renderScreenRootComponentId = (screen) ->
         $(screen.rootComponent.node).attr('id', 'screen-' + encodeNameForId(screen.name))
 
-    renderScreenName: (screen) ->
+    renderScreenName = (screen) ->
         $('.caption', screen.node).html screen.name
         renderScreenRootComponentId screen
 
-    rerenderScreenContent: (screen) ->
+    rerenderScreenContent = (screen) ->
         $(screen.node).find('.component').remove()
         renderScreenName screen
         renderScreenComponents screen, $('.content .rendered', screen.node)
 
-    bindScreen: (screen) ->
+    bindScreen = (screen) ->
         $(screen.node).bindContextMenu '#screen-context-menu', screen
         $('.content', screen.node).click (e) ->
             if e.which is 1
@@ -868,34 +868,34 @@ jQuery ($) ->
                 false
         $('.caption', screen.node).click -> startRenamingScreen screen
 
-    updateScreenList: ->
+    updateScreenList = ->
         $('#screens-list > .app-screen').remove()
         _(application.screens).each (screen, index) ->
             appendRenderedScreenFor screen
 
-    updateActionsDueToScreenRenames: (renames) ->
+    updateActionsDueToScreenRenames = (renames) ->
         for screen in application.screens
             traverse screen.rootComponent, (comp) ->
                 if comp.action && comp.action.action is Mockko.actions.switchScreen
-                        if newName: renames[comp.action.screenName]
-                            comp.action.screenName: newName
+                        if newName = renames[comp.action.screenName]
+                            comp.action.screenName = newName
                             componentActionChanged comp
 
-    keepingScreenNamesNormalized: (func) ->
-        _(application.screens).each (screen, index) -> screen.originalName: screen.name; screen.nameIsBasedOnIndex: (screen.name is "Screen ${index+1}")
+    keepingScreenNamesNormalized = (func) ->
+        _(application.screens).each (screen, index) -> screen.originalName = screen.name; screen.nameIsBasedOnIndex = (screen.name is "Screen #{index+1}")
         func()
         # important to execute all renames at once to handle numbered screens ("Screen 1") being swapped
-        renames: {}
+        renames = {}
         _(application.screens).each (screen, index) ->
-            screen.name: "Screen ${index+1}" if screen.nameIsBasedOnIndex or not screen.name?
+            screen.name = "Screen #{index+1}" if screen.nameIsBasedOnIndex or not screen.name?
             if screen.name isnt screen.originalName
-                renames[screen.originalName]: screen.name
+                renames[screen.originalName] = screen.name
             delete screen.nameIsBasedOnIndex if screen.nameIsBasedOnIndex?
             delete screen.originalName if screen.originalName?
         updateActionsDueToScreenRenames renames
 
-    addScreenWithoutTransaction: ->
-        screen: ser.internalizeScreen {
+    addScreenWithoutTransaction = ->
+        screen = ser.internalizeScreen {
             'rootComponent': DEFAULT_ROOT_COMPONENT
         }
         keepingScreenNamesNormalized ->
@@ -903,11 +903,11 @@ jQuery ($) ->
         appendRenderedScreenFor screen
         switchToScreen screen
 
-    addScreen: ->
+    addScreen = ->
         runTransaction "creation of a new screen", ->
             addScreenWithoutTransaction()
 
-    startRenamingScreen: (screen) ->
+    startRenamingScreen = (screen) ->
         return if activeMode()?.screenBeingRenamed is screen
         $('.caption', screen.node).startInPlaceEditing {
             before: ->
@@ -923,17 +923,17 @@ jQuery ($) ->
                 deactivateMode()
             accept: (newText) ->
                 runTransaction "screen rename", ->
-                    oldText: screen.name
-                    screen.name: newText
-                    renames: {}
-                    renames[oldText]: newText
+                    oldText = screen.name
+                    screen.name = newText
+                    renames = {}
+                    renames[oldText] = newText
                     updateActionsDueToScreenRenames renames
                     renderScreenName screen
         }
         return false
 
-    deleteScreen: (screen) ->
-        pos: application.screens.indexOf(screen)
+    deleteScreen = (screen) ->
+        pos = application.screens.indexOf(screen)
         return if pos < 0
 
         runTransaction "deletion of a screen", ->
@@ -946,12 +946,12 @@ jQuery ($) ->
             else
                 switchToScreen(application.screens[pos] || application.screens[pos-1])
 
-    duplicateScreen: (oldScreen) ->
-        pos: application.screens.indexOf(oldScreen)
+    duplicateScreen = (oldScreen) ->
+        pos = application.screens.indexOf(oldScreen)
         return if pos < 0
 
-        screen: ser.internalizeScreen ser.externalizeScreen oldScreen
-        screen.name: null
+        screen = ser.internalizeScreen ser.externalizeScreen oldScreen
+        screen.name = null
 
         runTransaction "duplication of a screen", ->
             keepingScreenNamesNormalized ->
@@ -960,7 +960,7 @@ jQuery ($) ->
         updateScreenList()
         switchToScreen screen
 
-    appendRenderedScreenFor: (screen, after) ->
+    appendRenderedScreenFor = (screen, after) ->
         renderScreen screen
         if after
             $(after).after(screen.node)
@@ -968,10 +968,10 @@ jQuery ($) ->
             $('#screens-list').append(screen.node)
         bindScreen screen
 
-    updateScreenPreview: (screen) ->
+    updateScreenPreview = (screen) ->
         rerenderScreenContent screen
 
-    setActiveScreen: (screen) ->
+    setActiveScreen = (screen) ->
         $('#screens-list > .app-screen').removeClass('active')
         $(screen.node).addClass('active')
 
@@ -995,8 +995,8 @@ jQuery ($) ->
         update: (e, ui) ->
             runTransaction "reordering screens", ->
                 keepingScreenNamesNormalized ->
-                    screens: _($("#screens-list .app-screen")).map (sn) -> $(sn).getdata('makeapp.screen')
-                    application.screens: screens
+                    screens = _($("#screens-list .app-screen")).map (sn) -> $(sn).getdata('makeapp.screen')
+                    application.screens = screens
                 updateScreenList()
     }
 
@@ -1004,14 +1004,14 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Active Screen / Application
 
-    switchToScreen: (screen) ->
+    switchToScreen = (screen) ->
         setActiveScreen screen
 
         $('#design-area .component').remove()
 
         activeScreen = screen
 
-        devicePanel: $('#device-panel')[0]
+        devicePanel = $('#device-panel')[0]
 
         $('#design-area').append renderInteractiveComponentHeirarchy activeScreen.rootComponent
         renderScreenRootComponentId screen
@@ -1022,20 +1022,20 @@ jQuery ($) ->
         deselectComponent()
         hover.componentUnhovered()
 
-    loadImageGroupsUsedInApplication: (app) ->
+    loadImageGroupsUsedInApplication = (app) ->
         # load all used image groups
         for screen in app.screens
             traverse screen.rootComponent, (c) ->
                 if c.image?
                     ensureImageGroupLoaded c.image.group
 
-    loadApplication: (app, appId) ->
+    loadApplication = (app, appId) ->
         # if design screen has display:none, many inner components get zero effective size
         $('#design-screen').show()
 
-        app.name: createNewApplicationName() unless app.name
-        applicationId: appId
-        application: app
+        app.name = createNewApplicationName() unless app.name
+        applicationId = appId
+        application = app
         setupUndoSystem()
         reloadApplication app
         switchToScreen application.screens[0]
@@ -1045,22 +1045,22 @@ jQuery ($) ->
         # is loaded from Dashboard screen. A workaround is to restore it here.
         restorePaletteScrollPosition()
 
-    reloadApplication: (app) ->
-        application: app
+    reloadApplication = (app) ->
+        application = app
         renderApplicationName()
         loadImageGroupsUsedInApplication app
         updateScreenList()
 
-    saveApplicationChanges: (callback) ->
+    saveApplicationChanges = (callback) ->
         snapshotForSimulation activeScreen
         serverMode.saveApplicationChanges ser.externalizeApplication(application), applicationId, (newId) ->
-            applicationId: newId
+            applicationId = newId
             if callback then callback()
 
-    renderApplicationName: ->
+    renderApplicationName = ->
         $('#app-name-content').html(application.name)
 
-    startDesignScreenApplicationNameEditing: ->
+    startDesignScreenApplicationNameEditing = ->
         return if activeMode()?.isAppRenamingMode
         $('#app-name-content').startInPlaceEditing {
             before: ->
@@ -1076,7 +1076,7 @@ jQuery ($) ->
                 deactivateMode()
             accept: (newText) ->
                 runTransaction "application rename", ->
-                    application.name: newText
+                    application.name = newText
         }
 
     $('#app-name-content').click ->
@@ -1086,27 +1086,27 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Share (stub implementation)
 
-    updateSharePopover: ->
-        s: JSON.stringify(ser.externalizeApplication(application))
+    updateSharePopover = ->
+        s = JSON.stringify(ser.externalizeApplication(application))
         $('#share-popover textarea').val(s)
 
-    toggleSharePopover: ->
+    toggleSharePopover = ->
         if $('#share-popover').is(':visible')
             $('#share-popover').hidePopOver()
         else
             $('#share-popover').showPopOverPointingTo $('#run-button')
             updateSharePopover()
 
-    checkApplicationLoading: ->
-        v: $('#share-popover textarea').val()
-        s: JSON.stringify(ser.externalizeApplication(application))
+    checkApplicationLoading = ->
+        v = $('#share-popover textarea').val()
+        s = JSON.stringify(ser.externalizeApplication(application))
 
-        good: yes
+        good = yes
         if v != s && v != ''
             try
-                app: JSON.parse(v)
+                app = JSON.parse(v)
             catch e
-                good: no
+                good = no
             loadApplication ser.internalizeApplication(app), applicationId if app
         $('#share-popover textarea').css('background-color', if good then 'white' else '#ffeeee')
         undefined
@@ -1118,24 +1118,24 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Image Upload
 
-    uploadImage: (group, file, callback) ->
-        console.log "Uploading ${file.fileName} of size ${file.fileSize}"
+    uploadImage = (group, file, callback) ->
+        console.log "Uploading #{file.fileName} of size #{file.fileSize}"
         serverMode.uploadImage group, file.fileName, file, (err) ->
             updateImages() unless err
             callback(err)
 
-    updateImages: ->
+    updateImages = ->
         serverMode.loadImages (groups) ->
-            imageGroups: []
+            imageGroups = []
             for group in groups
                 _updateGroup group['name'], group['images']
-                gg: {
+                gg = {
                     id: group['id']
                     name: group['name']
                     effect: group['effect']
                     writeable: group['writeable']
                 }
-                gg.images: ({
+                gg.images = ({
                     width: img['width']
                     height: img['height']
                     fileName: img['fileName']
@@ -1146,30 +1146,30 @@ jQuery ($) ->
 
     # Looks up group to use to drop images to after drag-and-drop
     # FIXME: use actual group under cursor, not first writeable.
-    findImageDropGroup: ->
+    findImageDropGroup = ->
         for group in imageGroups
             if group.writeable
                 return group
 
-    uploadFiles: (files, dropGroup, callback) ->
-        errors: []
-        filesToUpload: []
+    uploadFiles = (files, dropGroup, callback) ->
+        errors = []
+        filesToUpload = []
         for file in files
             if not file.fileName.match(/\.jpe?g$|\.png$|\.gif$/i)
-                ext: file.fileName.match(/\.[^.\/\\]+$/)[1]
-                errors.push { fileName: file.fileName, reason: "${ext || 'this'} format is not supported"}
+                ext = file.fileName.match(/\.[^.\/\\]+$/)[1]
+                errors.push { fileName: file.fileName, reason: "#{ext || 'this'} format is not supported"}
             else if file.fileSize > MAX_IMAGE_UPLOAD_SIZE
-                errors.push { fileName: file.fileName, reason: "file too big, maximum size is ${MAX_IMAGE_UPLOAD_SIZE_DESCR}"}
+                errors.push { fileName: file.fileName, reason: "file too big, maximum size is #{MAX_IMAGE_UPLOAD_SIZE_DESCR}"}
             else
                 filesToUpload.push file
         if errors.length > 0
-            message: switch errors.length
-                when 1 then "Cannot upload ${errors[0].fileName}: ${errors[0].reason}.\n"
-                else "Cannot upload the following files:\n" + ("\t* ${e.fileName} (${e.reason})\n" for e in errors)
+            message = switch errors.length
+                when 1 then "Cannot upload #{errors[0].fileName}: #{errors[0].reason}.\n"
+                else "Cannot upload the following files:\n" + ("\t* #{e.fileName} (#{e.reason})\n" for e in errors)
             if filesToUpload.length > 0
                 message += "\nThe following files WILL be uploaded: " + _(filesToUpload).map((f) -> f.fileName).join(", ")
             alert message
-        filesRemaining: filesToUpload.length
+        filesRemaining = filesToUpload.length
         for file in filesToUpload
             addCustomImagePlaceholder dropGroup.node
             uploadImage dropGroup, file, (err) ->
@@ -1179,23 +1179,23 @@ jQuery ($) ->
         $('#palette').scrollToBottom()
 
     $('body').each ->
-        this.ondragenter: (e) ->
+        this.ondragenter = (e) ->
             console.log "dragenter"
             e.preventDefault()
-            e.dataTransfer.dropEffect: 'copy'
+            e.dataTransfer.dropEffect = 'copy'
             false
-        this.ondragover: (e) ->
+        this.ondragover = (e) ->
             console.log "dragover"
             e.preventDefault()
-            e.dataTransfer.dropEffect: 'copy'
+            e.dataTransfer.dropEffect = 'copy'
             false
-        this.ondrop: (e) ->
+        this.ondrop = (e) ->
             return unless e.dataTransfer?.files?.length
             console.log "drop"
             e.preventDefault()
             uploadFiles e.dataTransfer.files, findImageDropGroup()
 
-    deleteImage: (image) ->
+    deleteImage = (image) ->
         serverMode.deleteImage image.group_id, image.fileName, ->
             $(image.node).fadeOut 250, ->
                 $(image.node).remove()
@@ -1204,7 +1204,7 @@ jQuery ($) ->
     ##########################################################################################################
     ##  keyboard shortcuts
 
-    KB_MOVE_DIRS: {
+    KB_MOVE_DIRS = {
         up: {
             offset: { x: 0, y: -1 }
         }
@@ -1219,20 +1219,20 @@ jQuery ($) ->
         }
     }
 
-    moveComponentByKeyboard: (comp, e, movement) ->
+    moveComponentByKeyboard = (comp, e, movement) ->
         return if layouting.hasNonFlexiblePosition(activeScreen, comp)
         if e.ctrlKey
-            # TODO: duplicate
+            # TODO = duplicate
         else
-            # TODO: detect if part of stack
-            amount: if e.shiftKey then 10 else 1
+            # TODO = detect if part of stack
+            amount = if e.shiftKey then 10 else 1
             moveComponentBy comp, ptMul(movement.offset, amount)
 
-    hookKeyboardShortcuts: ->
+    hookKeyboardShortcuts = ->
         $('body').keydown (e) ->
             return if e.target.tagName.toLowerCase() == 'input'
             return if activeMode()?.isInsideTextField
-            act: componentToActUpon()
+            act = componentToActUpon()
             switch e.which
                 when $.KEY_ESC
                     e.preventDefault(); e.stopPropagation()
@@ -1255,14 +1255,14 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Simulation (Run)
 
-    snapshotForSimulation: (screen) ->
+    snapshotForSimulation = (screen) ->
         if not screen.rootComponent.node?
             throw "This hack only works for the current screen"
-        screen.html: screen.rootComponent.node.outerHTML
+        screen.html = screen.rootComponent.node.outerHTML
 
-    runCurrentApplication: ->
+    runCurrentApplication = ->
         $('#run-screen').show()
-        url: window.location.href.replace(/\/(?:dev|designer).*$/, '/').replace(/#.*$/, '') + "R" + applicationId
+        url = window.location.href.replace(/\/(?:dev|designer).*$/, '/').replace(/#.*$/, '') + "R" + applicationId
         console.log url
         $('#run-address-label a').attr('href', url).html(url)
         $('#run-iframe').attr 'src', url
@@ -1282,9 +1282,9 @@ jQuery ($) ->
         $('#run-screen').hide()
 
     ##########################################################################################################
-    ##  Dashboard: Application List
+    ##  Dashboard = Application List
 
-    startDashboardApplicationNameEditing: (app) ->
+    startDashboardApplicationNameEditing = (app) ->
         return if activeMode()?.appBeingRenamed is app
         $('.caption', app.node).startInPlaceEditing {
             before: ->
@@ -1299,17 +1299,17 @@ jQuery ($) ->
             after:  ->
                 deactivateMode()
             accept: (newText) ->
-                app.content.name: newText
+                app.content.name = newText
                 serverMode.saveApplicationChanges ser.externalizeApplication(app.content), app.id, (newId) ->
                     refreshApplicationList()
         }
 
-    duplicateApplication: (app) ->
-        content: ser.externalizeApplication(app.content)
-        content.name: "${content.name} Copy"
+    duplicateApplication = (app) ->
+        content = ser.externalizeApplication(app.content)
+        content.name = "#{content.name} Copy"
         serverMode.saveApplicationChanges content, null, (newId) ->
             refreshApplicationList (newApps) ->
-                freshApp: _(newApps).detect (a) -> a.id is newId
+                freshApp = _(newApps).detect (a) -> a.id is newId
                 startDashboardApplicationNameEditing freshApp
 
     $('#rename-application-menu-item').bind {
@@ -1320,7 +1320,7 @@ jQuery ($) ->
     }
     $('#delete-application-menu-item').bind {
         selected: (e, app) ->
-            return unless confirm("Are you sure you want to delete ${app.content.name}?")
+            return unless confirm("Are you sure you want to delete #{app.content.name}?")
             deleteApplication app
     }
 
@@ -1328,56 +1328,56 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Copy/Paste
 
-    pasteJSON: (json) ->
-        targetCont: activeScreen.rootComponent
-        data: JSON.parse(json)
-        if data.type then data: [data]
-        newComps: (ser.internalizeComponent(c, targetCont) for c in data)
-        newComps: _((if c.type is Types.background then c.children else c) for c in newComps).flatten()
+    pasteJSON = (json) ->
+        targetCont = activeScreen.rootComponent
+        data = JSON.parse(json)
+        if data.type then data = [data]
+        newComps = (ser.internalizeComponent(c, targetCont) for c in data)
+        newComps = _((if c.type is Types.background then c.children else c) for c in newComps).flatten()
         pasteComponents targetCont, newComps
 
-    pasteComponents: (targetCont, newComps) ->
+    pasteComponents = (targetCont, newComps) ->
         return if newComps.length is 0
-        friendlyName: if newComps.length > 1 then "${newComps.length} objects" else friendlyComponentName(newComps[0])
-        runTransaction "pasting ${friendlyName}", ->
+        friendlyName = if newComps.length > 1 then "#{newComps.length} objects" else friendlyComponentName(newComps[0])
+        runTransaction "pasting #{friendlyName}", ->
             for newComp in newComps
                 # XXX FIXME hack for proper pasting of tab bar items
                 if newComp.type is Types['tab-bar-item']
-                    unless targetCont: findChildByType(activeScreen.rootComponent, Mockko.componentTypes['tabBar'])
+                    unless targetCont = findChildByType(activeScreen.rootComponent, Mockko.componentTypes['tabBar'])
                         alert "Please add a tab bar before pasting tabs"
                         return
                 $(childrenNodeOfComponent targetCont).append renderInteractiveComponentHeirarchy newComp
                 updateEffectiveSizesAndRelayoutHierarchy newComp
 
-                effect: layouting.computeDuplicationEffect activeScreen, newComp
+                effect = layouting.computeDuplicationEffect activeScreen, newComp
                 if effect is null
                     alert "Cannot paste the components because they do not fit into the designer"
                     return
 
-                newComp.parent: targetCont
+                newComp.parent = targetCont
                 targetCont.children.push newComp
 
                 commitMoves effect.moves, [newComp], STACKED_COMP_TRANSITION_DURATION, activeScreen, componentPositionChanged
-                newRect: effect.rect
+                newRect = effect.rect
 
                 moveComponent newComp, newRect
                 if newRect.w != newComp.effsize.w or newRect.h != newComp.effsize.h
-                    newComp.size: { w: newRect.w, h: newRect.h }
+                    newComp.size = { w: newRect.w, h: newRect.h }
                 traverse newComp, (child) -> componentPositionChanged child
 
                 layouting.adjustChildAfterPasteOrDuplication activeScreen, newComp, newComp.parent
                 renderComponentStyle newComp
 
-    cutComponents: (comps) ->
-        comps: _((if c.type is Types.background then c.children else c) for c in comps).flatten()
-        friendlyName: if comps.length > 1 then "${comps.length} objects" else friendlyComponentName(comps[0])
-        runTransaction "cutting of ${friendlyName}", ->
+    cutComponents = (comps) ->
+        comps = _((if c.type is Types.background then c.children else c) for c in comps).flatten()
+        friendlyName = if comps.length > 1 then "#{comps.length} objects" else friendlyComponentName(comps[0])
+        runTransaction "cutting of #{friendlyName}", ->
             for comp in comps
                 deleteComponentWithoutTransaction comp, false
 
     $(document).copiableAsText {
-        gettext: -> JSON.stringify(ser.externalizeComponent(comp)) if comp: componentToActUpon()
-        aftercut: -> cutComponents [comp] if comp: componentToActUpon()
+        gettext: -> JSON.stringify(ser.externalizeComponent(comp)) if comp = componentToActUpon()
+        aftercut: -> cutComponents [comp] if comp = componentToActUpon()
         paste: (text) -> pasteJSON text
         shouldProcessCopy: -> componentToActUpon() isnt null and !activeMode()?.isInsideTextField
         shouldProcessPaste: -> !activeMode()?.isInsideTextField
@@ -1386,13 +1386,13 @@ jQuery ($) ->
     #######
     # Profile
 
-    updateUserProfile: (userInfo) ->
+    updateUserProfile = (userInfo) ->
         $('#profile-full-name').val(userInfo['full-name'])
         $('#profile-newsletter').checked(userInfo['newsletter'])
 
         console.log $('#profile-full-name'), $('#profile-newsletter')
 
-    showUserProfileScreen: ->
+    showUserProfileScreen = ->
         $('#profile-screen').fadeIn(100)
 
     $('#profile-close-link').click ->
@@ -1402,7 +1402,7 @@ jQuery ($) ->
     $('#profile-submit-link').click -> submitProfileForm()
     $('#profile-popup').submit (e) -> e.preventDefault(); submitProfileForm()
 
-    submitProfileForm: ->
+    submitProfileForm = ->
         serverMode.setUserInfo {
             'full-name': $('#profile-full-name').val()
             'newsletter': $('#profile-newsletter').checked()
@@ -1416,22 +1416,22 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Browser History and Back Button
 
-    ignoreHashChanges: no
+    ignoreHashChanges = no
 
-    restoreAppFromLocationHash: (fallback) ->
+    restoreAppFromLocationHash = (fallback) ->
         return fallback() # restoring disabled b/c of Chrome 6 dev channel problem
 
         fallback ||= switchToDashboard
 
-        params: $.hashparam()
-        if appIdString: params['app']
+        params = $.hashparam()
+        if appIdString = params['app']
             return if appIdString == 'undefined'
-            appIdToLoad: parseInt(appIdString, 10)
+            appIdToLoad = parseInt(appIdString, 10)
         else
-            appIdToLoad: null
+            appIdToLoad = null
         if appIdToLoad isnt null
             refreshApplicationList ->
-                app: _(applicationList).detect (a) -> a.id == appIdToLoad
+                app = _(applicationList).detect (a) -> a.id == appIdToLoad
                 if app
                     loadApplication app.content, app.id
                     switchToDesign()
@@ -1440,19 +1440,19 @@ jQuery ($) ->
         else
             fallback()
 
-    saveAppToLocationHash: (appId) ->
-        ignoreHashChanges: yes
+    saveAppToLocationHash = (appId) ->
+        ignoreHashChanges = yes
         try
             $.hashparam { 'app': appId }
         finally
-            ignoreHashChanges: no
+            ignoreHashChanges = no
 
-    saveDashboardToLocationHash: (appId) ->
-        ignoreHashChanges: yes
+    saveDashboardToLocationHash = (appId) ->
+        ignoreHashChanges = yes
         $.hashparam {}
-        ignoreHashChanges: no
+        ignoreHashChanges = no
 
-    initBackButton: ->
+    initBackButton = ->
         $(window).bind 'hashchange', (e) ->
             return  # restoring disabled b/c of Chrome 6 dev channel problem
             return if ignoreHashChanges
@@ -1461,11 +1461,15 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Help & Vote (Feedback) Buttons
 
-    initFeedbackButton: ->
-        uservoiceOptions = { 'key': 'mockko', 'host': 'votebox.mockko.com',
-            'forum': '54458', 'lang': 'en', 'showTab': false }
-        s: document.createElement('script')
-        s.src: "http://cdn.uservoice.com/javascripts/widgets/tab.js"  # can use https:// too
+    initFeedbackButton = ->
+        uservoiceOptions =
+            'key': 'mockko'
+            'host': 'votebox.mockko.com'
+            'forum': '54458'
+            'lang': 'en'
+            'showTab': false
+        s = document.createElement('script')
+        s.src = "http://cdn.uservoice.com/javascripts/widgets/tab.js"  # can use https:// too
         document.getElementsByTagName('head')[0].appendChild(s)
 
         $('#feedback').bind {
@@ -1481,51 +1485,51 @@ jQuery ($) ->
             'widgetToggles': $('#help')
         }
 
-        s: document.createElement('script')
-        s.src: "http://help.mockko.com/tender_widget.js"
+        s = document.createElement('script')
+        s.src = "http://help.mockko.com/tender_widget.js"
         document.getElementsByTagName('head')[0].appendChild(s)
 
     ##########################################################################################################
 
-    initComponentTypes: ->
+    initComponentTypes = ->
         for typeName, ct of Types
-            ct.name: typeName
+            ct.name = typeName
             ct.style ||= {}
             if not ct.supportsBackground?
-                ct.supportsBackground: 'background' of ct.style
+                ct.supportsBackground = 'background' of ct.style
             if not ct.textStyleEditable?
-                ct.textStyleEditable: ct.defaultText?
+                ct.textStyleEditable = ct.defaultText?
             unless ct.constrainProportionsByDefault?
-                ct.constrainProportionsByDefault: no
-            ct.supportsText: ct.defaultText?
+                ct.constrainProportionsByDefault = no
+            ct.supportsText = ct.defaultText?
             unless ct.canHazBorderRadius?
-                ct.canHazBorderRadius: ct.style.borderRadius?
+                ct.canHazBorderRadius = ct.style.borderRadius?
             unless ct.canHazColor?
-                ct.canHazColor: yes
+                ct.canHazColor = yes
             unless ct.canHazLink?
-                ct.canHazLink: yes
+                ct.canHazLink = yes
             ct.adjustChildAfterPasteOrDuplication ||= (->)
             if ct.pin?
                 ct.allowedContainers = ['background']
 
-    createNewApplicationName: ->
+    createNewApplicationName = ->
         adjs = ['Best-Selling', 'Great', 'Incredible', 'Stunning', 'Gorgeous', 'Wonderful',
             'Amazing', 'Awesome', 'Fantastic', 'Beautiful', 'Unbelievable', 'Remarkable']
-        names: ("${adj} App" for adj in adjs)
-        usedNames: setOf(_.compact(app.content.name for app in (applicationList || [])))
-        names: _(names).reject (n) -> n of usedNames
+        names = ("#{adj} App" for adj in adjs)
+        usedNames = setOf(_.compact(app.content.name for app in (applicationList || [])))
+        names = _(names).reject (n) -> n of usedNames
         if names.length == 0
             "Yet Another App"
         else
             names[Math.floor(Math.random() * names.length)]
 
-    createNewApplication: ->
+    createNewApplication = ->
         loadApplication ser.internalizeApplication(MakeApp.appTemplates.basic), null
         switchToDesign()
         startDesignScreenApplicationNameEditing()
 
-    bindApplication: (app, an) ->
-        app.node: an
+    bindApplication = (app, an) ->
+        app.node = an
         $(an).bindContextMenu '#application-context-menu', app
         $('.content', an).click ->
             loadApplication app.content, app.id
@@ -1534,32 +1538,32 @@ jQuery ($) ->
             startDashboardApplicationNameEditing app
             false
 
-    deleteApplication: (app) ->
+    deleteApplication = (app) ->
         serverMode.deleteApplication app.id, ->
             $(app.node).fadeOut 250, ->
                 $(app.node).remove()
 
-    renderApplication: (appData) ->
-        appId: appData['id']
-        app: JSON.parse(appData['body'])
-        app: ser.internalizeApplication(app)
+    renderApplication = (appData) ->
+        appId = appData['id']
+        app = JSON.parse(appData['body'])
+        app = ser.internalizeApplication(app)
         loadImageGroupsUsedInApplication app
-        an: domTemplate('app-template')
+        an = domTemplate('app-template')
         $('.caption', $(an)).html(app.name)
         renderScreenComponents(app.screens[0], $('.content .rendered', an))
         $(an).appendTo($('#apps-list'))
-        app: { id: appId, content: app }
+        app = { id: appId, content: app }
         bindApplication app, an
         app
 
-    renderApplicaitonListGroupHeader: (name) ->
+    renderApplicaitonListGroupHeader = (name) ->
         $(domTemplate('group-header-template')).text(name).appendTo($('#apps-list'))
 
-    renderApplicationGroup: (name, apps) ->
+    renderApplicationGroup = (name, apps) ->
         renderApplicaitonListGroupHeader(name)
         renderApplication(app) for app in apps
 
-    refreshApplicationList: (callback) ->
+    refreshApplicationList = (callback) ->
         serverMode.loadApplications (apps) ->
             $('#apps-list *').remove()
 
@@ -1573,12 +1577,12 @@ jQuery ($) ->
             users = info for userId, info of users when userId isnt apps['current_user']
             users = (_(users).sortBy (user) -> -user['created_at'])
             for user in users
-                userDisplayName = "${user['full_name']} <${user['email']}>"
-                renderApplicationGroup("Shared By ${userDisplayName}", user['apps'])
+                userDisplayName = "#{user['full_name']} <#{user['email']}>"
+                renderApplicationGroup("Shared By #{userDisplayName}", user['apps'])
             renderApplicationGroup("Sample Applications", samples)
             callback(applicationList) if callback
 
-    switchToDesign: ->
+    switchToDesign = ->
         $(".screen").hide()
         $('#design-screen').show()
 
@@ -1590,7 +1594,7 @@ jQuery ($) ->
         adjustDeviceImagePosition()
         updateImages()
 
-    switchToDashboard: ->
+    switchToDashboard = ->
         $(".screen").hide()
         $('#dashboard-screen').show()
         console.log "switchToDashboard"
@@ -1605,50 +1609,50 @@ jQuery ($) ->
         e.preventDefault(); e.stopPropagation()
         switchToDashboard()
 
-    startOnDashboardByDefault: ->
+    startOnDashboardByDefault = ->
         restoreAppFromLocationHash switchToDashboard
 
-    startOnApplicationByDefault: (defaultApp) ->
+    startOnApplicationByDefault = (defaultApp) ->
         restoreAppFromLocationHash ->
             loadApplication ser.internalizeApplication(defaultApp), null
             switchToDesign()
 
-    loadDesigner: (userData) ->
-        $("body").removeClass("offline-user online-user").addClass("${userData['status']}-user")
+    loadDesigner = (userData) ->
+        $("body").removeClass("offline-user online-user").addClass("#{userData['status']}-user")
         console.log serverMode
         serverMode.adjustUI userData
         serverMode.startDesigner userData, startOnDashboardByDefault, startOnApplicationByDefault
 
-    adjustDeviceImagePosition: ->
-        deviceOffset: $('#device-panel').offset()
-        contentOffset: $('#design-area').offset()
-        deviceSize: { w: $('#device-panel').outerWidth(), h: $('#device-panel').outerHeight() }
-        paneSize: { w: $('#design-pane').outerWidth(), h: $('#design-pane').outerHeight() }
-        contentSize: { w: $('#design-area').outerWidth(), h: $('#design-area').outerHeight() }
-        deviceInsets: { x: contentOffset.left - deviceOffset.left, y: contentOffset.top - deviceOffset.top }
+    adjustDeviceImagePosition = ->
+        deviceOffset = $('#device-panel').offset()
+        contentOffset = $('#design-area').offset()
+        deviceSize = { w: $('#device-panel').outerWidth(), h: $('#device-panel').outerHeight() }
+        paneSize = { w: $('#design-pane').outerWidth(), h: $('#design-pane').outerHeight() }
+        contentSize = { w: $('#design-area').outerWidth(), h: $('#design-area').outerHeight() }
+        deviceInsets = { x: contentOffset.left - deviceOffset.left, y: contentOffset.top - deviceOffset.top }
 
-        devicePos: {
+        devicePos = {
             x: (paneSize.w - deviceSize.w) / 2
         }
         if deviceSize.h >= paneSize.h
-            contentY: (paneSize.h - contentSize.h) / 2
-            devicePos.y: contentY - deviceInsets.y
+            contentY = (paneSize.h - contentSize.h) / 2
+            devicePos.y = contentY - deviceInsets.y
         else
-            devicePos.y: (paneSize.h - deviceSize.h) / 2
+            devicePos.y = (paneSize.h - deviceSize.h) / 2
 
         $('#device-panel').css({ left: devicePos.x, top: devicePos.y })
 
-    supportedBrowser: ->
+    supportedBrowser = ->
         $.browser.webkit or window.location.href.match('[?&]nocheckbrowser')
 
     if not supportedBrowser()
-        window.location: '/'
+        window.location = '/'
         return
 
     $(window).resize ->
         adjustDeviceImagePosition()
 
-    hover: Mockko.setupHoverPanel {
+    hover = Mockko.setupHoverPanel {
         modeEngine
         componentActionChanged
         deleteComponent
@@ -1659,12 +1663,12 @@ jQuery ($) ->
         hoveredComponentChanged: ->
             inspector.updateInspector()
     }
-    inspector: Mockko.setupInspector { componentToActUpon, runTransaction, componentStyleChanged, componentActionChanged, modeEngine }
+    inspector = Mockko.setupInspector { componentToActUpon, runTransaction, componentStyleChanged, componentActionChanged, modeEngine }
 
     if window.location.href.match /^file:/
-        serverMode: Mockko.fakeServer
+        serverMode = Mockko.fakeServer
     else
-        serverMode: Mockko.server
+        serverMode = Mockko.server
 
     initFeedbackButton()
     initComponentTypes()

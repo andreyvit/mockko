@@ -42,41 +42,41 @@
 # have an ability to contain table rows (e.g. panes of a split screen, popovers).
 #
 
-{ centerSizeInRect }: Mockko.geom
+{ centerSizeInRect } = Mockko.geom
 
 {
     rectOf
     findComponentOccupyingRect, findChildByType, findComponentByTypeIntersectingRect
     findBestTargetContainerForRect
     newItemsForHorizontalStack, newItemsForHorizontalStackDuplication, computeDropEffectFromNewRects
-}: Mockko.model
+} = Mockko.model
 
 
-DUPLICATE_COMPONENT_OFFSET_X: 5
-DUPLICATE_COMPONENT_OFFSET_Y: 5
-DUPLICATE_COMPONENT_MIN_EDGE_INSET_X: 5
-DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y: 5
+DUPLICATE_COMPONENT_OFFSET_X = 5
+DUPLICATE_COMPONENT_OFFSET_Y = 5
+DUPLICATE_COMPONENT_MIN_EDGE_INSET_X = 5
+DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y = 5
 
 
 class Layout
     constructor: (screen, target) ->
-        @screen: screen
-        @target: target
+        @screen = screen
+        @target = target
 
 class PinnedLayout extends Layout
 
     computeDropEffect: (comp, rect, moveOptions) ->
-        pin: comp.type.pin
-        rect: pin.computeRect @screen.allowedArea, comp, (otherPin) =>
+        pin = comp.type.pin
+        rect = pin.computeRect @screen.allowedArea, comp, (otherPin) =>
             for child in @target.children
                 if child.type.pin is otherPin
                     return rectOf(child)
             null
-        moves: []
+        moves = []
         for dependantPin in pin.dependantPins
             for child in @target.children
                 if child.type.pin is dependantPin
-                    newRect: child.type.pin.computeRect @screen.allowedArea, child, (otherPin) =>
+                    newRect = child.type.pin.computeRect @screen.allowedArea, child, (otherPin) =>
                         return rect if otherPin is pin
                         for otherChild in @target.children
                             if otherChild.type.pin is otherPin
@@ -92,12 +92,12 @@ class PinnedLayout extends Layout
         null
 
     computeDeletionEffect: (comp) ->
-        pin: comp.type.pin
-        moves: []
+        pin = comp.type.pin
+        moves = []
         for dependantPin in pin.dependantPins
             for child in @target.children
                 if child.type.pin is dependantPin
-                    newRect: child.type.pin.computeRect @screen.allowedArea, child, (otherPin) =>
+                    newRect = child.type.pin.computeRect @screen.allowedArea, child, (otherPin) =>
                         return null if otherPin is pin
                         for otherChild in @target.children
                             if otherChild.type.pin is otherPin
@@ -106,31 +106,31 @@ class PinnedLayout extends Layout
                     moves.push { comp: child, abspos: newRect }
         { moves }
 
-    relayout: -> throw "Unsupported operation: unreachable at the moment"
+    relayout: -> throw "Unsupported operation = unreachable at the moment"
 
     hasNonFlexiblePosition: (comp) -> true
 
 class ContainerDeterminedLayout extends Layout
 
     computeDropEffect: (comp, rect, moveOptions) ->
-        newChildren: newItemsForHorizontalStack @target.children, comp, rect
-        itemRects: @target.type.layoutChildren newChildren, rectOf(@target)
-        { rect, moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
+        newChildren = newItemsForHorizontalStack @target.children, comp, rect
+        itemRects = @target.type.layoutChildren newChildren, rectOf(@target)
+        { rect, moves } = computeDropEffectFromNewRects newChildren, itemRects, comp
         { isAnchored: yes, rect, moves }
 
     computeDuplicationEffect: (oldComp, newComp) ->
-        newChildren: newItemsForHorizontalStackDuplication @target.children, oldComp, newComp
-        itemRects: @target.type.layoutChildren newChildren, rectOf(@target)
+        newChildren = newItemsForHorizontalStackDuplication @target.children, oldComp, newComp
+        itemRects = @target.type.layoutChildren newChildren, rectOf(@target)
         computeDropEffectFromNewRects newChildren, itemRects, newComp
 
     computeDeletionEffect: (comp) ->
-        newChildren: newItemsForHorizontalStack @target.children, comp, null
-        itemRects: @target.type.layoutChildren newChildren, rectOf(@target)
-        { moves }: computeDropEffectFromNewRects newChildren, itemRects, comp
+        newChildren = newItemsForHorizontalStack @target.children, comp, null
+        itemRects = @target.type.layoutChildren newChildren, rectOf(@target)
+        { moves } = computeDropEffectFromNewRects newChildren, itemRects, comp
 
     relayout: ->
-        children: _(@target.children).sortBy (child) -> child.abspos.x
-        itemRects: @target.type.layoutChildren children, rectOf(@target)
+        children = _(@target.children).sortBy (child) -> child.abspos.x
+        itemRects = @target.type.layoutChildren children, rectOf(@target)
         computeDropEffectFromNewRects children, itemRects, null
 
     hasNonFlexiblePosition: (comp) -> true
@@ -138,49 +138,49 @@ class ContainerDeterminedLayout extends Layout
 class RegularLayout extends Layout
 
     computeDropEffect: (comp, rect, moveOptions) ->
-        stacking: Mockko.stacking.handleStacking comp, rect, @screen.allStacks
+        stacking = Mockko.stacking.handleStacking comp, rect, @screen.allStacks
         if stacking.targetRect?
             { isAnchored: yes, rect: stacking.targetRect, moves: stacking.moves }
         else
-            anchors: _(Mockko.snapping.computeInnerAnchors(@target, comp, @screen.allowedArea)).reject (a) -> comp == a.comp
-            magnets: Mockko.snapping.computeMagnets(comp, rect, @screen.allowedArea)
-            snappings: Mockko.snapping.computeSnappings(anchors, magnets)
+            anchors = _(Mockko.snapping.computeInnerAnchors(@target, comp, @screen.allowedArea)).reject (a) -> comp == a.comp
+            magnets = Mockko.snapping.computeMagnets(comp, rect, @screen.allowedArea)
+            snappings = Mockko.snapping.computeSnappings(anchors, magnets)
 
             unless moveOptions.disableSnapping
-                snappings: Mockko.snapping.chooseSnappings snappings
+                snappings = Mockko.snapping.chooseSnappings snappings
                 for snapping in snappings
                     snapping.apply rect
 
             { isAnchored: no, rect, moves: [] }
 
     computeDuplicationEffect: (oldComp, newComp) ->
-        rect: rectOf(oldComp)
+        rect = rectOf(oldComp)
         rect.y += rect.h
-        stacking: Mockko.stacking.handleStacking oldComp, rect, @screen.allStacks, 'duplicate'
+        stacking = Mockko.stacking.handleStacking oldComp, rect, @screen.allStacks, 'duplicate'
 
         if stacking.targetRect
             return { rect: stacking.targetRect, moves: stacking.moves }
         else
-            allowedArea: @screen.allowedArea
-            rect: rectOf(oldComp)
+            allowedArea = @screen.allowedArea
+            rect = rectOf(oldComp)
             while rect.x+rect.w <= allowedArea.x+allowedArea.w - DUPLICATE_COMPONENT_MIN_EDGE_INSET_X
-                found: findComponentOccupyingRect @screen.rootComponent, rect
+                found = findComponentOccupyingRect @screen.rootComponent, rect
                 return { rect, moves: [] } unless found
                 rect.x += found.effsize.w + DUPLICATE_COMPONENT_OFFSET_X
 
-            rect: rectOf(oldComp)
+            rect = rectOf(oldComp)
             while rect.y+rect.h <= allowedArea.y+allowedArea.h - DUPLICATE_COMPONENT_MIN_EDGE_INSET_Y
-                found: findComponentOccupyingRect @screen.rootComponent, rect
+                found = findComponentOccupyingRect @screen.rootComponent, rect
                 return { rect, moves: [] } unless found
                 rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
 
             # when everything else fails, just pick a position not occupied by exact duplicate
-            rect: rectOf(oldComp)
+            rect = rectOf(oldComp)
             while rect.y+rect.h <= allowedArea.y+allowedArea.h
-                found: no
-                traverse @screen.rootComponent, (c) -> found: c if c.abspos.x == rect.x && c.abspos.y == rect.y
+                found = no
+                traverse @screen.rootComponent, (c) -> found = c if c.abspos.x == rect.x && c.abspos.y == rect.y
                 # handle (0,0) case
-                found: null if found is @screen.rootComponent
+                found = null if found is @screen.rootComponent
                 return { rect, moves: [] } unless found
                 rect.y += found.effsize.h + DUPLICATE_COMPONENT_OFFSET_Y
             return null
@@ -196,19 +196,19 @@ class RegularLayout extends Layout
 class TableRowLayout extends RegularLayout
     #
 
-computeContainerLayout: (screen, container) ->
+computeContainerLayout = (screen, container) ->
     if container.type.layoutChildren
         new ContainerDeterminedLayout(screen, container)
     else
         new RegularLayout(screen, container)
 
-containerAcceptsChild: (container, candidateChild) ->
+containerAcceptsChild = (container, candidateChild) ->
     if container.type.allowedChildren
         return candidateChild.type.name in container.type.allowedChildren
     else
         return true
 
-containerSatisfiesChild: (container, candidateChild) ->
+containerSatisfiesChild = (container, candidateChild) ->
     if allowed = candidateChild.type.allowedContainers
         container.type.name in allowed
     else
@@ -218,29 +218,29 @@ containerSatisfiesChild: (container, candidateChild) ->
 # (note: I'd really want to split up this function into determineDropTarget(comp, rect) and
 # then use computeContainerLayout(target), but I expect that for some target containers,
 # the layout to use will depend on the rect and/or comp)
-computeLayout: (screen, comp, target, rect) ->
+computeLayout = (screen, comp, target, rect) ->
     return null unless target? or rect?
 
-    if pin: comp.type.pin
+    if pin = comp.type.pin
         new PinnedLayout(screen, screen.rootComponent)
     else if comp.type.isTableRow
         new TableRowLayout(screen, screen.rootComponent)
     else if comp.type.name is 'tab-bar-item'
-        if target: findChildByType(screen.rootComponent, Mockko.componentTypes['tabBar'])
+        if target = findChildByType(screen.rootComponent, Mockko.componentTypes['tabBar'])
             new ContainerDeterminedLayout(screen, target)
         else
             null
-    else if (target and target.type.name is 'toolbar') or (rect and (target: findComponentByTypeIntersectingRect(screen.rootComponent, Mockko.componentTypes['toolbar'], rect, setOf [comp])))
+    else if (target and target.type.name is 'toolbar') or (rect and (target = findComponentByTypeIntersectingRect(screen.rootComponent, Mockko.componentTypes['toolbar'], rect, setOf [comp])))
         new ContainerDeterminedLayout(screen, target)
     else
         unless target
             for possibleType in comp.type.allowedContainers || []
-                if target: findComponentByTypeIntersectingRect screen.rootComponent, Mockko.componentTypes[possibleType], rect, setOf [comp]
+                if target = findComponentByTypeIntersectingRect screen.rootComponent, Mockko.componentTypes[possibleType], rect, setOf [comp]
                     break
             unless target
-                target: findBestTargetContainerForRect screen.rootComponent, rect, [comp]
+                target = findBestTargetContainerForRect screen.rootComponent, rect, [comp]
             while not containerAcceptsChild target, comp
-                target: target.parent
+                target = target.parent
 
         if target
             computeContainerLayout screen, target
@@ -248,50 +248,50 @@ computeLayout: (screen, comp, target, rect) ->
             null
 
 
-computeDropEffect: (screen, comp, rect, moveOptions) ->
-    if comp.type.name is 'image' and (target: findComponentByTypeIntersectingRect(screen.rootComponent, Mockko.componentTypes['tab-bar-item'], rect, setOf [comp]))
+computeDropEffect = (screen, comp, rect, moveOptions) ->
+    if comp.type.name is 'image' and (target = findComponentByTypeIntersectingRect(screen.rootComponent, Mockko.componentTypes['tab-bar-item'], rect, setOf [comp]))
         return { target, moves: [], isAnchored: yes, rect: centerSizeInRect(comp.effsize, rectOf target) }
 
-    if layout: computeLayout screen, comp, null, rect
+    if layout = computeLayout screen, comp, null, rect
         if comp.type.singleInstance
             for child in layout.target.children
                 if child.type is comp.type
                     return null
 
-        eff: layout.computeDropEffect comp, rect, moveOptions
-        eff.target: layout.target
+        eff = layout.computeDropEffect comp, rect, moveOptions
+        eff.target = layout.target
         return eff
     else
         return null
 
-computeDuplicationEffect: (screen, newComp, oldComp) ->
+computeDuplicationEffect = (screen, newComp, oldComp) ->
     oldComp ||= newComp
-    if layout: computeLayout screen, oldComp, oldComp.parent
+    if layout = computeLayout screen, oldComp, oldComp.parent
         layout.computeDuplicationEffect oldComp, newComp
     else
         null
 
-computeDeletionEffect: (screen, comp) ->
+computeDeletionEffect = (screen, comp) ->
     return { moves: [] } unless comp.parent
 
-    if layout: computeLayout screen, comp, comp.parent
+    if layout = computeLayout screen, comp, comp.parent
         layout.computeDeletionEffect comp
     else
         { moves: [] }
 
-computeRelayoutEffect: (screen, comp) ->
+computeRelayoutEffect = (screen, comp) ->
     computeContainerLayout(screen, comp).relayout()
 
-hasNonFlexiblePosition: (screen, comp) ->
+hasNonFlexiblePosition = (screen, comp) ->
     return true if comp.type is Mockko.componentTypes['background']
-    if layout: computeLayout(screen, comp, comp.parent)
+    if layout = computeLayout(screen, comp, comp.parent)
         return layout.hasNonFlexiblePosition(comp)
     return false
 
-adjustChildAfterPasteOrDuplication: (screen, child, container) ->
+adjustChildAfterPasteOrDuplication = (screen, child, container) ->
     container.type.adjustChildAfterPasteOrDuplication(screen, child, container)
 
-Mockko.layouting: {
+Mockko.layouting = {
     computeRelayoutEffect
     computeDropEffect
     computeDuplicationEffect

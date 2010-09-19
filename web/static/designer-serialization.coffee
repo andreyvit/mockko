@@ -5,14 +5,14 @@
 # Copyright (C) 2010, Andrey Tarantsov, Mikhail Gusarov
 #
 
-DEFAULT_TEXT_STYLES: {
-    fontSize: 17
+DEFAULT_TEXT_STYLES = {
+    fontSize:17
     textColor: '#fff'
     fontBold: no
     fontItalic: no
 }
 
-externalizeAction: (action) ->
+externalizeAction = (action) ->
     return null unless action?
     switch action.action
         when Mockko.actions.switchScreen
@@ -20,9 +20,9 @@ externalizeAction: (action) ->
                 'action': Mockko.actions.switchScreen.extname
                 'screenName': action.screenName
             }
-        else throw "unknown action: ${action.action}"
+        else throw "unknown action: #{action.action}"
 
-internalizeAction: (action) ->
+internalizeAction = (action) ->
     return null unless action?
     switch action['action']
         when Mockko.actions.switchScreen.extname
@@ -30,34 +30,34 @@ internalizeAction: (action) ->
                 action: Mockko.actions.switchScreen
                 screenName: action['screenName']
             }
-        else throw "error loading app: invalid action ${action['action']}"
+        else throw "error loading app: invalid action #{action['action']}"
 
-internalizeLocation: (location, parent) ->
+internalizeLocation = (location, parent) ->
     location ||= {}
     {
         x: (location['x'] || 0) + (parent?.abspos?.x || 0)
         y: (location['y'] || 0) + (parent?.abspos?.y || 0)
     }
 
-externalizeLocation: (abspos, parent) ->
+externalizeLocation = (abspos, parent) ->
     {
         'x': abspos.x - (parent?.abspos?.x || 0)
         'y': abspos.y - (parent?.abspos?.y || 0)
     }
 
-externalizeSize: (size) ->
+externalizeSize = (size) ->
     {
         'w': size.w
         'h': size.h
     }
 
-internalizeSize: (size) ->
+internalizeSize = (size) ->
     {
         w: if size then size['w'] || size['width']  else null
         h: if size then size['h'] || size['height'] else null
     }
 
-internalizeStyle: (style) ->
+internalizeStyle = (style) ->
     {
         fontSize: style['fontSize']
         textColor: style['textColor']
@@ -69,7 +69,7 @@ internalizeStyle: (style) ->
         borderRadius: style['borderRadius']
     }
 
-externalizeStyle: (style) ->
+externalizeStyle = (style) ->
     {
         'fontSize': style.fontSize
         'textColor': style.textColor
@@ -81,20 +81,20 @@ externalizeStyle: (style) ->
         'borderRadius': style.borderRadius
     }
 
-externalizeImage: (image) ->
+externalizeImage = (image) ->
     {
         'group': image.group
         'name': image.name
     }
 
-internalizeImage: (image) ->
+internalizeImage = (image) ->
     {
         group: image['group']
         name: image['name']
     }
 
-externalizeComponent: (c) ->
-    rc: {
+externalizeComponent = (c) ->
+    rc = {
         'type': c.type.name || c.type
         'location': externalizeLocation c.abspos, c.parent
         # 'effsize': externalizeSize c.effsize
@@ -105,12 +105,12 @@ externalizeComponent: (c) ->
         'action': externalizeAction c.action
         'children': (externalizeComponent(child) for child in c.children || [])
     }
-    rc['state']: c.state if c.state?
-    rc['image']: externalizeImage(c.image) if c.image?
+    rc['state'] = c.state if c.state?
+    rc['image'] = externalizeImage(c.image) if c.image?
     rc
 
-externalizePaletteComponent: (c) ->
-    rc: {
+externalizePaletteComponent = (c) ->
+    rc = {
         'type': c.type
         'location': externalizeLocation(c.location || { x: 0, y: 0 }, null)
         'size': externalizeSize(c.size || { w: null, h: null })
@@ -120,12 +120,12 @@ externalizePaletteComponent: (c) ->
         'action': externalizeAction c.action
         'children': (externalizePaletteComponent(child) for child in c.children || [])
     }
-    rc['state']: c.state if c.state?
-    rc['image']: externalizeImage(c.image) if c.image?
+    rc['state'] = c.state if c.state?
+    rc['image'] = externalizeImage(c.image) if c.image?
     rc
 
-internalizeComponent: (c, parent) ->
-    rc: {
+internalizeComponent = (c, parent) ->
+    rc = {
         type: Mockko.componentTypes[c['type']]
         abspos: internalizeLocation c['location'], parent
         size: internalizeSize c['size']
@@ -134,33 +134,33 @@ internalizeComponent: (c, parent) ->
         inDocument: yes
         parent: parent
     }
-    rc.children: (internalizeComponent(child, rc) for child in c['children'] || [])
+    rc.children = (internalizeComponent(child, rc) for child in c['children'] || [])
     if not rc.type
         console.log "Missing type for component:"
         console.log c
-        throw "Missing type: ${c['type']}"
-    rc.state: c['state']
-    rc.image: internalizeImage(c['image']) if c['image']?
+        throw "Missing type: #{c['type']}"
+    rc.state = c['state']
+    rc.image = internalizeImage(c['image']) if c['image']?
     if rc.image?.constructor is String
         if rc.image.substr(0, 'images/'.length) == 'images/'
-            encodedId: rc.image.substr('images/'.length)
-            rc.image: { id: decodeURIComponent encodedId }
+            encodedId = rc.image.substr('images/'.length)
+            rc.image = { id: decodeURIComponent encodedId }
         else
-            throw "Invalid image reference: ${rc.image}"
-    rc.style: $.extend({}, (if rc.type.textStyleEditable then DEFAULT_TEXT_STYLES else {}), rc.type.style || {}, internalizeStyle(c['style'] || {}))
-    rc.text: c['text'] || rc.type.defaultText if rc.type.supportsText
+            throw "Invalid image reference: #{rc.image}"
+    rc.style = $.extend({}, (if rc.type.textStyleEditable then DEFAULT_TEXT_STYLES else {}), rc.type.style || {}, internalizeStyle(c['style'] || {}))
+    rc.text = c['text'] || rc.type.defaultText if rc.type.supportsText
     rc
 
-externalizeScreen: (screen) ->
+externalizeScreen = (screen) ->
     {
         'rootComponent': externalizeComponent(screen.rootComponent)
         'name': screen.name
         'html': screen.html || ''
     }
 
-internalizeScreen: (screen) ->
-    rootComponent: internalizeComponent(screen['rootComponent'], null)
-    screen: {
+internalizeScreen = (screen) ->
+    rootComponent = internalizeComponent(screen['rootComponent'], null)
+    screen = {
         rootComponent: rootComponent
         html: screen['html'] || ''
         name: screen['name'] || null
@@ -173,22 +173,22 @@ internalizeScreen: (screen) ->
     }
     return screen
 
-externalizeApplication: (app) ->
+externalizeApplication = (app) ->
     {
         'name': app.name
         'screens': (externalizeScreen(s) for s in app.screens)
     }
 
-internalizeApplication: (app) ->
-    screens: (internalizeScreen(s) for s in app['screens'])
+internalizeApplication = (app) ->
+    screens = (internalizeScreen(s) for s in app['screens'])
     _(screens).each (screen, index) ->
-        screen.name ||= "Screen ${index+1}"
+        screen.name ||= "Screen #{index+1}"
     {
         name: app['name']
         screens: screens
     }
 
-(window.Mockko ||= {}).serialization: {
+(window.Mockko ||= {}).serialization = {
     externalizeAction, internalizeAction
     internalizeLocation, externalizeLocation
     externalizeSize, internalizeSize
