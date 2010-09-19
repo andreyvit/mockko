@@ -105,7 +105,7 @@ class GetAppListHandler(RequestHandler):
         app_query = app_query.fetch(1000)
 
         accounts_by_key = {}
-        for acc in Account.get(set([app._created_by for app in app_query])):
+        for acc in Account.get(set([app._created_by for app in app_query] + [account.key()])):
             accounts_by_key[acc.key()] = acc
 
             users_info[acc.user.user_id()] = {
