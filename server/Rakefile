@@ -1,0 +1,48 @@
+require 'rake/clean'
+
+LESS   = FileList['**/*.less']
+COFFEE = FileList['**/*.coffee']
+
+CSS  = LESS.ext('css')
+JS   = COFFEE.ext('js')
+
+CLOBBER.include(CSS, JS)
+
+rule '.css' => '.less' do |t|
+   puts "  LESS #{t.source}"
+   sh 'lessc', t.source, t.name
+end
+
+rule '.js' => '.coffee' do |t|
+   puts "COFFEE #{t.source}"
+   sh 'coffee', '-c', t.source
+end
+
+desc "Build all CSS and JavaScript files"
+task :default => (CSS + JS)
+
+desc "Continuously watch for changes and rebuild files"
+task :watch => [:default] do
+    require 'rubygems'
+    require 'fssm'
+
+    def rebuild
+        sh 'rake'
+        puts "    OK"
+        if File.file? 'server.pid'
+          Process.kill 'USR2', File.read('server.pid').to_i
+        end
+    rescue
+        nil
+    end
+
+    begin
+        FSSM.monitor(nil, ['**/*.coffee', '**/*.less']) do
+            update { rebuild }
+            delete { rebuild }
+            create { rebuild }
+        end
+    rescue FSSM::CallbackError => e
+        Process.exit
+    end
+end

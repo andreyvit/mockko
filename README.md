@@ -14,6 +14,28 @@ Prerequisites
 * Perl (for 'make optimize')
 * PIL or Pillow (for 'make upload-stock')
 
+
+New Server
+----------
+
+Prerequisites:
+
+* node.js (`brew install node`)
+* npm package manager (`brew install npm`)
+* MongoDB (`brew install mongodb`)
+* Redis (`brew install redis`)
+* CoffeeScript (`npm install coffee`)
+* express (`npm install express`)
+* supervisor (`npm install supervisor`)
+
+Note: seems that ideally most npm prerequisites should be bundled as submodules.
+
+Run (development):
+
+    rake watch &
+    supervisor -w app.js -p app.js
+
+
 Build
 -----
 
