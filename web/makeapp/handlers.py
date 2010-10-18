@@ -429,3 +429,29 @@ class RunAppHandler(RequestHandler):
 """ % dict(title=content['name'], content=body)
 
         return Response(html, mimetype="text/html")
+
+class StatusHandler(RequestHandler):
+
+    def get(self):
+        account_count = Account.all().count(1000)
+        app_count = App.all().count(1000)
+
+        html="""
+        <pre>
+        Mockko statistics:
+
+        Users:          %(account_count)d
+        Applications:   %(app_count)d
+        """ % dict(account_count=account_count, app_count=app_count)
+
+        return Response(html, mimetype="text/html")
+
+class UserExportHandler(RequestHandler):
+
+    def get(self):
+        accounts = Account.all().fetch(1000)
+        lines = []
+        lines.append("email,name")
+        for account in accounts:
+            lines.append("%s,%s" % (account.user.email(), account.full_name))
+        return Response("\n".join(lines), mimetype="text/csv")

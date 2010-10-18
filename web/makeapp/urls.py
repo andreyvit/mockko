@@ -18,4 +18,7 @@ def get_rules():
         Rule('/images/<group_id>', endpoint='api/save-image', methods=['POST'], handler='makeapp.handlers:SaveImageHandler'),
         Rule('/images/<group_id>/<image_name>', endpoint='api/serve-image', methods=['GET'], handler='makeapp.handlers:ServeImageHandler'),
         Rule('/images/<group_id>/<image_name>', endpoint='api/delete-image', methods=['DELETE'], handler='makeapp.handlers:DeleteImageHandler'),
+
+        Rule('/status/', endpoint='admin/status', methods=['GET'], handler='makeapp.handlers:StatusHandler'),
+        Rule('/users-csv-export/', endpoint='admin/users-export', methods=['GET'], handler='makeapp.handlers:UserExportHandler'),
     ]
