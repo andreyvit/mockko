@@ -1,4 +1,5 @@
-== Prerequisites ==
+Prerequisites
+-------------
 
 * GNU make
 * Python >= 2.5
@@ -13,17 +14,20 @@
 * Perl (for 'make optimize')
 * PIL or Pillow (for 'make upload-stock')
 
-== Build ==
+Build
+-----
 
 Run 'make help' for help.
 
-== Bugtracker ==
+Bug Tracker
+-----------
 
 https://www.pivotaltracker.com/projects/74356
 
 (Use the [12345] in commit message to close bug 12345)
 
-== Component JSON Formats ==
+Component JSON Formats
+----------------------
 
 A component is represented as a JavaScript/JSON object in one of three possible formats:
 
