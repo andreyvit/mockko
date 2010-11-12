@@ -326,7 +326,12 @@ jQuery ($) ->
     pending = {}
 
     _returnImageUrl = (image, effect, cb) ->
-        throw "image group URLs not cached = #{image.group}" unless image.group of groups
+        unless image.group of groups
+          console.error "!!! _returnImageUrl: image group URLs not cached = #{image.group}"
+          return
+        if !image.name
+          console.error ["!!! _returnImageUrl: image has no name: ", image]
+          return
         digest = groups[image.group][image.name]
         if effect
             cb "images/#{encodeURIComponent image.group}/#{encodeURIComponent (_imageEffectName image.name, effect)}?#{digest}"
