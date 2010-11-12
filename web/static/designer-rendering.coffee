@@ -33,7 +33,7 @@ renderComponentPosition = (c, cn) ->
                 'x': c.abspos.x - ((c.parent?.dragpos && false || c.parent?.abspos)?.x || 0)
                 'y': c.abspos.y - ((c.parent?.dragpos && false || c.parent?.abspos)?.y || 0)
             }
-    if o = c.type.childrenOffset
+    if o = c.parent?.type?.childrenOffset
         relpos = { x: relpos.x + o.x, y: relpos.y + o.y }
     $(cn || c.node).css({
         left:   "#{relpos.x}px"
