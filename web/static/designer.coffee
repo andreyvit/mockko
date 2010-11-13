@@ -1272,16 +1272,20 @@ jQuery ($) ->
         $('#run-address-label a').attr('href', url).html(url)
         $('#run-iframe').attr 'src', url
 
-    $('#run-button').click (e) ->
-        e.preventDefault(); e.stopPropagation()
-        if e.shiftKey
-            toggleSharePopover()
-            return
+    saveAndRunCurrentApplication = ->
         if applicationId?
             runCurrentApplication()
         else
             saveApplicationChanges ->
                 runCurrentApplication()
+
+    $('#play-button').bind
+        'mousedown': ->
+            $('#play-button').addClass('active')
+        'mouseup': (e) ->
+            e.preventDefault(); e.stopPropagation()
+            $('#play-button').removeClass('active')
+            saveAndRunCurrentApplication()
 
     $('#run-stop-button').click ->
         $('#run-screen').hide()
@@ -1645,7 +1649,10 @@ jQuery ($) ->
         else
             devicePos.y = (paneSize.h - deviceSize.h) / 2
 
-        $('#device-panel').css({ left: devicePos.x, top: devicePos.y })
+        # caution: magic constants 40 and 70
+
+        $('#device-panel').css({ left: devicePos.x - 40, top: devicePos.y })
+        $('#buttons-pane').css left: devicePos.x + deviceSize.w + 70
 
     supportedBrowser = ->
         $.browser.webkit or window.location.href.match('[?&]nocheckbrowser')
