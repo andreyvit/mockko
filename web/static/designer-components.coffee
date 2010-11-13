@@ -76,9 +76,14 @@ Pins.bottom.dependantPins.push Pins.secondBottom
         heightPolicy: { fixedSize: 30, userSize: yes }
         supportsImage: yes
         supportsImageReplacement: no
-        tagName: 'img'
         renderImage: (comp, node, imageUrl) ->
-          node.src = imageUrl
+            if imageUrl
+                $(node).css
+                    'background-image': "url(#{imageUrl})"
+                    'background-repeat': "no-repeat"
+                    '-webkit-background-size': "100% 100%"
+            else
+                $(node).css backgroundImage: "none"
         tooltip: (comp) ->
             comp.image.name
         constrainProportionsByDefault: yes
