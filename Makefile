@@ -69,6 +69,7 @@ help:
 	@echo "  make run-opt  -- run application using dev. appserver (optimized)"
 	@echo "  make deploy-production -- upload application to GAE"
 	@echo "  make deploy   -- upload 'playground' version to GAE"
+	@echo "  make quick-deploy -- upload 'playground' version to GAE without running 'optimize' step"
 	@echo "  make upload-stock -- upload 'stock' images to local devserver or GAE"
 	@echo "  make clean    -- clean all generated files"
 
@@ -194,7 +195,7 @@ run-opt: all optimize
 
 # Deployment
 
-deploy-production: check-branches do-deploy
+deploy-production: check-branches optimize do-deploy
 
 check-branches:
 	@echo "  CHECK BRANCHES"
@@ -207,7 +208,7 @@ check-branches:
 	fi
 
 do-deploy: VER_ARG=$(if $(APP_VERSION),-V $(APP_VERSION))
-do-deploy: all optimize do-deploy-$(shell id -un)
+do-deploy: all do-deploy-$(shell id -un)
 
 do-deploy-andreyvit:
 	appcfg.py $(VER_ARG) -e andreyvit@gmail.com --passin update web < ~/.andreyvit_passwd
@@ -216,7 +217,10 @@ do-deploy-dottedmag:
 	appcfg.py $(VER_ARG) -e dottedmag@dottedmag.net update web
 
 deploy: APP_VERSION=$(shell id -un)-playground
-deploy: do-deploy
+deploy: optimize do-deploy
+
+quick-deploy: APP_VERSION=$(shell id -un)-playground
+quick-deploy: do-deploy
 
 upload-stock:
 	python scripts/upload_stock --no-auth -s localhost:$(DEVAPPSERVER_PORT) mockkodesigner
