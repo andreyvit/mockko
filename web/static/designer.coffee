@@ -1268,11 +1268,11 @@ jQuery ($) ->
     isRunningApplication = ->
         $('#run-iframe').is(':visible')
 
+    getRunURL = ->
+        window.location.href.replace(/\/(?:dev|designer).*$/, '/').replace(/#.*$/, '') + "R" + applicationId
+
     runCurrentApplication = ->
-        url = window.location.href.replace(/\/(?:dev|designer).*$/, '/').replace(/#.*$/, '') + "R" + applicationId
-        console.log url
-        # $('#run-address-label a').attr('href', url).html(url)
-        $('#run-iframe').attr 'src', url
+        $('#run-iframe').attr 'src', getRunURL()
 
         $('#run-iframe').show()
         $('#design-area').css 'visibility': 'hidden'
@@ -1294,16 +1294,50 @@ jQuery ($) ->
             saveApplicationChanges ->
                 runCurrentApplication()
 
-    $('#play-button').bind
+    $('#buttons-pane .button').bind
         'mousedown': ->
-            $('#play-button').addClass('down')
+            $(this).addClass('down')
         'mouseup': (e) ->
-            e.preventDefault(); e.stopPropagation()
-            $('#play-button').removeClass('down')
-            if isRunningApplication()
-                stopRunningApplication()
-            else
-                saveAndRunCurrentApplication()
+            $(this).removeClass('down')
+
+    $('#play-button').click (e) ->
+        if isRunningApplication()
+            stopRunningApplication()
+        else
+            saveAndRunCurrentApplication()
+
+    initializeRunOnDevice = ($button, $popup) ->
+        $link  = $popup.find('.link')
+        $close = $popup.find('.close')
+
+        isPopupOpen = ->
+            $popup.is(':visible')
+
+        closePopup = ->
+            $popup.fadeOut(250)
+
+        openPopup = ->
+            width  = $popup.outerWidth()
+            height = $popup.outerHeight()
+            buttonOffset = $button.offset()
+            buttonHeight = $button.outerHeight()
+            parentOffset = $popup.parent().offset()
+
+            buttonHeight -= 30  # ignore the button text for the purposes of centering
+
+            $link.text(getRunURL())
+
+            $popup.css
+                left: buttonOffset.left - 10 - width - parentOffset.left
+                top:   (buttonOffset.top + buttonHeight / 2) - height / 2 - parentOffset.top
+            $popup.fadeIn()
+
+        togglePopup = -> if isPopupOpen() then closePopup() else openPopup()
+
+        $button.click -> togglePopup(); undefined
+        $close.click  -> closePopup(); undefined
+
+    initializeRunOnDevice($('#run-on-device-button'), $('#run-on-device-popup'))
 
     ##########################################################################################################
     ##  Dashboard = Application List

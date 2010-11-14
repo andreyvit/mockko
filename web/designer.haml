@@ -140,7 +140,8 @@
         %iframe#run-iframe
 
       #buttons-pane
-        #play-button
+        #play-button.button
+        #run-on-device-button.button
 
       #palette
         #palette-container
@@ -198,6 +199,12 @@
               %li#no-action-button Do Nothing
               %li#set-action-button Switch To Screen
               #chosen-action-label (no action set)
+
+      #run-on-device-popup
+        %p.hint Open this link on your iPhone or share it with others (does not require a login):
+        %p.link http://www.example.com/R123456789
+        .close Close
+
     #color-picker
 
     #profile-screen.screen
