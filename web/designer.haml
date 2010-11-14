@@ -137,6 +137,8 @@
               .resizing-handle.resizing-n.resizing-bc
               .resizing-handle.resizing-ne.resizing-br
 
+        %iframe#run-iframe
+
       #buttons-pane
         #play-button
 
@@ -212,12 +214,6 @@
         .buttons
           %a#profile-close-link.cancel(href='#') Cancel
           %a#profile-submit-link.save(href='#') Save
-
-    #run-screen.screen
-      #run-stop-button Back to Designer
-      #run-address-label Visit from an iPhone/iPad, or share this link: <a href="#" target="_new">http://example.com/</a>
-      %iframe#run-iframe
-
 
     %ul#component-context-menu.context-menu
       %li#delete-component-menu-item Delete

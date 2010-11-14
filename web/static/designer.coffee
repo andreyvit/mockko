@@ -1265,12 +1265,27 @@ jQuery ($) ->
             throw "This hack only works for the current screen"
         screen.html = screen.rootComponent.node.outerHTML
 
+    isRunningApplication = ->
+        $('#run-iframe').is(':visible')
+
     runCurrentApplication = ->
-        $('#run-screen').show()
         url = window.location.href.replace(/\/(?:dev|designer).*$/, '/').replace(/#.*$/, '') + "R" + applicationId
         console.log url
-        $('#run-address-label a').attr('href', url).html(url)
+        # $('#run-address-label a').attr('href', url).html(url)
         $('#run-iframe').attr 'src', url
+
+        $('#run-iframe').show()
+        $('#design-area').css 'visibility': 'hidden'
+        adjustDeviceImagePosition()
+
+        $('#play-button').addClass('active')
+
+    stopRunningApplication = ->
+        $('#design-area').css 'visibility': 'visible'
+        $('#run-iframe').hide()
+        adjustDeviceImagePosition()
+
+        $('#play-button').removeClass('active')
 
     saveAndRunCurrentApplication = ->
         if applicationId?
@@ -1281,14 +1296,14 @@ jQuery ($) ->
 
     $('#play-button').bind
         'mousedown': ->
-            $('#play-button').addClass('active')
+            $('#play-button').addClass('down')
         'mouseup': (e) ->
             e.preventDefault(); e.stopPropagation()
-            $('#play-button').removeClass('active')
-            saveAndRunCurrentApplication()
-
-    $('#run-stop-button').click ->
-        $('#run-screen').hide()
+            $('#play-button').removeClass('down')
+            if isRunningApplication()
+                stopRunningApplication()
+            else
+                saveAndRunCurrentApplication()
 
     ##########################################################################################################
     ##  Dashboard = Application List
@@ -1652,6 +1667,9 @@ jQuery ($) ->
         # caution: magic constants 40 and 70
 
         $('#device-panel').css({ left: devicePos.x - 40, top: devicePos.y })
+        $('#run-iframe').css
+            left: devicePos.x - 40 + deviceInsets.x
+            top:  devicePos.y + deviceInsets.y
         $('#buttons-pane').css left: devicePos.x + deviceSize.w + 70
 
     supportedBrowser = ->

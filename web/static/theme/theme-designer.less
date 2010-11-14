@@ -3,6 +3,7 @@
 
 #design-screen {
     background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0, 0, 0, 0.0)), to(rgba(0, 0, 0, 0.0))), url(images/background-designer.png) repeat;
+    position: relative;
 
     #run-button {
         min-width: 70px;
@@ -16,7 +17,7 @@
     .left-pane {
     }
     #device-panel {
-        position: relative;
+        position: absolute;
     }
     #design-pane {
 /*        background: #dddfe4;*/
@@ -428,8 +429,17 @@
   &:hover {
     background-position: 0 -85px;
   }
-  &.active {
+  &.down {
     background-position: 0 -170px;
+  }
+  &.active {
+    background-position: 0 -255px;
+    &:hover {
+      background-position: 0 -340px;
+    }
+    &.down {
+      background-position: 0 -425px;
+    }
   }
 }
 
@@ -1055,13 +1065,11 @@
 }
 
 #run-iframe {
+    display: none;
     position: absolute;
-    left: 50%;
-    top: 50%;
     width: 320px;
     height: 480px;
-    margin-left: -160px;
-    margin-top: -240px;
+    margin: 0px;
     border: none;
 }
 
