@@ -59,9 +59,8 @@
         .left
           %a#new-app-button(href="#") New Application
         .right
-          %a#help Help
-          %a#feedback Feedback
           %a#logout-button.logout-button(href="#") Sign Out
+          %a.help-button Help & Feedback
           %a.profile-button(href="#") User Profile
         %h1
           Dashboard
@@ -96,8 +95,7 @@
               %span Undo something...
             Undo
         .right
-          %a#help Help
-          %a#feedback Feedback
+          %a.help-button Help & Feedback
           / %a#logout-button.logout-button(href="#") Sign Out
           / %a#share-button(href="#") Share
           / %a.profile-button(href="#") User Profile
@@ -206,6 +204,33 @@
         .close Close
 
     #color-picker
+
+    #help-popup
+      #help-topics.pane
+        %header Learn about...
+        .body
+          %a(href="http://help.mockko.com/faqs/general/keyboard-shortcuts" target="_new") Keyboard shortcuts
+          %a(href="http://help.mockko.com/faqs/sharing/how-to-share" target="_new") Sharing options
+          %a(href="http://help.mockko.com/faqs/images/awesome-stock-icons-for-ios" target="_new") Awesome stock icons
+          %a.all(href="http://help.mockko.com/faqs/" target="_new") See all help topics »
+      #help-support.pane
+        %header Contact support?
+        .body
+          %a(href="http://help.mockko.com/discussion/new" target="_new") Start a discussion now
+      #help-voting.pane
+        %header Top feature requests
+        .body
+          %ul.features
+            %li
+              .votes 7 votes
+              %p Support landscape mode
+            %li
+              .votes 6 votes
+              %p iPad mockups
+            %li
+              .votes 3 votes
+              %p Support custom image buttons
+          %a(href="http://mockko.uservoice.com/" target="_new") Visit our UserVoice to vote or suggest your own »
 
     #profile-screen.screen
       %form#profile-popup

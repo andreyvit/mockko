@@ -1519,33 +1519,64 @@ jQuery ($) ->
     ##########################################################################################################
     ##  Help & Vote (Feedback) Buttons
 
-    initFeedbackButton = ->
-        uservoiceOptions =
-            'key': 'mockko'
-            'host': 'votebox.mockko.com'
-            'forum': '54458'
-            'lang': 'en'
-            'showTab': false
-        s = document.createElement('script')
-        s.src = "http://cdn.uservoice.com/javascripts/widgets/tab.js"  # can use https:// too
-        document.getElementsByTagName('head')[0].appendChild(s)
+    newPopup = ($popup, options) ->
 
-        $('#feedback').bind {
-            'click':     -> window['UserVoice']['Popin']['show'](uservoiceOptions)
-            'mousedown': -> $(this).addClass('active')
-            'mouseup':   -> $(this).removeClass('active')
-            'mouseout':  -> $(this).removeClass('active')
-        }
+        nop = ->
 
-        window['Tender'] = {
-            'hideToggle': true
-            # sso: "unique-sso-token-of-current-user"
-            'widgetToggles': $('#help')
-        }
+        { prepare } = $.extend({ prepare: nop }, options || {})
 
-        s = document.createElement('script')
-        s.src = "http://help.mockko.com/tender_widget.js"
-        document.getElementsByTagName('head')[0].appendChild(s)
+        # public methods
+
+        isOpen = ->
+            $popup.is(':visible')
+
+        close = ->
+            return unless isOpen()
+            $popup.fadeOut(200)
+
+        open = ->
+            return if isOpen()
+            prepare($popup, options)
+            $popup.fadeIn(200)
+
+        toggle = ->
+            if isOpen() then close() else open()
+
+        # bind events
+
+        $(options.toggle).click(-> toggle(); undefined) if options.toggle
+
+        { isOpen, open, close, toggle }
+
+    initFeedbackButton = ($button, $popup) ->
+        # uservoiceOptions =
+        #     'key': 'mockko'
+        #     'host': 'votebox.mockko.com'
+        #     'forum': '54458'
+        #     'lang': 'en'
+        #     'showTab': false
+        # s = document.createElement('script')
+        # s.src = "http://cdn.uservoice.com/javascripts/widgets/tab.js"  # can use https:// too
+        # document.getElementsByTagName('head')[0].appendChild(s)
+        #
+        # $('#feedback').bind {
+        #     'click':     -> window['UserVoice']['Popin']['show'](uservoiceOptions)
+        #     'mousedown': -> $(this).addClass('active')
+        #     'mouseup':   -> $(this).removeClass('active')
+        #     'mouseout':  -> $(this).removeClass('active')
+        # }
+        #
+        # window['Tender'] = {
+        #     'hideToggle': true
+        #     # sso: "unique-sso-token-of-current-user"
+        #     'widgetToggles': $('#help')
+        # }
+        #
+        # s = document.createElement('script')
+        # s.src = "http://help.mockko.com/tender_widget.js"
+        # document.getElementsByTagName('head')[0].appendChild(s)
+
+        popup = newPopup $popup, toggle: $button
 
     ##########################################################################################################
 
@@ -1734,7 +1765,7 @@ jQuery ($) ->
     else
         serverMode = Mockko.server
 
-    initFeedbackButton()
+    initFeedbackButton($('.help-button'), $('#help-popup'))
     initComponentTypes()
     hookKeyboardShortcuts()
     initBackButton()
