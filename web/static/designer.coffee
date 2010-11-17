@@ -1310,13 +1310,7 @@ jQuery ($) ->
         $link  = $popup.find('.link')
         $close = $popup.find('.close')
 
-        isPopupOpen = ->
-            $popup.is(':visible')
-
-        closePopup = ->
-            $popup.fadeOut(250)
-
-        openPopup = ->
+        updatePopup = ->
             width  = $popup.outerWidth()
             height = $popup.outerHeight()
             buttonOffset = $button.offset()
@@ -1330,14 +1324,12 @@ jQuery ($) ->
             $popup.css
                 left: buttonOffset.left - 10 - width - parentOffset.left
                 top:   (buttonOffset.top + buttonHeight / 2) - height / 2 - parentOffset.top
-            $popup.fadeIn()
 
-        togglePopup = -> if isPopupOpen() then closePopup() else openPopup()
-
-        $button.click -> togglePopup(); undefined
-        $close.click  -> closePopup(); undefined
-
-    initializeRunOnDevice($('#run-on-device-button'), $('#run-on-device-popup'))
+        popup = newPopup $popup,
+                    modeEngine: modeEngine
+                    toggle:     $button
+                    close:      $close
+                    prepare:    updatePopup
 
     ##########################################################################################################
     ##  Dashboard = Application List
@@ -1523,7 +1515,7 @@ jQuery ($) ->
 
         nop = ->
 
-        { prepare } = $.extend({ prepare: nop }, options || {})
+        { prepare, modeEngine } = $.extend({ prepare: nop }, options || {})
 
         # public methods
 
@@ -1533,11 +1525,21 @@ jQuery ($) ->
         close = ->
             return unless isOpen()
             $popup.fadeOut(200)
+            modeEngine.deactivateMode()
 
         open = ->
             return if isOpen()
             prepare($popup, options)
             $popup.fadeIn(200)
+
+            modeEngine.activateMode {
+                isInsideTextField: yes
+                debugname: "Popup"
+                mousedown: -> close(); false
+                mousemove: -> false
+                mouseup: -> false
+                cancel: -> close()
+            }
 
         toggle = ->
             if isOpen() then close() else open()
@@ -1545,10 +1547,11 @@ jQuery ($) ->
         # bind events
 
         $(options.toggle).click(-> toggle(); undefined) if options.toggle
+        $(options.close) .click(-> close();  undefined) if options.close
 
         { isOpen, open, close, toggle }
 
-    initFeedbackButton = ($button, $popup) ->
+    initFeedbackButton = (modeEngine, $button, $popup) ->
         API_URL = 'https://mockko.uservoice.com/forums/54458/suggestions.json?client=qF52dPwrz1KQdEgRmaw&callback=?'
         retrieveVotes = ->
             $.getJSON API_URL, null, (data, status, xhr) ->
@@ -1566,7 +1569,10 @@ jQuery ($) ->
                             .append($("<p/>", text: item.title))
                             .appendTo($list)
 
-        popup = newPopup $popup, toggle: $button, prepare: retrieveVotes
+        popup = newPopup $popup,
+                    modeEngine: modeEngine
+                    toggle:     $button
+                    prepare:    retrieveVotes
 
     ##########################################################################################################
 
@@ -1755,7 +1761,8 @@ jQuery ($) ->
     else
         serverMode = Mockko.server
 
-    initFeedbackButton($('.help-button'), $('#help-popup'))
+    initFeedbackButton(modeEngine, $('.help-button'), $('#help-popup'))
+    initializeRunOnDevice($('#run-on-device-button'), $('#run-on-device-popup'))
     initComponentTypes()
     hookKeyboardShortcuts()
     initBackButton()
