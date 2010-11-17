@@ -1549,34 +1549,24 @@ jQuery ($) ->
         { isOpen, open, close, toggle }
 
     initFeedbackButton = ($button, $popup) ->
-        # uservoiceOptions =
-        #     'key': 'mockko'
-        #     'host': 'votebox.mockko.com'
-        #     'forum': '54458'
-        #     'lang': 'en'
-        #     'showTab': false
-        # s = document.createElement('script')
-        # s.src = "http://cdn.uservoice.com/javascripts/widgets/tab.js"  # can use https:// too
-        # document.getElementsByTagName('head')[0].appendChild(s)
-        #
-        # $('#feedback').bind {
-        #     'click':     -> window['UserVoice']['Popin']['show'](uservoiceOptions)
-        #     'mousedown': -> $(this).addClass('active')
-        #     'mouseup':   -> $(this).removeClass('active')
-        #     'mouseout':  -> $(this).removeClass('active')
-        # }
-        #
-        # window['Tender'] = {
-        #     'hideToggle': true
-        #     # sso: "unique-sso-token-of-current-user"
-        #     'widgetToggles': $('#help')
-        # }
-        #
-        # s = document.createElement('script')
-        # s.src = "http://help.mockko.com/tender_widget.js"
-        # document.getElementsByTagName('head')[0].appendChild(s)
+        API_URL = 'https://mockko.uservoice.com/forums/54458/suggestions.json?client=qF52dPwrz1KQdEgRmaw&callback=?'
+        retrieveVotes = ->
+            $.getJSON API_URL, null, (data, status, xhr) ->
+                if data.length
+                    console.log ["data", data]
+                    top = { title: item['title'], votes: item['vote_count'] } for item in data.slice(0, 3)
+                    console.log ["top", top]
+                    $list = $('#help-voting .features')
+                    $list.find('li').remove()
 
-        popup = newPopup $popup, toggle: $button
+                    for item in top
+                        console.log ["item", item]
+                        $("<li/>")
+                            .append($("<div/>", class: 'votes', text: "#{item.votes} votes"))
+                            .append($("<p/>", text: item.title))
+                            .appendTo($list)
+
+        popup = newPopup $popup, toggle: $button, prepare: retrieveVotes
 
     ##########################################################################################################
 
