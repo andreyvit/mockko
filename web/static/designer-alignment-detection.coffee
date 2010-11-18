@@ -22,7 +22,7 @@ Alignments = {
         bestDefiniteGuess: -> this
         cssValue: 'center'
         adjustedPosition: (originalRect, newSize) ->
-            c: centerOfRect originalRect
+            c = centerOfRect originalRect
             { x: c.x - newSize.w/2, y: originalRect.y }
     }
     right: {
