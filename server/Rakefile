@@ -2,11 +2,13 @@ require 'rake/clean'
 
 LESS   = FileList['**/*.less']
 COFFEE = FileList['**/*.coffee']
+JADE   = FileList['mockups/**/*.jade']
 
 CSS  = LESS.ext('css')
 JS   = COFFEE.ext('js')
+HTML = JADE.ext('html')
 
-CLOBBER.include(CSS, JS)
+CLOBBER.include(CSS, JS, HTML)
 
 rule '.css' => '.less' do |t|
    puts "  LESS #{t.source}"
@@ -18,8 +20,13 @@ rule '.js' => '.coffee' do |t|
    sh 'coffee', '-c', t.source
 end
 
-desc "Build all CSS and JavaScript files"
-task :default => (CSS + JS)
+rule '.html' => '.jade' do |t|
+   puts "JADE   #{t.source}"
+   sh 'jade', t.source
+end
+
+desc "Build all CSS, JavaScript and static HTML files"
+task :default => (CSS + JS + HTML)
 
 desc "Continuously watch for changes and rebuild files"
 task :watch => [:default] do
@@ -37,7 +44,7 @@ task :watch => [:default] do
     end
 
     begin
-        FSSM.monitor(nil, ['**/*.coffee', '**/*.less']) do
+        FSSM.monitor(nil, ['**/*.coffee', '**/*.less', '**/*.jade']) do
             update { rebuild }
             delete { rebuild }
             create { rebuild }
@@ -45,4 +52,10 @@ task :watch => [:default] do
     rescue FSSM::CallbackError => e
         Process.exit
     end
+end
+
+desc "Run the development server of the application"
+task :run do
+    # sh 'supervisor -w app.js -p app.js'
+    sh 'screen -Rx -p='
 end

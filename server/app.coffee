@@ -11,10 +11,13 @@ process.on 'uncaughtException', (excp) ->
 { puts } = require 'sys'
 
 fs           = require 'fs'
+sys          = require 'sys'
+path         = require 'path'
 assert       = require 'assert'
 Step         = require 'step'
 express      = require 'express'
 fugue        = require 'fugue'
+paperboy     = require 'paperboy'
 mongodb      = require 'mongodb'
 io           = require 'socket.io'
 { Mongoose } = require 'mongoose'
@@ -43,6 +46,9 @@ app.configure 'production', ->
 
 socket = io.listen(app)
 
+PROJECT_ROOT = path.dirname(__filename)
+MOCKUPS_ROOT = path.join(path.dirname(__filename), 'mockups')
+
 newMockko = (db, app, socket) ->
 
     _users = null
@@ -53,6 +59,9 @@ newMockko = (db, app, socket) ->
     # private methods
 
     setupRoutes = ->
+    
+        log = (statCode, url, ip, err) ->
+          sys.log "#{statCode} - #{url} - #{ip} - #{err || 'ok'}"
 
         app.get '/', (req, res) ->
             _users.insert { created: +new Date() }, ->
@@ -62,6 +71,23 @@ newMockko = (db, app, socket) ->
 
         app.get '/users/:id', (req, res) ->
             res.send "user id xx #{req.params.id}"
+            
+        app.get '/mockups/*', (req, res) ->
+          req.url = req.url.replace('/mockups', '')
+          paperboy
+            .deliver(MOCKUPS_ROOT, req, res)
+            .before ->
+              sys.log "Received Request"
+            .after (statCode) ->
+              log statCode, req.url, req.ip
+            .error (statCode, msg) ->
+              res.writeHead statCode, 'Content-Type': 'text/plain'
+              res.end "Error: #{statCode}"
+              log statCode, req.url, req.ip, msg
+            .otherwise (err) ->
+              res.writeHead 404, 'Content-Type': 'text/plain'
+              res.end "Error 404: File not found"
+              log 404, req.url, req.ip, err
 
         socket.on 'connection', (client) ->
             puts "WebSocket #{client.sessionId} connected"
