@@ -136,7 +136,7 @@ jQuery ($) ->
 
     componentActionChanged = (c) ->
         renderComponentStyle c
-        if c is componentToActUpon()
+        if selection.isSelected(c)
             inspector.updateActionInspector()
         if c is hover.currentlyHovered()
             hover.updateHoverPanelPosition()
@@ -192,6 +192,14 @@ jQuery ($) ->
     ##########################################################################################################
     ##  component management
 
+    commonDescriptionOf = (comps) ->
+        if comps.length == 0
+            "zero components"
+        else if comps.length == 1
+            friendlyComponentName comps[0]
+        else
+            "#{comps.length} components"
+
     cloneTemplateComponent = (compTemplate) ->
         c = ser.internalizeComponent compTemplate, null
         traverse c, (comp) -> comp.inDocument = no
@@ -211,12 +219,17 @@ jQuery ($) ->
         else
             $(rootc.node).remove()
         containerChildrenChanged rootc.parent
-        deselectComponent() if isComponentOrDescendant selectedComponent, rootc
+        selection.deselectOnRemovalOf(rootc)
         hover.componentUnhovered() if isComponentOrDescendant hover.currentlyHovered(), rootc
 
     deleteComponent = (rootc) ->
         runTransaction "deletion of #{friendlyComponentName rootc}", ->
             deleteComponentWithoutTransaction rootc, true
+
+    deleteComponents = (comps) ->
+        runTransaction "deletion of #{commonDescriptionOf comps}", ->
+            comps.forEach (comp) ->
+                deleteComponentWithoutTransaction comp, true
 
     insetsToEdges = (screen, comp) ->
         r = rectOf comp
@@ -228,18 +241,30 @@ jQuery ($) ->
             b: Math.max(0, (a.y+a.h) - (r.y+r.h))
         }
 
-    moveComponentBy = (comp, offset) ->
-        insets = insetsToEdges(activeScreen, comp)
+    minInsets = (a, b) ->
+        return a unless b?
+        return b unless a?
+
+        l: Math.min(a.l, b.l)
+        r: Math.min(a.r, b.r)
+        t: Math.min(a.t, b.t)
+        b: Math.min(a.b, b.b)
+
+    moveComponentsBy = (comps, offset) ->
+        insets = null
+        comps.forEach (comp) ->
+            insets = minInsets(insets, insetsToEdges(activeScreen, comp))
         offset = {
             x: if offset.x < 0 then -Math.min(-offset.x, insets.l) else Math.min( offset.x, insets.r)
             y: if offset.y < 0 then -Math.min(-offset.y, insets.t) else Math.min( offset.y, insets.b)
         }
         return if offset.x == 0 and offset.y == 0
         # warning: this prefix (“keyboard moving of”) is also used in designer-undo.coffee
-        runTransaction "keyboard moving of #{friendlyComponentName comp}", ->
-            setUndoChangeComponent comp
-            traverse comp, (c) -> c.abspos = ptSum(c.abspos, offset)
-            traverse comp, componentPositionChanged
+        runTransaction "keyboard moving of #{commonDescriptionOf comps}", ->
+            comps.forEach (comp) ->
+                setUndoChangeComponent comp
+                traverse comp, (c) -> c.abspos = ptSum(c.abspos, offset)
+                traverse comp, componentPositionChanged
 
     duplicateComponent = (comp) ->
         return if comp.type.unmovable || comp.type.singleInstance
@@ -374,23 +399,79 @@ jQuery ($) ->
     ##########################################################################################################
     ##  selection
 
-    selectedComponent = null
+    initSelection = (options) ->
+        { selectionDidChange } = options
 
-    selectComponent = (comp) ->
-        return if comp is selectedComponent
-        deselectComponent()
-        selectedComponent = comp
-        $(selectedComponent.node).addClass 'selected'
-        inspector.updateInspector()
+        selectedComponents = []
 
-    deselectComponent = ->
-        return if selectedComponent is null
-        $(selectedComponent.node).removeClass 'selected'
-        selectedComponent = null
-        inspector.updateInspector()
+        isSelected = (candidate) -> selectedComponents.some((comp) -> comp == candidate)
 
-    componentToActUpon = -> selectedComponent || hover.currentlyHovered()
+        isInSelectedHierarchy = (candidate) ->
+            selectedComponents.some((comp) -> isComponentOrDescendant candidate, comp)
 
+        renderAsSelected = (comp) ->
+            $(comp.node).addClass 'selected'
+
+        renderAsNotSelected = (comp) ->
+            $(comp.node).removeClass 'selected'
+
+        select = (comp) ->
+            selectedComponents.forEach (comp) -> renderAsNotSelected(comp)
+            selectedComponents = [comp]
+            renderAsSelected(comp)
+            selectionDidChange()
+
+        deselect = (comp) ->
+            return unless isSelected(comp)
+            selectedComponents = selectedComponents.filter((c) -> c != comp)
+            renderAsNotSelected(comp)
+            selectionDidChange()
+
+        deselectOnRemovalOf = (removed) ->
+            oldLength = selectedComponents.length
+
+            selectedComponents.forEach (selected) ->
+                if isComponentOrDescendant(selected, removed)
+                    selectedComponents = selectedComponents.filter((c) -> c != selected)
+                    renderAsNotSelected(selected)
+
+            if selectedComponents.length != oldLength
+                selectionDidChange()
+
+        toggle = (comp) ->
+            if isSelected(comp)
+                selectedComponents = selectedComponents.filter((c) -> c != comp)
+                renderAsNotSelected comp
+            else if isInSelectedHierarchy(comp)
+                # do nothing
+            else
+                selectedComponents.push(comp)
+                renderAsSelected(comp)
+            selectionDidChange()
+
+        deselectAll = ->
+            return if isEmpty()
+            selectedComponents.forEach (comp) -> renderAsNotSelected(comp)
+            selectedComponents = []
+            selectionDidChange()
+
+        isEmpty = -> selectedComponents.length == 0
+
+        isNonEmpty = -> selectedComponents.length > 0
+
+        components = -> selectedComponents
+
+        { isEmpty, isNonEmpty, select, toggle, deselectAll, deselectOnRemovalOf, isSelected, isInSelectedHierarchy, components }
+
+    selection = initSelection
+        selectionDidChange: ->
+            inspector.updateInspector()
+
+    componentToActUpon = ->
+        if selection.isEmpty()
+            null
+        else
+            selection.components()[0]
 
     ##########################################################################################################
     ##  double-click editing
@@ -578,7 +659,7 @@ jQuery ($) ->
                         undo.abandonTransaction()
                         deleteComponent c
                 deactivateMode()
-                selectComponent(c) if ok
+                selection.select(c) if ok
                 true
 
             cancel: ->
@@ -617,7 +698,7 @@ jQuery ($) ->
                         $(c.node).remove()
                     undo.rollbackTransaction()
                 deactivateMode()
-                selectComponent(c) if ok
+                selection.select(c) if ok
                 startComponentTextInPlaceEditing(c) if c.type.supportsText
                 true
 
@@ -657,11 +738,15 @@ jQuery ($) ->
 
     defaultMouseDown = (e, comp) ->
         if comp
-            selectComponent comp
-            if not comp.type.unmovable
-                activateExistingComponentDragging comp, { x: e.pageX, y: e.pageY }
+            if e.metaKey
+                selection.toggle comp
+            else
+                selection.select comp
+
+                if not comp.type.unmovable
+                    activateExistingComponentDragging comp, { x: e.pageX, y: e.pageY }
         else
-            deselectComponent()
+            selection.deselectAll()
         true
 
     defaultMouseMove = (e, comp) ->
@@ -1024,7 +1109,7 @@ jQuery ($) ->
         updateEffectiveSizesAndRelayoutHierarchy activeScreen.rootComponent
         componentsChanged()
 
-        deselectComponent()
+        selection.deselectAll()
         hover.componentUnhovered()
 
     loadImageGroupsUsedInApplication = (app) ->
@@ -1224,34 +1309,34 @@ jQuery ($) ->
         }
     }
 
-    moveComponentByKeyboard = (comp, e, movement) ->
-        return if layouting.hasNonFlexiblePosition(activeScreen, comp)
+    moveComponentsByKeyboard = (comps, e, movement) ->
+        return if comps.some((comp) -> layouting.hasNonFlexiblePosition(activeScreen, comp))
         if e.ctrlKey
             # TODO = duplicate
         else
             # TODO = detect if part of stack
             amount = if e.shiftKey then 10 else 1
-            moveComponentBy comp, ptMul(movement.offset, amount)
+            moveComponentsBy comps, ptMul(movement.offset, amount)
 
     hookKeyboardShortcuts = ->
         $('body').keydown (e) ->
             return if e.target.tagName.toLowerCase() == 'input'
             return if activeMode()?.isInsideTextField
-            act = componentToActUpon()
+            sel = selection.isNonEmpty()
             switch e.which
                 when $.KEY_ESC
                     e.preventDefault(); e.stopPropagation()
-                    dispatchToMode(ModeMethods.escdown, e) || deselectComponent()
+                    dispatchToMode(ModeMethods.escdown, e) || selection.deselectAll()
                 when $.KEY_DELETE, $.KEY_BACKSPACE
                     e.preventDefault(); e.stopPropagation()
-                    deleteComponent(act) if act
-                when $.KEY_ARROWUP    then moveComponentByKeyboard act, e, KB_MOVE_DIRS.up    if act
-                when $.KEY_ARROWDOWN  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.down  if act
-                when $.KEY_ARROWLEFT  then moveComponentByKeyboard act, e, KB_MOVE_DIRS.left  if act
-                when $.KEY_ARROWRIGHT then moveComponentByKeyboard act, e, KB_MOVE_DIRS.right if act
+                    deleteComponents(selection.components()) if sel
+                when $.KEY_ARROWUP    then moveComponentsByKeyboard selection.components(), e, KB_MOVE_DIRS.up    if sel
+                when $.KEY_ARROWDOWN  then moveComponentsByKeyboard selection.components(), e, KB_MOVE_DIRS.down  if sel
+                when $.KEY_ARROWLEFT  then moveComponentsByKeyboard selection.components(), e, KB_MOVE_DIRS.left  if sel
+                when $.KEY_ARROWRIGHT then moveComponentsByKeyboard selection.components(), e, KB_MOVE_DIRS.right if sel
                 when 'D'.charCodeAt(0)
                     e.preventDefault(); e.stopPropagation()
-                    duplicateComponent(act) if act and (e.ctrlKey or e.metaKey)
+                    duplicateComponent(componentToActUpon()) if sel and (e.ctrlKey or e.metaKey)
                 when 'Z'.charCodeAt(0)
                     e.preventDefault(); e.stopPropagation()
                     undo.undoLastChange() if (e.ctrlKey or e.metaKey)
