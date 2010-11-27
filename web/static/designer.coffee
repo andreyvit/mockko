@@ -1394,6 +1394,9 @@ jQuery ($) ->
     initializeRunOnDevice = ($button, $popup) ->
         $link  = $popup.find('.link-url')
         $close = $popup.find('.close')
+        $copy  = $popup.find('.button-copy')
+
+        $copy.clippy 'run-on-device-link', url: '/static/clippy-mockko.swf'
 
         updatePopup = ->
             width  = $popup.outerWidth()

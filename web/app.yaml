@@ -33,6 +33,10 @@ handlers:
   expiration: "0s"
   login: required
 
+- url: /static/clippy-mockko\.swf
+  static_files: static/clippy-mockko.swf
+  upload: static/clippy-mockko.swf
+
 - url: /static/designer\.min\.js
   static_files: minified/designer.min.js
   upload: minified/designer.min.js
