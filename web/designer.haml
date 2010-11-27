@@ -206,24 +206,38 @@
     #color-picker
 
     #help-popup
-      #help-topics.pane
-        %header Learn about...
-        .body
-          %a(href="http://help.mockko.com/faqs/general/keyboard-shortcuts" target="_new") Keyboard shortcuts
-          %a(href="http://help.mockko.com/faqs/sharing/how-to-share" target="_new") Sharing options
-          %a(href="http://help.mockko.com/faqs/images/awesome-stock-icons-for-ios" target="_new") Awesome stock icons
-          %a.all(href="http://help.mockko.com/faqs/" target="_new") See all help topics »
-      #help-support.pane
-        %header Bugs or questions?
-        .body
-          %a(href="http://help.mockko.com/discussion/new" target="_new") Support is here to help
-      #help-voting.pane
-        %header Top feature requests
-        .body
-          %ul.features
-            %li
-              .votes Loading...
-          %a(href="http://mockko.uservoice.com/" target="_new") Suggest a feature now »
+      .close
+      .body
+        #help-topics.pane
+          %header Learn about...
+          .body
+            %ul
+              %li
+                %a(href="http://help.mockko.com/faqs/general/keyboard-shortcuts" target="_new") Keyboard shortcuts
+              %li
+                %a(href="http://help.mockko.com/faqs/sharing/how-to-share" target="_new") Sharing options
+              %li
+                %a(href="http://help.mockko.com/faqs/images/awesome-stock-icons-for-ios" target="_new") Awesome stock icons
+            .all
+              %a(href="http://help.mockko.com/faqs/" target="_new") See all help topics »
+        #help-support.pane
+          %header Support
+          .body
+            %ul
+              %li
+                %a(href="http://help.mockko.com/discussions/problems#new_topic_form" target="_new") Bug?
+              %li
+                %a(href="http://help.mockko.com/discussions/questions#new_topic_form" target="_new") Question?
+              %li
+                %a(href="http://mockko.jaconda.im/r/mockko-support/" target="_new") Wanna chat?
+        #help-voting.pane
+          %header Top feature requests
+          .body
+            %ul.features
+              %li.loading
+                Loading...
+            .all
+              %a(href="http://mockko.uservoice.com/" target="_new") Suggest a feature now »
 
     #profile-screen.screen
       %form#profile-popup

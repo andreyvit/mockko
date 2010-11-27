@@ -1650,13 +1650,14 @@ jQuery ($) ->
                     for item in top
                         console.log ["item", item]
                         $("<li/>")
-                            .append($("<div/>", class: 'votes', text: "#{item.votes} votes"))
+                            .append($("<div/>", class: 'votes', text: "#{item.votes}"))
                             .append($("<p/>", text: item.title))
                             .appendTo($list)
 
         popup = newPopup $popup,
                     modeEngine: modeEngine
                     toggle:     $button
+                    close:      $popup.find('.close')
                     prepare:    retrieveVotes
 
     ##########################################################################################################
