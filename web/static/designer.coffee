@@ -1395,8 +1395,13 @@ jQuery ($) ->
         $link  = $popup.find('.link-url')
         $close = $popup.find('.close')
         $copy  = $popup.find('.button-copy')
+        $copyLabel = $popup.find('.button-copy-label')
 
-        $copy.clippy 'run-on-device-link', url: '/static/clippy-mockko.swf'
+        $copy.clippy('/static/clippy-mockko.swf').bind
+            'clippycopy':   (e, data) ->  data.text = getRunURL()
+            'clippyover':   ->            $copyLabel.html "copy to clipboard"
+            'clippyout':    ->            $copyLabel.html ""
+            'clippycopied': ->            $copyLabel.html "copied!"
 
         updatePopup = ->
             width  = $popup.outerWidth()
