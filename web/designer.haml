@@ -199,9 +199,11 @@
               #chosen-action-label (no action set)
 
       #run-on-device-popup
-        %p.hint Open this link on your iPhone or share it with others (does not require a login):
-        %p.link http://www.example.com/R123456789
-        .close Close
+        .hint Open this link on your iPhone or share it with others (does not require a login):
+        .link
+          %a.link-url(href="#" target="_new") http://www.example.com/R123456789
+          .button-copy
+        .close
 
     #color-picker
 

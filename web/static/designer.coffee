@@ -1392,22 +1392,24 @@ jQuery ($) ->
             saveAndRunCurrentApplication()
 
     initializeRunOnDevice = ($button, $popup) ->
-        $link  = $popup.find('.link')
+        $link  = $popup.find('.link-url')
         $close = $popup.find('.close')
 
         updatePopup = ->
             width  = $popup.outerWidth()
             height = $popup.outerHeight()
             buttonOffset = $button.offset()
+            buttonWidth  = $button.outerWidth()
             buttonHeight = $button.outerHeight()
             parentOffset = $popup.parent().offset()
 
             buttonHeight -= 30  # ignore the button text for the purposes of centering
 
-            $link.text(getRunURL())
+            url = getRunURL()
+            $link.text(url).attr('href', url)
 
             $popup.css
-                left: buttonOffset.left - 10 - width - parentOffset.left
+                left: buttonOffset.left + buttonWidth - parentOffset.left
                 top:   (buttonOffset.top + buttonHeight / 2) - height / 2 - parentOffset.top
 
         popup = newPopup $popup,

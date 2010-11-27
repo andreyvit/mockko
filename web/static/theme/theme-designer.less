@@ -456,11 +456,21 @@
 #run-on-device-popup {
   display: none;
   position: absolute;
-  width: 400px;
-  background: #eee;
-  border: 1px solid #ccc;
-  padding: 15px 20px;
-  -webkit-box-shadow: 2px 2px 20px #000000;
+  width: 460px;
+  height: 127px;
+
+  background: url(images/popup-run-on-device.png);
+
+  padding: 30px 30px 20px 60px;
+
+  a {
+    background: url(images/underline-blue.png) repeat-x 0% 100%;
+    text-decoration: none;
+    color: #265fad;
+    &:hover {
+      background-image: url(images/underline-blue-solid.png);
+    }
+  }
 
   .hint {
     font-size: 15px;
@@ -468,19 +478,31 @@
   }
   .link {
     margin: 10px 0px 0px;
-    font-size: 18px;
+    font-size: 16px;
     -webkit-user-select: text;
+  }
+  .button-copy {
+    display: inline-block;
+    display: none;
+    position: relative;
+    top: 4px;
+    width: 18px;
+    height: 19px;
+    margin-left: 3px;
+    background: url(images/button-copy-to-clipboard.png) no-repeat;
   }
   .close {
     position: absolute;
-    right: 20px;
-    bottom: 15px;
-    text-decoration: underline;
-    font-size: 12px;
-    color: #444;
+    right: 0px;
+    top: 0px;
+    width: 50px;
+    height: 45px;
+
+    background: url(images/popup-close.png) no-repeat 40% 60%;
+    /* background: rgba(255,0,0,0.5); */
+
     cursor: pointer;
     &:hover {
-      color: #000;
     }
   }
 }
