@@ -1,0 +1,3 @@
+#! /bin/zsh
+cd $(dirname $0)/../server
+supervisor -w app.js -p app.js
