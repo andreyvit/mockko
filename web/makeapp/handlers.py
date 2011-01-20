@@ -446,6 +446,33 @@ class StatusHandler(RequestHandler):
 
         return Response(html, mimetype="text/html")
 
+class UserStatsHandler(RequestHandler):
+
+    def get(self):
+        account_count = Account.all().count(1000)
+        app_count = App.all().count(1000)
+
+        html="""
+        <pre>
+        <?xml version="1.0" encoding="UTF-8"?>
+        <root>
+        	<item>
+        		<value>%(app_count)d</value>
+        		<text>Apps</text>
+        	</item>
+        	<item>
+        		<value>%(account_count)d</value>
+        		<text>Accounts</text>
+        	</item>
+        	<item>
+        		<value>0</value>
+        		<text>Active Users</text>
+        	</item>
+        </root>
+        """ % dict(account_count=account_count, app_count=app_count)
+
+        return Response(html, mimetype="text/xml")
+
 class UserExportHandler(RequestHandler):
 
     def get(self):
