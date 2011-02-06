@@ -54,8 +54,16 @@ task :watch => [:default] do
     end
 end
 
-desc "Run the development server of the application"
-task :run do
-    # sh 'supervisor -w app.js -p app.js'
-    sh 'screen -Rx -p='
+namespace :start do
+  desc "Start Redis"
+  task :redis do
+    sh 'mkdir -p data/redis'
+    sh 'redis-server conf/redis-devel.conf'
+  end
+
+  desc "Run the development server of the application"
+  task :node do
+      sh 'supervisor -w app.js -p app.js'
+  end
 end
+

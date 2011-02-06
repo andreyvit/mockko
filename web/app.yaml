@@ -15,6 +15,11 @@ handlers:
   script: console/app/console.py
   login: admin
 
+# REST API for exporting data
+
+- url: /rest/.*
+  script: rest.py
+
 # Boring stuff
 
 - url: /favicon.ico
