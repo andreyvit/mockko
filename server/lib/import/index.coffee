@@ -46,7 +46,7 @@ importAccount = (redis, old, callback) ->
 
     instance = new Account { oldKey: old._key } unless instance?
 
-    instance.email           = old.email
+    instance.email           = old.user
     instance.fullName        = old.full_name
     instance.newsletter      = old.newsletter
     instance.profileCreated  = old.profile_created

@@ -58,12 +58,18 @@ namespace :start do
   desc "Start Redis"
   task :redis do
     sh 'mkdir -p data/redis'
-    sh 'redis-server conf/redis-devel.conf'
+    sh 'redis-server config/redis-devel.conf'
+  end
+
+  desc "Start Redis"
+  task :mongo do
+    sh 'mkdir -p data/mongo'
+    sh 'mongod run --config config/mongo-devel.conf'
   end
 
   desc "Run the development server of the application"
   task :node do
-      sh 'supervisor -w app.js -p app.js'
+      sh 'supervisor -w server.js,environment.js,lib -p server.js'
   end
 end
 

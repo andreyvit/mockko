@@ -9,17 +9,10 @@ fugue        = require 'fugue'
 paperboy     = require 'paperboy'
 io           = require 'socket.io'
 
-{ puts } = require 'sys'
-
 # db = new mongodb.Db 'mockko', new mongodb.Server(config.mongodb_host, config.mongodb_port, {}), {}
-app = exports.app = express.createServer()
-
-configureRedisClient = (redis) ->
-  redis.on 'error', (err) ->
-    console.log "Redis error: #{err}"
+app = module.exports = express.createServer()
 
 subdomainHandler = ->
-
   return (req, res, next) ->
     return next() unless req.headers.host
 
@@ -32,12 +25,16 @@ subdomainHandler = ->
 
     next()
 
+redisProvider = (req, res, next) ->
+      req.redis = app.set('redis')
+      next()
+
 app.configure ->
   app.use express.logger(format: ':method :url')
   app.use express.methodOverride()
   app.use express.bodyDecoder()
-  app.use require('util/redisProvider')('redis', configureRedisClient)
   app.use subdomainHandler()
+  app.use redisProvider
   app.use app.router
   app.use express.staticProvider(__dirname + '/public')
   app.set 'view engine', 'jade'
@@ -73,41 +70,76 @@ log = (statCode, url, ip, err) ->
 # }
 
 authenticate = (req, res, next) ->
-  puts "authenticate() got a request, subdomain == #{req.subdomain}"
+  console.log "authenticate() got a request, subdomain == #{req.subdomain}"
   if req.subdomain == 'www'
     next()
   else
-    puts "asking Redis"
-    r = req.redis
-    console.log "1, r.get = #{r.get}"
-    r.get "acc:subdomain:#{req.subdomain}", (err, accountId) ->
-      puts "returned from Redis"
+    redis = req.redis
+    redis.get "acc:subdomain:#{req.subdomain}", (err, accountId) ->
+      console.log "returned from Redis"
       return next(err) if err
 
       if accountId
-        req.accountId = accountId
-        next()
+        redis.get "acc::#{accountId}", (err, accountJSON) ->
+          return next(err) if err
+          return next(new Error("Account not found for ID #{accountId}")) unless accountJSON
+
+          req.account = JSON.parse(accountJSON)
+          next()
       else
-        res.send "Sorry, this account does not exist.", 404
+        res.send "Sorry, account '#{req.subdomain}' does not exist.", 404
 
 app.get '/www/', authenticate, (req, res) ->
   res.send "Hello!"
-  # res.render 'index'
-  #   locals:
-  #     title: "Foo"
-  # _users.insert { created: +new Date() }, ->
-  #   res.render 'index'
-  #     locals:
-  #       title: "Foo"
 
 app.get '/', authenticate, (req, res) ->
-  _users.insert { created: +new Date() }, ->
-    res.render 'index'
-      locals:
-        title: "Foo"
+  res.send "Hello, #{req.account.fullName} &lt;#{req.account.email}&gt;!"
 
-app.get '/users/:id', (req, res) ->
-  res.send "user id xx #{req.params.id}"
+app.get '/user/', authenticate, (req, res) ->
+  res.send "[42]"
+
+app.post '/user/', authenticate, (req, res) ->
+  res.redirect "[42]"
+
+app.get '/apps/', authenticate, (req, res) ->
+  res.send "[1, 2, 3]"
+
+app.get /\/R(\d+)/, authenticate, (req, res) ->
+  res.send "run app #{req.params[0]}"
+
+app.post '/apps/:app_id', authenticate, (req, res) ->
+  res.send "saved app #{req.params.app_id}"
+
+app.del '/apps/:app_id', authenticate, (req, res) ->
+  res.send "deleted app #{req.params.app_id}"
+
+# get all groups
+app.get '/images/', authenticate, (req, res) ->
+  res.send "[1, 2, 3]"
+
+# get group
+app.get '/images/:group_id', authenticate, (req, res) ->
+  res.send "[1, 2, 3]"
+
+# save image
+app.post '/images/:group_id', authenticate, (req, res) ->
+  res.send "[1, 2, 3]"
+
+# get image
+app.get '/images/:group_id/:image_name', authenticate, (req, res) ->
+  res.send "[1, 2, 3]"
+
+# delete image
+app.del '/images/:group_id/:image_name', authenticate, (req, res) ->
+  res.send "[1, 2, 3]"
+
+# statistics
+app.get '/status/', authenticate, (req, res) ->
+  res.send "[1, 2, 3]"
+
+# more statistics
+app.get '/stats/apps.xml', authenticate, (req, res) ->
+  res.send "[1, 2, 3]"
 
 app.get '/mockups/*', (req, res) ->
   req.url = req.url.replace('/mockups', '')
@@ -127,12 +159,12 @@ app.get '/mockups/*', (req, res) ->
       log 404, req.url, req.ip, err
 
 socket.on 'connection', (client) ->
-  puts "WebSocket #{client.sessionId} connected"
+  console.log "WebSocket #{client.sessionId} connected"
   client.send buffer: _buffer
   client.broadcast announcement: client.sessionId + ' connected'
 
   client.on 'message', (message) ->
-    puts "WebSocket #{client.sessionId} message"
+    console.log "WebSocket #{client.sessionId} message"
     msg = message: [client.sessionId, message]
     _buffer.push msg
     if _buffer.length > 15
@@ -140,5 +172,5 @@ socket.on 'connection', (client) ->
     client.broadcast msg
 
   client.on 'disconnect', ->
-    puts "WebSocket #{client.sessionId} disconnected"
+    console.log "WebSocket #{client.sessionId} disconnected"
     client.broadcast announcement: client.sessionId + ' disconnected'
