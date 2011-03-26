@@ -1,2 +1,0 @@
-#! /bin/bash
-mongod run --config /usr/local/Cellar/mongodb/1.6.3-x86_64/mongod.conf "$@"
