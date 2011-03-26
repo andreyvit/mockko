@@ -22,5 +22,5 @@ def get_rules():
         Rule('/status/', endpoint='admin/status', methods=['GET'], handler='makeapp.handlers:StatusHandler'),
         Rule('/users-csv-export/', endpoint='admin/users-export', methods=['GET'], handler='makeapp.handlers:UserExportHandler'),
 
-        Rule('/stats/apps.xml', endpoint='stats/apps', methods=['GET'], handler='makeapp.handlers:UserStatsHandler'),
+        Rule('/stats/apps.xml', endpoint='stats/apps', methods=['GET', 'POST'], handler='makeapp.handlers:UserStatsHandler'),
     ]
