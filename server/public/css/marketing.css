@@ -1,0 +1,239 @@
+/*@screenshot_width:  472px;
+@screenshot_height: 312px;*/
+* {
+  margin: 0;
+  padding: 0;
+}
+html, body {
+  height: 100%;
+}
+body {
+  -webkit-text-size-adjust: none;
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-touch-callout: none;
+  line-height: 1.5;
+  min-width: 1002px;
+  min-height: 630px;
+  background: #e8e5e3 url(/images/marketing/subtle-gradient.png) repeat-y 50% 0px;
+}
+a {
+  /*    -webkit-tap-highlight-color: rgba(0,0,0,0);*/
+
+}
+.container {
+  width: 1002px;
+  /*    background: silver;*/
+
+  margin: 0px auto;
+  position: relative;
+  padding: 0px 10px;
+}
+#header-pane {
+  height: 179px;
+  background: #cccfd6 url(/images/marketing/header-background.png) repeat-x;
+  line-height: 1;
+}
+h1 {
+  color: #2f3e4d;
+  font-size: 34px;
+  font-weight: normal;
+  text-align: center;
+  padding-top: 10px;
+  text-shadow: 0px 1px #fff;
+}
+h2 {
+  color: #626b75;
+  font-size: 16px;
+  font-weight: normal;
+  text-align: center;
+  padding-top: 10px;
+  text-shadow: 0px 1px #fff;
+}
+#title-overlay {
+  position: absolute;
+  top: 0px;
+  left: 50%;
+  width: 729px;
+  height: 83px;
+  margin-left: -364px;
+  background: url(/images/marketing/header-title.png) no-repeat;
+}
+#button-container {
+  position: absolute;
+  left: 50%;
+  margin-left: -501px;
+  top: 87px;
+  width: 1002px;
+  padding: 0px;
+}
+#button-container .sep-left, #button-container .sep-right, #button-container .button {
+  display: block;
+  float: left;
+  height: 70px;
+}
+#button-container .sep-left {
+  width: 0px;
+  border-right: 1px solid #303b56;
+}
+#button-container .sep-right {
+  width: 0px;
+  border-left: 1px solid #73808d;
+}
+#button-container .button {
+  font-weight: normal;
+  width: 331px;
+  border-left: 1px solid #73808d;
+  border-right: 1px solid #303b56;
+  background: url(/images/marketing/header-button-backgrounds.png) repeat-x 0px 0px;
+}
+#button-container .button .label {
+  font-weight: normal;
+  color: #dadcde;
+  font-size: 24px;
+  margin-top: 7px;
+  padding: 5px 0px;
+  text-shadow: 0px 1px rgba(0, 0, 0, 0.82);
+}
+#button-container .button .sublabel {
+  color: #a6b9cc;
+  font-size: 12px;
+  margin-top: -2px;
+  text-shadow: 0px 1px rgba(0, 0, 0, 0.77);
+}
+#button-container a, #button-container a:link, #button-container a:visited {
+  color: black;
+  text-decoration: none;
+}
+#button-container a:hover {
+  color: blue;
+  background-position: 0px -70px;
+}
+#button-container a:active {
+  color: red;
+  background-position: 0px -140px;
+}
+#button-container #download * {
+  margin-left: 90px;
+  padding-left: 38px;
+}
+#button-container #download .label {
+  background: url(/images/marketing/action-download.png) no-repeat 0px 100%;
+}
+#button-container #run-in-browser * {
+  margin-left: 67px;
+  padding-left: 41px;
+}
+#button-container #run-in-browser .label {
+  background: url(/images/marketing/action-run-in-browser.png) no-repeat 0px 80%;
+}
+#button-container #buy * {
+  margin-left: 60px;
+  padding-left: 43px;
+}
+#button-container #buy .label {
+  background: url(/images/marketing/action-buy.png) no-repeat 0px 100%;
+}
+#button-bar {
+  margin: 20px 0px 0px 0px;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  height: 60px;
+}
+#screenshots-and-features-pane {
+  height: 356px;
+  margin-top: 40px;
+}
+.screenshots img {
+  position: absolute;
+  top: 9px;
+  right: 26px;
+  width: 487px;
+  height: 322px;
+}
+.features {
+  position: relative;
+  padding-top: 28px;
+}
+.features .sep {
+  list-style: none;
+  position: absolute;
+  left: -11px;
+  width: 459px;
+  height: 2px;
+  background: url(/images/marketing/feature-separator.png) no-repeat 0px 0px;
+}
+.features li {
+  position: relative;
+  padding-left: 71px;
+  padding-top: 2px;
+  list-style: none;
+  line-height: 46px;
+  color: #344355;
+  font-size: 18px;
+  text-shadow: 0px 1px #fff;
+}
+.features li .sep {
+  top: 0px;
+}
+#feat-palette {
+  background: url(/images/marketing/features/palette.png) no-repeat 32px 50%;
+}
+#feat-magicsnap {
+  background: url(/images/marketing/features/magicsnap.png) no-repeat 30px 50%;
+}
+#feat-run {
+  background: url(/images/marketing/features/run.png) no-repeat 37px 50%;
+}
+#feat-glyphish {
+  background: url(/images/marketing/features/glyphish.png) no-repeat 29px 50%;
+}
+#feat-ipad {
+  background: url(/images/marketing/features/ipad.png) no-repeat 36px 50%;
+}
+#footer-pane {
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  font-size: 10px;
+  height: 67px;
+  padding-top: 13px;
+  background: url(/images/marketing/footer-background.png) repeat-x 0px 100%;
+}
+#footer-pane .container *,
+#footer-pane .container a,
+#footer-pane .container a:visited,
+#footer-pane .container a:link {
+  display: block;
+  position: absolute;
+  color: #344355;
+  font-size: 14px;
+  text-shadow: 0px 1px rgba(255, 255, 255, 0.7);
+  line-height: 21px;
+  margin: 23px 0px;
+}
+#footer-pane .container a:hover {
+  color: #122133;
+}
+#footer-pane .container a:active {
+  color: #566577;
+}
+#footer-pane .container #twitter {
+  left: 47px;
+  padding-left: 20px;
+  background: url(/images/marketing/footer-twitter.png) no-repeat 0px 50%;
+}
+#footer-pane .container #email {
+  left: 295px;
+  padding-left: 23px;
+  background: url(/images/marketing/footer-email.png) no-repeat 0px 50%;
+}
+#footer-pane .container #icons-by {
+  right: 47px;
+  font-size: 12px;
+}
+#footer-pane .container #icons-by a {
+  font-size: 12px;
+  display: inline;
+  position: static;
+}

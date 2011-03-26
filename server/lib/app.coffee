@@ -12,16 +12,23 @@ io           = require 'socket.io'
 # db = new mongodb.Db 'mockko', new mongodb.Server(config.mongodb_host, config.mongodb_port, {}), {}
 app = module.exports = express.createServer()
 
-subdomainHandler = ->
+subdomainHandler = (staticDir) ->
+  staticItems = fs.readdirSync(staticDir)
+
   return (req, res, next) ->
     return next() unless req.headers.host
 
     host = req.headers.host.split(':')[0]
-    if host.match /^www\.|^mockko\./
+    first = req.url.split('/')[1]
+    console.log "req.url == '#{req.url}'"
+    console.log "first == '#{first}'"
+    console.log "first in staticItems == #{first in staticItems}"
+    if host.match(/^www\.|^mockko\./) && !(first in staticItems)
       req.url = "/www#{req.url}"
       req.subdomain = 'www'
     else
       req.subdomain = host.split('.')[0]
+    console.log "req.url == '#{req.url}'"
 
     next()
 
@@ -33,10 +40,10 @@ app.configure ->
   app.use express.logger(format: ':method :url')
   app.use express.methodOverride()
   app.use express.bodyDecoder()
-  app.use subdomainHandler()
+  app.use subdomainHandler(__dirname + '/../public')
   app.use redisProvider
+  app.use express.staticProvider(__dirname + '/../public')
   app.use app.router
-  app.use express.staticProvider(__dirname + '/public')
   app.set 'view engine', 'jade'
 
 app.configure 'development', ->
@@ -89,8 +96,9 @@ authenticate = (req, res, next) ->
       else
         res.send "Sorry, account '#{req.subdomain}' does not exist.", 404
 
-app.get '/www/', authenticate, (req, res) ->
-  res.send "Hello!"
+app.get '/www/', (req, res) ->
+  res.render 'marketing-index',
+    layout: 'marketing'
 
 app.get '/', authenticate, (req, res) ->
   res.send "Hello, #{req.account.fullName} &lt;#{req.account.email}&gt;!"
