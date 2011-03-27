@@ -39,10 +39,10 @@ redisProvider = (req, res, next) ->
 app.configure ->
   app.use express.logger(format: ':method :url')
   app.use express.methodOverride()
-  app.use express.bodyDecoder()
+  app.use express.bodyParser()
   app.use subdomainHandler(__dirname + '/../public')
   app.use redisProvider
-  app.use express.staticProvider(__dirname + '/../public')
+  app.use express.static(__dirname + '/../public')
   app.use app.router
   app.set 'view engine', 'jade'
 
