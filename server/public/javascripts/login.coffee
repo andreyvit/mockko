@@ -14,11 +14,11 @@ jQuery ($) ->
 
   showRelevantLoginGroup = ->
     email = $('#email').val()
-  
+
     $('#email-spinner').addClass('visible')
     determineAccountTypeByEmail email, (err, data) ->
       $('#email-spinner').removeClass('visible')
-      
+
       logInOrSignUp = null
       if err
         groupId = '#error-group'
@@ -40,14 +40,14 @@ jQuery ($) ->
 
       unless $(groupId).is(':visible')
         $('.login-group').removeClass('visible')
-        $(groupId).addClass('visible')  
-      
+        $(groupId).addClass('visible')
+
       if logInOrSignUp
         $('.login-box h1 .el').removeClass('active')
         $(".login-box h1 .#{logInOrSignUp}-el").addClass('active')
       else
         $('.login-box h1 .el').addClass('active')
-  
+
   emailDidChangeTimer = null
   emailDidChange = ->
     clearTimeout(emailDidChangeTimer) if emailDidChangeTimer

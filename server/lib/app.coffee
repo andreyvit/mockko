@@ -36,8 +36,8 @@ subdomainHandler = (staticDir) ->
     next()
 
 redisProvider = (req, res, next) ->
-      req.redis = app.set('redis')
-      next()
+  req.redis = app.set('redis')
+  next()
 
 app.configure ->
   app.use express.logger(format: ':method :url')
