@@ -12,6 +12,7 @@ Account = model.defineModel('Account', prefix: 'acc')
   .property('updated')
   .property('newsletter')
   .property('profileCreated')
+  .property('subdomain')
 
 App = model.defineModel('App', prefix: 'a')
   .property('oldKey', unique: yes)
@@ -20,6 +21,11 @@ App = model.defineModel('App', prefix: 'a')
   .property('created')
   .property('updated')
   .property('body', standalone: yes, storage: model.storage.stringValue)
+  .onSave (db, multi, callback) ->
+    if !@_original.creator || @_original.creator != @id
+      multi.srem @constructor.__indexKey('creator', @_original.creator), @id if @_original.creator
+      multi.sadd @constructor.__indexKey('creator', @creator), @id
+    callback(null)
 
 ImageGroup = model.defineModel('ImageGroup', prefix: 'ig')
   .property('oldKey', unique: yes)

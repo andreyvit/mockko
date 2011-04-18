@@ -16,12 +16,22 @@ exports.map = (list, options) ->
       index = results.length
       results.push undefined
 
-      func item, (err, newItem) ->
-        results[index] = newItem
-        error ||= err
+      do (index) ->
+        func item, (err, newItem) ->
+          results[index] = newItem
+          error ||= err
 
-        if (outstanding -= 1) == 0
-          results = compact(results) if options.compact
-          options.then(error, results)
+          if (outstanding -= 1) == 0
+            results = compact(results) if options.compact
+            options.then(error, results)
 
     undefined
+
+exports.chain = (func1, func2, callback) ->
+  return (args..., callback) ->
+    self = this
+    func1.call self, args..., (err) ->
+      return callback(err) if err
+      func2.call self, args..., (err) ->
+        return callback(err) if err
+        callback(null)

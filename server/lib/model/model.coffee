@@ -93,6 +93,7 @@ exports.defineModel = (name, options) ->
   class DasModel
 
     constructor: (attributes = {}) ->
+      @_original = {}
       @existing = no
       @setAttributes attributes
 
@@ -108,6 +109,7 @@ exports.defineModel = (name, options) ->
       for k, v of attributes
         throw "Invalid #{name} attribute: #{k}" unless @constructor.isValidKey(k)
         @[k] = v
+        @_original[k] = v unless k of @_original
       attributes
 
     serialize: ->
@@ -128,7 +130,9 @@ exports.defineModel = (name, options) ->
         each: (group, cb) =>
           @constructor.__groups[group].load @, db, cb
         then: (err) =>
-          callback(err, @)
+          @afterLoad (err) =>
+            return callback(err) if err
+            callback(null, @)
 
     save: (db, groups, callback) ->
       unless callback?
@@ -158,8 +162,17 @@ exports.defineModel = (name, options) ->
               then: (err) =>
                 return callback(err) if err
 
-                multi.exec (err, replies) =>
-                  callback(err)
+                @onSave db, multi, (err) =>
+                  return callback(err) if err
+
+                  multi.exec (err, replies) =>
+                    callback(err)
+
+    afterLoad: (callback) ->
+      callback(null)
+
+    onSave: (db, multi, callback) ->
+      callback(null)
 
   DasModel.__prefix = options.prefix || name
   DasModel.__groups = {}
@@ -201,6 +214,11 @@ exports.defineModel = (name, options) ->
     @
 
   DasModel.group('default', storage.jsonMap).property('id')
+
+  for hook in ['afterLoad', 'onSave']
+    DasModel[hook] = (func) ->
+      @::[hook] = async.chain(@::[hook], func)
+      @
 
   DasModel.byId = (db, id, groups, callback) ->
     unless callback?

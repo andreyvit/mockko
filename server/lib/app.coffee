@@ -8,6 +8,9 @@ express      = require 'express'
 fugue        = require 'fugue'
 paperboy     = require 'paperboy'
 io           = require 'socket.io'
+async        = require 'util/async'
+
+{ inspect }  = require 'util'
 
 # db = new mongodb.Db 'mockko', new mongodb.Server(config.mongodb_host, config.mongodb_port, {}), {}
 app = module.exports = express.createServer()
@@ -104,13 +107,71 @@ app.get '/', authenticate, (req, res) ->
   res.send "Hello, #{req.account.fullName} &lt;#{req.account.email}&gt;!"
 
 app.get '/user/', authenticate, (req, res) ->
-  res.send "[42]"
+  res.sendJSON
+    'logout_url':      '/'  # FIXME: users.create_logout_url(url_for('home'))
+    'profile-created': req.account.profileCreated
+    'newsletter':      req.account.newsletter
+    'full-name':       req.account.fullName
 
 app.post '/user/', authenticate, (req, res) ->
-  res.redirect "[42]"
+  res.redirect "/"
 
-app.get '/apps/', authenticate, (req, res) ->
-  res.send "[1, 2, 3]"
+app.get '/apps/', authenticate, (req, res, next) ->
+  req.redis.keys "a::*", (err, keys) ->
+    return next(err) if err
+
+    async.map keys,
+      each: (key, callback) ->
+        return callback(null) if key.match(/:body$/)
+        req.redis.get key, (err, appJSON) ->
+          return callback(err) if err
+
+          console.log "appJSON = #{inspect(appJSON)}"
+          a = JSON.parse(appJSON)
+          console.log "app = #{inspect(a)}"
+          callback(null, a)
+
+      then: (err, apps) ->
+        return next(err) if err
+
+        apps = (a for a in apps when a)
+        console.log "apps = #{inspect(apps.slice(0, 10))}"
+
+        result = {}
+        results = []
+        for creator, appsForCreator of apps.groupBy('creator')
+          continue if !creator
+          r = result[creator] =
+            apps: appsForCreator
+            creator: creator
+            # 'full_name': acc.full_name or '',
+            # 'email': acc.user.email(),
+            # 'created_at': time.mktime(acc.created_at.timetuple()),
+          results.push r
+          break
+
+        console.log "results = #{inspect(results)}"
+
+        async.map results,
+          each: (r, callback) ->
+            console.log "creator = #{r.creator}"
+            req.redis.get "acc::#{r.creator}", (err, accountJSON) ->
+              return callback(err) if err
+              console.log "creator = #{r.creator}"
+              console.log "json = #{accountJSON}"
+              account = JSON.parse(accountJSON)
+              console.log "account = #{account}"
+
+              r.full_name  = account.fullName
+              r.email      = account.email
+              r.created_at = account.created
+
+              callback(null)
+
+          then: (err) ->
+            return next(err) if err
+
+            res.sendJSON result
 
 app.get /\/R(\d+)/, authenticate, (req, res) ->
   res.send "run app #{req.params[0]}"

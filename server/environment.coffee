@@ -15,6 +15,24 @@ Function::curry = (args...) ->
   return (moreArgs...) ->
     return __method.apply(this, args.concat(moreArgs))
 
+Array::indexBy = (key) ->
+  result = {}
+  for item in @
+    k = if key.call then key(item) else item[key]
+    result[k] = item
+  result
+
+Array::groupBy = (key) ->
+  result = {}
+  for item in @
+    continue if !item
+    k = if key.call then key(item) else item[key]
+    (result[k] ||= []).push item
+  result
+
+require('http').ServerResponse::sendJSON = (obj) ->
+  @contentType 'json'
+  @send JSON.stringify(obj)
 
 class Environment
 
