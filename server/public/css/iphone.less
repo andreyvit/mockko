@@ -1,0 +1,403 @@
+
+.component {
+    font: 17px Helvetica;
+}
+
+/* backgrounds */
+
+.bg-transparent {
+    background-color: transparent;
+}
+
+.bg-striped {
+    background: url("/images/iphone/background-striped.png");
+}
+
+.bg-white {
+    background: white;
+}
+
+.bg-black {
+    background: black;
+}
+
+.bg-dark {
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#1e1f21), to(#272729));
+}
+
+.bg-plastic {
+    background: #17181a;
+}
+
+.bg-plastic.odd-in-group {
+    background-color: #1c1c1f;
+}
+
+.bg-metal {
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(238,238,238,1)), to(rgba(156,158,160,1)));
+}
+
+/* texts */
+
+.c-text {
+    display: block;
+    text-decoration: none;
+}
+
+
+/* bar buttons */
+
+.c-backButton {
+    height: 30px;
+    line-height: 30px;
+    color: #fff;
+    text-shadow: rgba(0,0,0,0.6) 0 -1px 0;
+    text-decoration: none;
+    border-width: 0 5px 0 13px;
+    -webkit-border-top-left-radius: 16px;
+    -webkit-border-bottom-left-radius: 16px;
+    -webkit-border-top-right-radius: 6px;
+    -webkit-border-bottom-right-radius: 6px;
+    padding-left: 7px;
+    padding-right: 7px;
+    font-size: 12px;
+    font-weight: bold;
+}
+.c-backButton-normal {
+    -webkit-border-image: url("/images/iphone/navleft.png") 0 5 0 13;
+}
+.c-backButton-black {
+    -webkit-border-image: url("/images/iphone/navleftblack.png") 0 5 0 13;
+}
+
+.c-barButton {
+/*  color: #fff;
+    text-shadow: rgba(0,0,0,0.6) 0 -1px 0;
+    font-size: 12px;
+    font-weight: bold;
+*/
+    height: 30px;
+    line-height: 30px;
+    text-decoration: none;
+    border-width: 0 5px 0 13px;
+    -webkit-border-top-left-radius: 16px;
+    -webkit-border-bottom-left-radius: 16px;
+    -webkit-border-top-right-radius: 6px;
+    -webkit-border-bottom-right-radius: 6px;
+    padding-left: 7px;
+    padding-right: 7px;
+    border-width: 0 5px 0 5px;
+}
+.c-barButton-normal {
+    -webkit-border-image: url("/images/iphone/navbutton.png") 0 5 0 5;
+}
+.c-barButton-done {
+    -webkit-border-image: url("/images/iphone/navbuttonblue.png") 0 5 0 5;
+}
+.c-barButton-black {
+    -webkit-border-image: url("/images/iphone/navbuttonblack.png") 0 5 0 5;
+}
+
+/* colored buttons */
+
+.c-coloredButton {
+    border-width: 0 12px;
+    padding: 10px;
+    text-align: center;
+/*    font-size: 20px;
+    font-weight: bold;*/
+}
+.c-coloredButton-red {
+    -webkit-border-image: url(/images/iphone/button-colored-red.png) 0 12 0 12;
+    color: #fff;
+    text-shadow: #7a0001 0 -1px 0;
+}
+.c-coloredButton-white {
+    -webkit-border-image: url(/images/iphone/button-colored-white.png) 0 12 0 12;
+    text-shadow: rgba(255, 255, 255, 0.7) 0 1px 0;
+}
+.c-coloredButton-gray {
+    -webkit-border-image: url(/images/iphone/button-colored-gray.png) 0 12 0 12;
+    color: #FFFFFF;
+}
+
+/* buy button */
+
+.c-buyButton {
+/*    font-size: 12px;
+    color: #fff;*/
+    height: 25px;
+    line-height: 25px;
+    border-width: 0 4px;
+    text-align: center;
+}
+.c-buyButton-green {
+    -webkit-border-image: url(/images/iphone/button-buy-green.png) 0 4;
+/*    text-shadow: rgba(0, 0, 0, 0.5) 0 -1px 0;*/
+}
+.c-buyButton-blue {
+    -webkit-border-image: url(/images/iphone/button-buy-blue.png) 0 4;
+/*    text-shadow: rgba(0, 0, 0, 0.5) 0 -1px 0;*/
+}
+
+/* other buttons */
+
+.c-roundedButton {
+    color: #516691;
+
+    background: white;
+    border: 1px solid #9d9e9e;
+    -webkit-border-radius: 8px;
+    text-align: left;
+    padding-left: 30px;
+    padding-right: 30px;
+    line-height: 44px;
+}
+
+/* tables */
+
+.c-plain-row {
+    font-size: 20px;
+    margin-bottom: -1px;
+}
+
+.c-plain-row-white {
+/*    background: white;*/
+    border-bottom: 1px solid #d9d9d9;
+}
+
+.c-plain-row-dark {
+    border-bottom: 2px solid #000;
+    border-top: 1px solid #4a4b4d;
+}
+
+.c-plain-row-plastic {
+    border-width: 1px 0;
+    border-style: solid;
+    border-top-color: #222;
+    border-bottom-color: #000;
+}
+
+.c-plain-row-metal {
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #666;
+    /* font: 26px; */
+}
+
+.c-plain-header {
+    background: url(/images/iphone/row-plain-header-bg.png) repeat-x;
+/*    border-bottom: 1px solid #111113;
+    border-top: 1px solid #666;*/
+    margin: 1px 0 0 0;
+    padding: 2px 10px;
+/*    color: #3e9ac3;
+    font-size: 16px;
+    text-shadow: #000 0 1px 0;*/
+}
+
+@roundrect-row-radius: 8px;
+.c-roundrect-row {
+
+    .inner {
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        left: 10px;
+        right: 10px;
+/*        background: white;*/
+        border: 1px solid #d9d9d9;
+        -webkit-border-radius: @roundrect-row-radius;
+    }
+}
+.c-roundrect-row.in-stack .inner {
+    -webkit-border-radius: 0px;
+    border-bottom: none;
+}
+.c-roundrect-row.first-in-group .inner {
+    -webkit-border-top-left-radius: @roundrect-row-radius;
+    -webkit-border-top-right-radius: @roundrect-row-radius;
+    -moz-border-radius-topleft: @roundrect-row-radius;
+    -moz-border-radius-topright: @roundrect-row-radius;
+    border-top-left-radius: @roundrect-row-radius;
+    border-top-right-radius: @roundrect-row-radius;
+}
+.c-roundrect-row.last-in-group .inner {
+    -webkit-border-bottom-right-radius: @roundrect-row-radius;
+    -webkit-border-bottom-left-radius: @roundrect-row-radius;
+    -moz-border-radius-bottomright: @roundrect-row-radius;
+    -moz-border-radius-bottomleft: @roundrect-row-radius;
+    border-bottom-right-radius: @roundrect-row-radius;
+    border-bottom-left-radius: @roundrect-row-radius;
+    border-bottom: 1px solid #d9d9d9;
+}
+.c-roundrect-row.first-in-group.last-in-group .inner {
+    -webkit-border-radius: @roundrect-row-radius;
+}
+
+.c-roundrect-header {
+    line-height: 1;
+    padding: 18px 24px 9px 20px;
+}
+
+
+.c-statusBar-grey {
+    background-image: url(/images/iphone/statusbar-grey-po.png);
+}
+.c-statusBar-black-opaque {
+    background-image: url(/images/iphone/statusbar-black-opaque-po.png);
+}
+.c-statusBar-black-translucent {
+    background-image: url(/images/iphone/statusbar-black-translucent-po.png);
+}
+
+.c-tabBar {
+    background: url(/images/iphone/tabbar-po.png) repeat-x;
+}
+
+.c-tab-bar-item {
+    -webkit-border-image: url(/images/iphone/tabbar-item-inactive-bg.png) 3 3 3 3;
+    border-width: 3px 3px;
+    -webkit-border-radius: 3px;
+
+    .icon {
+        position: absolute;
+        top: -3px;
+        left: 50%;
+        margin-left: -17px;
+        width: 35px;
+        height: 32px;
+        background: none no-repeat 50% 50%;
+    }
+
+    .label {
+        position: absolute;
+        bottom: -3px;
+        left: 0px;
+        right: 0px;
+        height: 12px;
+        line-height: 12px;
+        text-align: center;
+        font-size: 9px;
+    }
+}
+.c-tab-bar-item.state-on {
+    -webkit-border-image: url(/images/iphone/tabbar-item-active-bg.png) 3 3 3 3;
+}
+
+.c-navBar-grey {
+    background: url(/images/iphone/navbar-grey-po.png) repeat-x;
+}
+.c-navBar-black-opaque {
+    background: url(/images/iphone/navbar-black-opaque-po.png) repeat-x;
+}
+.c-navBar-black-translucent {
+    background: url(/images/iphone/navbar-black-translucent-po.png) repeat-x;
+}
+
+.c-toolbar-grey {
+    background: url(/images/iphone/toolbar-gray-po.png) repeat-x;
+}
+.c-toolbar-black-opaque {
+    background: url(/images/iphone/toolbar-black-opaque-po.png) repeat-x;
+}
+.c-toolbar-black-translucent {
+    background: url(/images/iphone/toolbar-black-translucent-po.png) repeat-x;
+}
+
+.c-text-field {
+    background: white;
+    -webkit-border-radius: 7px;
+    border: 1px solid #9d9e9e;
+    line-height: 29px;
+    padding: 0px 0px 0px 7px;
+}
+
+.c-switch {
+    background-image: url(/images/iphone/switch.png);
+}
+.c-switch.state-on {
+    background-position: 0px -27px;
+}
+
+#device-panel.d-iphone-po {
+    background-image: url(/images/iphone/device-iphone-po.png);
+    background-repeat: no-repeat;
+    width: 414px;
+    height: 770px;
+    #design-area {
+        left: 47px;
+        top: 139px;
+        width: 320px;
+        height: 480px;
+    }
+}
+
+.c-image {
+    display: block;
+}
+
+.c-rect {
+    border: 1px solid black;
+}
+
+.c-map {
+    background: url(/images/iphone/map.png) no-repeat 50% 50%;
+}
+
+.c-map-marker-red {
+    background: url(/images/iphone/map-marker-red.png) no-repeat 0% 0%;
+}
+.c-map-marker-blue {
+    background: url(/images/iphone/map-marker-blue.png) no-repeat 0% 0%;
+}
+
+.c-map-gps-location {
+    background: url(/images/iphone/map-gps-location.png) no-repeat 0% 0%;
+}
+
+.c-map-pin-red {
+    background: url(/images/iphone/map-pin-red.png) no-repeat 0% 0%;
+}
+
+.c-map-callout {
+    border-width: 4px 6px 11px 8px;
+    -webkit-border-image: url(/images/iphone/map-callout.png) 4 6 11 8;
+    line-height: 20px;
+    text-align: center;
+}
+
+body.run {
+    overflow-x: hidden;
+    -webkit-user-select: none;
+    -webkit-text-size-adjust: none;
+    font-family: Helvetica;
+    -webkit-perspective: 800;
+    -webkit-transform-style: preserve-3d;
+    -webkit-touch-callout: none;
+    overflow: hidden;
+}
+.run .selectable, .run input, .run textarea { -webkit-user-select: auto; }
+.run {
+    margin: 0;
+    padding: 0;
+}
+.run, .run * {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+.run a {
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+.run .component {
+    position: absolute;
+}
+.run .c-background {
+    position: absolute;
+    width: 320px;
+    height: 480px;
+    left: 0px;
+    top: 0px;
+}
+.run .has-action, .run .has-action * {
+    cursor: pointer !important;
+}

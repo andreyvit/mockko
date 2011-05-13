@@ -1,0 +1,68 @@
+
+body {
+    margin: 0px;
+    padding: 0px;
+}
+
+#screen-container {
+    position: relative;
+    margin: 0px; padding: 0px;
+    width: 320px; height: 460px;
+    overflow: hidden;
+}
+
+.screen {
+    display: none;
+    position: absolute;
+    left: 0px; top: 0px;
+    margin: 0px; padding: 0px;
+    width: 320px; height: 460px;
+    background: url(/images/webios/background-striped.png);
+}
+.screen:first-child {
+    display: block;
+}
+
+.no-statusbar {
+    #screen-container, .screen {
+        height: 480px;
+    }
+}
+
+.link, .back, a[href] {
+    cursor: pointer;
+}
+
+// display iPhone-like border and a status bar when browsing from a PC
+@media all and (min-device-width: 481px) {
+    #screen-container {
+        border: 10px solid #222;
+        border-top-width: 25px;
+        border-bottom-width: 60px;
+        border-radius: 10px;
+        margin: 10px auto;
+        height: 480px;
+    }
+    #screen-container:before {
+        display: block;
+        content: "";
+        background-image: url(/images/webios/statusbar-grey-po.png);
+        width: 100%;
+        height: 20px;
+    }
+    .screen {
+        top: 20px;
+    }
+    .black-opaque #screen-container:before {
+        background-image: url(/images/webios/statusbar-black-opaque-po.png);
+    }
+    .black-translucent #screen-container:before {
+        background-image: url(/images/webios/statusbar-black-translucent-po.png);
+    }
+    .no-statusbar #screen-container:before {
+        display: none;
+    }
+    .no-statusbar .screen {
+        top: 0px;
+    }
+}

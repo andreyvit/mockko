@@ -1,0 +1,121 @@
+
+.black-bar-background {
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#858585), color-stop(3%, #636363), color-stop(50%, #202020), color-stop(51%, black), color-stop(97%, black), to(#262626));
+}
+.translucent-bar-background {
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(133,133,133,0.7)), color-stop(3%, rgba(99,99,99,0.7)), color-stop(50%, rgba(32,32,32,0.7)), color-stop(51%, rgba(0,0,0,0.7)), color-stop(99.9%, rgba(0,0,0,0.7)), to(rgba(38,38,38,0.7)));
+}
+.normal-bar-background {
+    background: url(/images/designer/UINavigationBarSilverBackground.png);
+    /*background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#b0bccd), color-stop(50%, #899cb4), color-stop(50%, #8094ae), color-stop(51%, #8195af), to(#6d84a2));
+    border-top: 1px solid #cdd5df;
+    border-bottom: 1px solid #2d3642;*/
+    color: #656C73;
+    text-shadow: rgba(255, 255, 255, 0.746094) 0px 1px 0px;
+}
+.striped-background {
+    background: -webkit-gradient(linear,left top,right top,from(#c5ccd4), color-stop(71%, #c5ccd4), color-stop(72%, #cbd2d8), to(#cbd2d8));
+}
+
+.silver-back-button {
+    -webkit-border-image: url(/images/designer/UINavigationBarSilverBack.png) 0 4 0 12 stretch stretch;
+    border-width: 0px 4px 0px 12px;
+
+    :active {
+        -webkit-border-image: url(/images/designer/UINavigationBarSilverBackPressed.png) 0 4 0 12 stretch stretch;
+    }
+}
+
+.silver-bar-button {
+    /*background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#6d7174), color-stop(50%, #353d3d), to(#272c2c));*/
+/*  background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#6d7174), color-stop(50%, #353d3d), to(#272c2c));
+    border: 1px solid #383838;
+    -webkit-border-radius: 5px; */
+    -webkit-border-image: url(/images/designer/UINavigationBarSilverButton.png) 0 5 0 5 stretch stretch;
+    border-width: 0px 5px;
+    max-width: 160px;
+    text-shadow: rgba(0, 0, 0, 0.597656) 0px -1px 0px;
+    color: white;
+
+    &:active {
+        -webkit-border-image: url(/images/designer/UINavigationBarSilverButtonPressed.png) 0 5 0 5 stretch stretch;
+    }
+
+    &.disabled {
+        cursor: default;
+        color: #bbbbbb;
+        &:hover #undo-hint {
+            visibility: hidden;
+        }
+        &:active {
+            -webkit-border-image: url(/images/designer/UINavigationBarSilverButton.png) 0 5 0 5 stretch stretch;
+        }
+    }
+}
+
+.popover {
+    position: absolute;
+
+    -webkit-box-shadow: rgba(0, 0, 0, 0.496094) 0px 0px 40px 0px;
+    -webkit-border-image: url(/images/designer/popover-border.png) 6 6 6 6 stretch stretch;
+
+    width: 320px;
+    height: 600px;
+    -webkit-border-radius: 7px;
+
+    .tip {
+        position: absolute;
+        background: url(/images/designer/popover-arrow-up.png) no-repeat;
+        background-position: 0% 0%;
+        width: 37px;
+        height: 20px;
+        top: -20px;
+    }
+
+    .top {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        right: 0px;
+        height: 44px;
+
+        h1 {
+            position: absolute;
+            overflow: hidden;
+
+            left: 0%;
+            right: 0%;
+            text-align: center;
+
+            font-size: 20px;
+            line-height: 44px;
+            height: 44px;
+
+            font-weight: bold;
+            text-shadow: rgba(0,0,0,0.6) 0 -1px 0;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #fff;
+        }
+    }
+
+    .content {
+        position: absolute;
+        top: 44px;
+        left: 0px;
+        right: 0px;
+        bottom: 0px;
+    }
+
+}
+
+.clearfix {
+    zoom: 1;
+    &:after {
+        content: ".";
+        display: block;
+        height: 0;
+        clear: both;
+        visibility: hidden;
+    }
+}

@@ -1,0 +1,287 @@
+!!! 5
+html(lang="en", class="no-js")
+  head
+    meta(charset="UTF-8")
+    meta(http-equiv="X-UA-Compatible", content="IE=edge,chrome=1")
+
+    title Mockko: iPhone Mockups | iPad Mockups | Android Mockups
+
+    meta(name="viewport", content="width=1024")
+    meta(name="description", content="")
+    meta(name="author", content="")
+
+    link(rel="shortcut icon", href="/favicon.ico")
+    link(rel="apple-touch-icon", href="/apple-touch-icon.png")
+    link(rel="stylesheet", href="/css/marketing.css")
+
+    script(src="/js/libs/modernizr-1.7.min.js")
+
+    link(rel="stylesheet", href="/css/animations.css")
+    link(rel="stylesheet", href="/css/theme-common.css")
+    link(rel="stylesheet", href="/css/theme-designer.css")
+    link(rel="stylesheet", href="/css/theme-dashboard.css")
+    link(rel="stylesheet", href="/css/iphone.css")
+    link(rel="stylesheet", href="/css/webios-components.css")
+    title
+      Mockko: iPhone Mockups | iPad Mockups | Android Mockups
+    script
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-17047204-1']);
+      _gaq.push(['_setDomainName', 'none']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+      (function() {
+      var ga = document.createElement('script');
+      ga.type = 'text/javascript';
+      ga.async = true;
+      ga.src = ('https:' == document.location.protocol ?
+      'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0];
+      s.parentNode.insertBefore(ga, s);
+      })();
+  body
+    #dashboard-screen.screen
+      .toolbar
+        .left
+          a#new-app-button(href="#") New Application
+        .right
+          a#logout-button.logout-button(href="#") Sign Out
+          a.help-button Help & Feedback
+          a.profile-button(href="#") User Profile
+        h1
+          | Dashboard
+          .mockko-logo-titlebar
+
+      // #go-native
+      //   Download
+      //   a(href="http://files.tarantsov.com/Mockko.msi") Mockko for Windows
+      //   •
+      //   a(href="http://files.tarantsov.com/Mockko.dmg") Mockko for Mac OS X
+
+      #apps-list
+        #group-header-template.group-header.template
+        #app-template.app.template
+          .pile1
+          .pile2
+          .content
+            .rendered
+          .caption My Frickin' App
+
+
+    #design-screen.screen
+
+      .toolbar
+        .left
+          // a#login-button.login-button(href="#") Sign In To Continue
+          a#dashboard-button(href="#myapps") Dashboard
+          a#undo-button(href="#undo")
+            #undo-hint
+              span Undo something...
+            | Undo
+        .right
+          a.help-button Help & Feedback
+          // a#logout-button.logout-button(href="#") Sign Out
+          // a#share-button(href="#") Share
+          // a.profile-button(href="#") User Profile
+        h1#app-name
+          span#app-name-content My Great App
+          .mockko-logo-titlebar
+
+      #screens-pane.left-pane
+        #add-screen-button Add Screen
+        #screens-list
+          #app-screen-template.app-screen.template
+            .content
+              .rendered
+            .caption
+
+      // #add-screen-pane
+
+      #design-pane
+        #device-panel.d-iphone-po
+          #design-area
+            #hover-panel.hover-panel
+              .handle.delete-handle
+                .tip delete
+              .handle.duplicate-handle
+                .tip duplicate
+              .handle.link-handle
+                .tip drag&nbsp;to&nbsp;set&nbsp;linked&nbsp;screen
+              .handle.unlink-handle
+                .tip click&nbsp;to&nbsp;remove&nbsp;link
+              .resizing-handle.resizing-ne.resizing-tl
+              .resizing-handle.resizing-n.resizing-tc
+              .resizing-handle.resizing-nw.resizing-tr
+              .resizing-handle.resizing-e.resizing-cl
+              .resizing-handle.resizing-e.resizing-cr
+              .resizing-handle.resizing-nw.resizing-bl
+              .resizing-handle.resizing-n.resizing-bc
+              .resizing-handle.resizing-ne.resizing-br
+
+        iframe#run-iframe
+
+      #buttons-pane
+        #play-button.button
+        #run-on-device-button.button
+
+      #palette
+        #palette-container
+
+      #share-popover
+        .tip
+        .top
+          h1 Copy or paste JSON data
+        .content
+          textarea
+
+      #inspector
+        .tabs
+          #insp-backgrounds-tab.tab Backgrounds
+          #insp-text-tab.tab Text
+          #insp-position-tab.tab Position
+          // #insp-action-tab.tab Action
+        #insp-backgrounds-pane.pane
+          ul#backgrounds-palette
+            li#background-swatch-template.template
+        #insp-text-pane.pane
+          ul#text-size-group
+            li#make-size-smaller A
+            li#make-size-bigger A
+            #pixel-size-label
+          ul#text-style-group
+            li#text-bold B
+            li#text-italic I
+          ul#shadow-style-group
+            .descr Shadow:
+            li#shadow-none(title="None") N
+            li#shadow-dark-above(title="Dark, above object") A
+            li#shadow-light-below(title="Light, below object") B
+          ul#color-style-group
+            .descr
+              = "#"
+              input#text-color-input(value="e0e0e0")
+            li#pick-color-button(title="Pick Color")
+              #pick-color-swatch.color-swatch
+        #insp-position-pane.pane
+          ul
+            li#insp-rel-pos-li
+              In parent:
+              span#insp-rel-pos (10, 100)
+            li#insp-abs-pos-li
+              On screen:
+              span#insp-abs-pos (10, 230)
+            li#insp-size-li
+              Size:
+              span#insp-size 150x30
+        // #insp-action-pane.pane
+        //   ul#action-group
+        //     .descr When this object is tapped:
+        //     li#no-action-button Do Nothing
+        //     li#set-action-button Switch To Screen
+        //     #chosen-action-label (no action set)
+
+      #run-on-device-popup
+        .hint Open this link on your iPhone or share it with others (does not require a login):
+        .link
+          a#run-on-device-link.link-url(href="#", target="_new") http://www.example.com/R123456789
+          span.button-copy
+          span.button-copy-label
+        .close
+
+    #color-picker
+
+    #help-popup
+      .close
+      .body
+        #help-topics.pane
+          header Learn about...
+          .body
+            ul
+              li
+                a(href="http://help.mockko.com/faqs/general/keyboard-shortcuts", target="_new") Keyboard shortcuts
+              li
+                a(href="http://help.mockko.com/faqs/sharing/how-to-share", target="_new") Sharing options
+              li
+                a(href="http://help.mockko.com/faqs/images/awesome-stock-icons-for-ios", target="_new") Awesome stock icons
+            .all
+              a(href="http://help.mockko.com/faqs/", target="_new") See all help topics »
+        #help-support.pane
+          header Support
+          .body
+            ul
+              li
+                a(href="http://help.mockko.com/discussions/problems#new_topic_form", target="_new") Bug?
+              li
+                a(href="http://help.mockko.com/discussions/questions#new_topic_form", target="_new") Question?
+              li
+                a(href="http://mockko.jaconda.im/r/mockko-support/", target="_new") Wanna chat?
+        #help-voting.pane
+          header Top feature requests
+          .body
+            ul.features
+              li.loading
+                Loading...
+            .all
+              a(href="http://mockko.uservoice.com/", target="_new") Suggest a feature now »
+
+    #profile-screen.screen
+      form#profile-popup
+        h1 Edit User Profile
+        p.field
+          label(for="profile-full-name") Full Name:
+          input#profile-full-name(type="text", size="40")
+        p.newsletter
+          input#profile-newsletter(type="checkbox")
+          label(for="profile-newsletter")
+            | Subscribe to Newsletter
+            span (2x/month, new features & tips)
+        .buttons
+          a#profile-close-link.cancel(href='#') Cancel
+          a#profile-submit-link.save(href='#') Save
+
+    ul#component-context-menu.context-menu
+      li#delete-component-menu-item Delete
+      li#duplicate-component-menu-item Duplicate
+    ul#custom-image-context-menu.context-menu
+      li#delete-custom-image-menu-item Delete
+    ul#screen-context-menu.context-menu
+      li#rename-screen-menu-item Rename
+      li#duplicate-screen-menu-item Duplicate
+      li#delete-screen-menu-item Delete
+    ul#application-context-menu.context-menu
+      li#rename-application-menu-item Rename
+      li#duplicate-application-menu-item Duplicate
+      li#delete-application-menu-item Delete
+
+    canvas#link-overlay.overlay(style="display: none")
+
+    script(src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js")
+    script
+      !window.jQuery && document.write(unescape('%3Cscript src="/js/libs/jquery-1.5.1.min.js"%3E%3C/script%3E'))
+    script(src="/js/libs/jquery-ui-1.8.custom.min.js")
+    script(src="/js/libs/underscore.js")
+    // script(src="./minified/designer.premin.js")
+    script(src="/js/libs/jquery.cookie.js")
+    script(src="/js/geometry.js")
+    script(src="/js/designer-offline.js")
+    script(src="/js/designer-online.js")
+    script(src="/js/designer-jqueryaddons.js")
+    script(src="/js/designer-components.js")
+    script(src="/js/designer-templates.js")
+    script(src="/js/designer-actions.js")
+    script(src="/js/designer-serialization.js")
+    script(src="/js/designer-rendering.js")
+    script(src="/js/designer-undo.js")
+    script(src="/js/designer-model.js")
+    script(src="/js/designer-alignment-detection.js")
+    script(src="/js/designer-stacking-legacy.js")
+    script(src="/js/designer-hover-panel.js")
+    script(src="/js/designer-snapping.js")
+    script(src="/js/designer-layouting.js")
+    script(src="/js/designer-component-tree.js")
+    script(src="/js/designer-effect-live-applicator.js")
+    script(src="/js/designer-dragging.js")
+    script(src="/js/designer-resizing.js")
+    script(src="/js/designer-inspector.js")
+    script(src="/js/jpicker.js")
+    script(src="/js/designer.js")

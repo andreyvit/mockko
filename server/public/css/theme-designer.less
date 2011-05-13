@@ -1,0 +1,1401 @@
+
+@import "theme-mixins";
+
+#design-screen {
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0, 0, 0, 0.0)), to(rgba(0, 0, 0, 0.0))), url(/images/designer/background-designer.png) repeat;
+    position: relative;
+
+    #run-button {
+        min-width: 70px;
+    }
+
+    #palette {
+        background: rgba(255, 255, 255, 0.5);
+        border-left: 3px solid rgba(0, 0, 0, 0.4);
+    }
+
+    .left-pane {
+    }
+    #device-panel {
+        position: absolute;
+    }
+    #design-pane {
+/*        background: #dddfe4;*/
+        position: absolute;
+        left: 100px;
+        top: 44px;
+        right: 360px;
+        bottom: 50px;
+        overflow: visible;
+    }
+    #design-area {
+        position: absolute;
+    }
+}
+
+#add-button {
+    min-width: 50px;
+}
+
+.component {
+    position: absolute;
+    -webkit-transform: scale(1.0);
+}
+
+.component.movable {
+    cursor: move;
+}
+
+.component.editing {
+    cursor: text !important;
+}
+
+.component.dragging {
+    z-index: 10000 !important;
+    -webkit-transition: -webkit-transform 0.20s linear;
+}
+
+.component.dragging.anchored {
+    -webkit-transition: -webkit-transform 0.20s linear, left 0.20s linear, top 0.20s linear, width 0.20s linear, height 0.20s linear;
+/*    outline: 1px solid green;*/
+}
+
+.component.stackable {
+    -webkit-transition: left 0.20s, top 0.20s;
+/*    outline: 1px solid red;*/
+}
+
+.component.leaf {
+}
+
+.component.selected {
+    outline: 2px solid rgba(100, 100, 255, 0.9);
+    outline-offset: 2px;
+    z-index: 900;
+/*    -webkit-box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 30px;*/
+}
+
+.hover-panel {
+    position: absolute;
+    z-index: 8000;
+
+    .handle, .resizing-handle {
+        box-sizing: content-box;
+        -webkit-box-sizing: content-box;
+        -moz-box-sizing: content-box;
+    }
+
+    .handle {
+        position: absolute;
+        color: white;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+
+        &:hover {
+            .tip {
+                visibility: visible;
+            }
+        }
+
+        .tip {
+            position: absolute;
+            visibility: hidden;
+            display: block;
+            font-size: 12px;
+            height: 16px;
+            width: auto;
+            line-height: 16px;
+            -webkit-border-radius: 6px;
+            background: rgba(0, 0, 0, 0.66);
+            padding: 0px 6px;
+        }
+    }
+
+    .delete-handle {
+        left: -8px;
+        top: -8px;
+
+        background: url(/images/designer/button-delete-normal.png) no-repeat 0% 0%;
+        &:hover {
+            background-image: url(/images/designer/button-delete-over.png);
+        }
+        &:active {
+            background-image: url(/images/designer/button-delete-down.png);
+        }
+
+        .tip {
+            top: -18px;
+            left: -17px;
+            color: red;
+        }
+    }
+
+    .duplicate-handle {
+        left: 8px;
+        top: -8px;
+        padding-right: 3px;
+
+        background: url(/images/designer/button-dup-normal.png) no-repeat 0% 0%;
+        &:hover {
+            background-image: url(/images/designer/button-dup-over.png);
+        }
+        &:active {
+            background-image: url(/images/designer/button-dup-down.png);
+        }
+
+        .tip {
+            top: -18px;
+            left: -25px;
+            color: #6cc341;
+        }
+    }
+    .duplicate-handle.disabled {
+        display: none;
+    }
+
+    .link-handle {
+        left: 24px;
+        top: -8px;
+        padding-right: 3px;
+
+        background: url(/images/designer/button-link-normal.png) no-repeat 0% 0%;
+        &:hover {
+            background-image: url(/images/designer/button-link-over.png);
+        }
+        &:active {
+            background-image: url(/images/designer/button-link-down.png);
+        }
+
+        .tip {
+            top: -18px;
+            left: -60px;
+            color: #4c9ccc + #141414;
+        }
+    }
+    .link-handle.disabled {
+        display: none;
+    }
+
+    .unlink-handle {
+        left: 40px;
+        top: -8px;
+        padding-right: 3px;
+
+        background: url(/images/designer/button-unlink-normal.png) no-repeat 0% 0%;
+        &:hover {
+            background-image: url(/images/designer/button-unlink-over.png);
+        }
+        &:active {
+            background-image: url(/images/designer/button-unlink-down.png);
+        }
+
+        .tip {
+            top: -18px;
+            left: -45px;
+            color: #4c9ccc + #141414;
+        }
+    }
+    .unlink-handle.disabled {
+        display: none;
+    }
+
+    .move-handle {
+        left: -8px;
+        top: 8px;
+        cursor: move;
+
+        .tip {
+            top: 18px;
+            left: -16px;
+        }
+    }
+    .move-handle:before {
+        content: "M";
+    }
+
+    .resizing-handle {
+        position: absolute;
+        width: 7px;
+        height: 7px;
+        background: url(/images/designer/resizing-handle.png) no-repeat 50% 50%;
+        padding: 3px;
+        cursor: move;
+    }
+    .resizing-handle.disabled {
+        background: url(/images/designer/resizing-handle-disabled.png) no-repeat 50% 50%;
+        cursor: default;
+    }
+    .resizing-handle.hidden {
+        display: none;
+    }
+    .resizing-ne { cursor: nwse-resize; }
+    .resizing-nw { cursor: nesw-resize; }
+    .resizing-e  { cursor: ew-resize; }
+    .resizing-n  { cursor: ns-resize; }
+
+}
+.hover-panel.controls-outside {
+    .delete-handle, .duplicate-handle, .link-handle, .unlink-handle {
+        padding-bottom: 2px;
+        height: 20px;
+        top: -20px;
+    }
+}
+.hover-panel.leaf .move-handle {
+    display: none;
+}
+
+#share-popover {
+    .popover;
+    width: 320px;
+    height: 600px;
+    display: none;
+
+    .content {
+        padding: 10px 10px;
+        textarea {
+            width: 100%;
+            height: 100%;
+        }
+    }
+}
+
+#share-popover.visible {
+    display: block;
+}
+
+#palette-container {
+    padding-bottom: 60px;
+    .clearfix;
+}
+
+#palette {
+    position: absolute;
+    right: 0;
+    top: 44px;
+    bottom: 0px;
+    width: 360px;
+
+    padding: 5px 5px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+
+    .group {
+        .header {
+            margin: 10px 5px 8px 5px;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 16px;
+            color: #656C73;
+            text-shadow: rgba(255, 255, 255, 0.746094) 0px 1px 0px;
+            border-bottom: 1px solid #656C73;
+        }
+    }
+
+    .items {
+        display: block;
+        @scale: 1;
+        width: 320px / @scale;
+        -webkit-transform-origin-x: 0%;
+        -webkit-transform-origin-y: 0%;
+        -webkit-transform: scale(@scale);
+    }
+
+    .image-upload-prompt {
+        cursor: pointer;
+        color: #656C73;
+        font-size: 12px;
+        padding: 10px 0px 10px 5px;
+        text-shadow: 0px 1px rgba(255, 255, 255, 0.5);
+    }
+
+    .item.palette-tile {
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border: 1px solid #656C73;
+    }
+
+    .item {
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 5px;
+        margin-right: 5px;
+        margin-bottom: 10px;
+
+        cursor: move;
+
+        img {
+            display: block;
+            margin: 5px auto;
+            line-height: 28px;
+        }
+
+        .caption {
+            position: absolute;
+            font-size: 10px;
+            text-align: center;
+            left: 0px;
+            right: 0px;
+            bottom: 0px;
+            height: 12px;
+            line-height: 12px;
+            opacity: 0.8;
+            color: #777;
+        }
+
+        &:hover {
+/*            background: rgba(100, 100, 100, 0.5);*/
+/*            outline: 1px solid #656C73;*/
+            -webkit-box-shadow: white 0px 0px 10px;
+
+            .caption {
+                opacity: 1;
+                color: black;
+                display: block;
+            }
+        }
+    }
+    .customImagePlaceholder {
+        float: left;
+        width: 64px;
+        height: 64px;
+        background: url(/images/designer/indicator.gif) 50% 50% no-repeat;
+    }
+}
+
+.palette.visible {
+    display: block;
+}
+
+.component.cannot-drop {
+    opacity: 0.75;
+    -webkit-transform: scale(0.75);
+}
+
+#undo-button {
+    cursor: pointer;
+    width: 65px;
+
+    .silver-bar-button;
+
+    #undo-hint {
+        z-index: 10000;
+        visibility: hidden;
+
+        position: absolute;
+        top: 30px;
+        width: 400px;
+        margin-left: -200px + 55px / 2;
+        height: 16px;
+        display: block;
+        height: 16px;
+        text-align: center;
+
+        span {
+            display: span;
+            padding: 2px 10px;
+
+            line-height: 16px;
+            font-size: 12px;
+            font-weight: bold;
+            color: red;
+
+            -webkit-border-radius: 6px;
+            background: rgba(0, 0, 0, 0.66);
+        }
+    }
+    &:hover #undo-hint {
+        visibility: visible;
+    }
+}
+
+#buttons-pane {
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  width: 70px;
+  .button {
+    cursor: pointer;
+    display: block;
+    margin: 0px auto 30px;
+    width: 70px;
+  }
+}
+#play-button {
+  height: 85px;
+  background: url(/images/designer/button-play.png) no-repeat 0 0;
+  &:hover {
+    background-position: 0 -85px;
+  }
+  &.down {
+    background-position: 0 -170px;
+  }
+  &.active {
+    background-position: 0 -255px;
+    &:hover {
+      background-position: 0 -340px;
+    }
+    &.down {
+      background-position: 0 -425px;
+    }
+  }
+}
+#run-on-device-button {
+  height: 121px;
+  background: url(/images/designer/button-run-on-device.png) no-repeat 0 0;
+  &:hover {
+    background-position: 0 -121px;
+  }
+  &.down {
+    background-position: 0 -242px;
+  }
+}
+
+#run-on-device-popup {
+  display: none;
+  position: absolute;
+  width: 460px;
+  height: 127px;
+
+  background: url(/images/designer/popup-run-on-device.png);
+
+  padding: 30px 30px 20px 60px;
+
+  text-shadow: 0px 1px rgba(255, 255, 255, 0.75);
+
+  a {
+    background: url(/images/designer/underline-blue.png) repeat-x 0% 100%;
+    text-decoration: none;
+    color: #265fad;
+    &:hover {
+      background-image: url(/images/designer/underline-blue-solid.png);
+    }
+  }
+
+  .hint {
+    font-size: 15px;
+    color: #444;
+  }
+  .link {
+    margin: 10px 0px 0px;
+    font-size: 16px;
+    -webkit-user-select: text;
+  }
+  .button-copy {
+    display: inline-block;
+    position: relative;
+    top: 2px;
+    margin-left: 3px;
+    /*
+    display: none;
+    width: 18px;
+    height: 19px;
+    background: url(/images/designer/button-copy-to-clipboard.png) no-repeat;
+    */
+  }
+  .button-copy-label {
+    font-size: 13px;
+    color: #444;
+  }
+  .close {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 50px;
+    height: 45px;
+
+    background: url(/images/designer/popup-close.png) no-repeat 40% 60%;
+    /* background: rgba(255,0,0,0.5); */
+
+    cursor: pointer;
+    &:hover {
+    }
+  }
+}
+
+#screens-pane {
+    background: rgba(255, 255, 255, 0.5);
+    border-right: 3px solid rgba(0, 0, 0, 0.3);
+
+    position: absolute;
+    width: 105px;
+    top: 44px;
+    bottom: 0px;
+    padding-top: 5px;
+    z-index: 1000;
+
+    color: #656C73;
+    text-shadow: rgba(255, 255, 255, 0.746094) 0px 1px 0px;
+
+/*  overflow-x: hidden;
+    overflow-y: auto;
+*/}
+
+#screens-list {
+    position: absolute;
+    width: 105px;
+    top: 35px;
+    bottom: 0px;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+#screens-list .app-screen .content {
+    -webkit-transition: -webkit-box-shadow 0.1s linear;
+}
+
+#screens-list.prominent .app-screen .content {
+    -webkit-box-shadow: 0px 0px 20px #770000;
+}
+
+#add-screen-button {
+    .silver-bar-button;
+    cursor: pointer;
+    position: absolute;
+    z-index: 1000;
+    top: 5px;
+    height: 30px;
+    text-align: center;
+    line-height: 30px;
+    width: 90px;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 0px 5px 0px 6px;
+}
+
+.app-screen {
+
+    padding: 5px 0px 0px 0px;
+    cursor: pointer;
+    width: 80px + 10px + 10px - 3px;
+    margin-left: auto;
+    margin-right: auto;
+    -webkit-box-sizing: content-box;
+
+    .content {
+        opacity: 0.9;
+        margin: 0px 6px 0px 4px;
+        width: 90px;
+        height: 130px;
+        padding: 5px;
+        background: #000;
+        -webkit-box-shadow: 0 3px 6px rgba(0,0,0,.25);
+        -moz-box-shadow: 0 3px 6px rgba(0,0,0,.25);
+        -webkit-border-radius: 5px;
+        overflow: hidden;
+
+        .rendered {
+            -webkit-transform-origin-x: 0%;
+            -webkit-transform-origin-y: 0%;
+            -webkit-transform: scale(0.25);
+        }
+    }
+
+    .caption {
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        line-height: 16px;
+        padding: 2px 0px;
+        margin: 2px 0px 0px 0px;
+        cursor: text;
+        &:hover {
+            outline: 1px solid rgba(187,0,0,0.3);
+            outline-offset: -3px;
+        }
+    }
+
+}
+
+.app-screen.active {
+    background: rgba(0, 0, 0, 0.2);
+    .content {
+/*        -webkit-box-shadow: 0 3px 6px rgba(255,255,255,0.5);*/
+    }
+    .caption {
+        color: #000;
+    }
+}
+
+#add-screen-pane {
+    position: absolute;
+    left: 0px;
+    width: 100px;
+    bottom: 0px;
+    height: 51px;
+    background: url(/images/designer/background-inspector.png) repeat-x;
+    border-top: 1px solid @tab-border-color;
+}
+
+#profile-screen {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+#profile-popup {
+    @width: 600px;
+    @height: 280px;
+
+    background: rgba(255, 255, 255, 0.9);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: @width;
+    height: @height;
+    margin-left: @width / 2 * -1;
+    margin-top: @height / 2 * -1;
+    border: 1px solid #000;
+    -webkit-box-shadow: #000 0px 0px 40px;
+
+    padding: 50px 90px 20px 90px;
+
+    font-family: Helvetica;
+    font-size: 14px;
+    line-height: 24px;
+
+    h1 {
+        line-height: 24px;
+        font-size: 24px;
+        color: #222;
+        font-weight: bold;
+        margin-bottom: 36px;
+    }
+
+    p {
+        margin-top: 15px;
+        width: auto;
+        .clearfix;
+        padding-left: 5px;
+
+        .small {
+            font-size: 14px;
+            line-height: 24px;
+        }
+
+        &.field {
+            margin-left: auto; margin-right: auto;
+            label {
+                display: inline-block;
+                line-height: 30px;
+                text-align: right;
+                padding-right: 20px;
+            }
+
+            input {
+                width: 650px - 2 * 90px - 200px;
+                display: inline-block;
+                line-height: 25px;
+                font-size: 16px;
+            }
+        }
+
+        &.newsletter {
+            padding-left: 5px;
+            text-align: left;
+            input {
+                margin-right: 4px;
+            }
+        }
+    }
+
+    .buttons {
+        position: absolute;
+        bottom: 30px;
+        left: 0px;
+        right: 0px;
+        line-height: 40px;
+        font-size: 14px;
+        text-align: center;
+
+        a, a:link, a:visited {
+            text-decoration: underline;
+            font-weight: bold;
+            color: blue;
+            margin: 0px 10px;
+        }
+
+        a.save {
+            text-decoration: none;
+
+            .silver-bar-button;
+            padding: 7px 40px;
+            margin-left: 40px;
+        }
+        a.cancel {
+        }
+
+    }
+
+    .unsupported {
+        display: none;
+        position: absolute;
+        bottom: 40px;
+        left: 0px;
+        right: 0px;
+        line-height: 40px;
+        font-size: 20px;
+        text-align: center;
+    }
+
+}
+
+@tab-border-color: #666;
+#inspector {
+    position: absolute;
+    bottom: 0px;
+    left: 105px;
+    right: 0px;
+    height: 70px;
+    -webkit-transform: translate(0px, 70px);
+    -webkit-transition: -webkit-transform 0.10s linear;
+
+    &.visible {
+        -webkit-transform: translate(0px, 0px);
+    }
+
+    .tabs {
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        top: 0px;
+        height: 20px;
+
+        font-size: 11px;
+        border-bottom: 1px solid @tab-border-color;
+        padding-left: 20px;
+
+        .tab {
+            float: left;
+            margin-left: -1px;
+            cursor: pointer;
+
+            height: 16px;
+            margin-top: 4px;
+            line-height: 16px;
+            background: #eee;
+
+            padding-left: 10px;
+            padding-right: 10px;
+
+            border: 1px solid @tab-border-color;
+
+            &:hover {
+                background: #f7f7f7
+            }
+        }
+
+        .tab.active {
+            cursor: default;
+            background: #f5f6f7;
+            border-bottom: none;
+            margin-top: 0px;
+            line-height: 20px;
+            height: 20px;
+
+            font-weight: bold;
+
+            &:hover {
+                background: #f5f6f7;
+            }
+        }
+    }
+
+    .pane {
+        display: none;
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        top: 20px;
+        bottom: 0px;
+
+        background: url(/images/designer/background-inspector.png) repeat-x;
+        overflow: hidden;
+
+        color: #000;
+        text-shadow: 0px 1px #fff;
+    }
+
+    .pane.active {
+        display: block;
+    }
+}
+
+#insp-backgrounds-pane {
+    padding: 10px 20px;
+
+    ul {
+        display: block;
+        float: left;
+        height: 30px;
+        width: auto;
+    }
+    li {
+        cursor: pointer;
+        display: block;
+        float: left;
+        margin-right: 10px;
+
+        height: 30px;
+        width: 30px;
+        -webkit-border-radius: 10px;
+
+        -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
+    }
+    li.disabled {
+        opacity: 0.7;
+        cursor: default;
+    }
+    li.active {
+        border: 1px solid rgb(255, 215, 0);
+        -webkit-box-shadow: rgba(255, 215, 0, 0.5) 0px 0px 10px;
+    }
+}
+
+#insp-position-pane {
+    font-size: 12px;
+    line-height: 50px;
+    padding: 0px 0px 0px 120px;
+    ul, li {
+        display: inline;
+    }
+    li {
+        position: absolute;
+    }
+    #insp-rel-pos-li {
+        left: 20px;
+    }
+    #insp-abs-pos-li {
+        left: 140px;
+    }
+    #insp-size-li {
+        left: 270px;
+    }
+}
+
+#insp-text-pane {
+    ul {
+        display: block;
+        position: absolute;
+        bottom: 10px;
+        width: auto;
+    }
+
+    li, .descr, #pixel-size-label {
+        display: block;
+        float: left;
+        line-height: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+    li {
+        width: 35px;
+        text-align: center;
+        font-weight: bold;
+        margin-right: 3px;
+        cursor: pointer;
+
+        .silver-bar-button;
+
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+    li.disabled {
+        opacity: 0.9;
+        color: #ccc;
+        cursor: default;
+    }
+    .descr {
+        margin-right: 10px;
+    }
+
+    ul#text-size-group {
+        left: 120px;
+    }
+    ul#text-style-group {
+        left: 20px;
+    }
+    ul#shadow-style-group {
+        left: 260px;
+    }
+    ul#color-style-group {
+        left: 490px;
+    }
+    .color-swatch {
+        width: 12px;
+        height: 12px;
+        border: 1px solid #777;
+        background: red;
+    }
+    #pick-color-swatch {
+        display: inline-block;
+        position: relative;
+        top: 2px;
+        left: -1px;
+    }
+    #text-color-input.invalid {
+        background-color: #ffdddd;
+    }
+
+    #pixel-size-label {
+        margin-left: 10px;
+    }
+
+    #make-size-bigger {
+        font-size: 14px;
+    }
+    #make-size-smaller {
+        font-size: 11px;
+    }
+
+    #text-bold {
+        font-weight: extra-bold;
+    }
+    #text-italic {
+        font-style: italic;
+    }
+    #text-style-group li.active {
+        color: gold;
+    }
+    #text-color-input {
+        width: 50px;
+    }
+    #text-color-input:disabled {
+        opacity: 0.7;
+    }
+
+    #shadow-none {
+        text-shadow: none;
+    }
+    #shadow-dark-above {
+        color: #fff;
+        text-shadow: 0px -1px #000;
+    }
+    #shadow-light-below {
+        color: #000;
+        text-shadow: 0px 1px #fff;
+    }
+    #shadow-dark-above.disabled {
+        color: #ccc;
+    }
+    #shadow-light-below.disabled {
+        color: #666;
+    }
+
+}
+
+#color-picker {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+}
+
+#insp-action-pane {
+    ul {
+        display: block;
+        position: absolute;
+        bottom: 10px;
+        width: auto;
+    }
+
+    li, .descr, #chosen-action-label {
+        display: block;
+        float: left;
+        line-height: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+    li {
+        width: auto;
+        text-align: center;
+        font-weight: bold;
+        margin-right: 3px;
+        cursor: pointer;
+
+        .silver-bar-button;
+
+        padding-left: 7px;
+        padding-right: 7px;
+        margin-left: 10px;
+    }
+    li.disabled {
+        opacity: 0.9;
+        color: #ccc;
+        cursor: default;
+    }
+    li.active {
+        color: gold;
+    }
+    .descr {
+        margin-right: 10px;
+    }
+
+    ul#action-group {
+        left: 20px;
+    }
+    #chosen-action-label {
+        margin-left: 5px;
+    }
+}
+
+.context-menu {
+    position: absolute;
+    z-index: 99999;
+    background: rgba(255, 255, 255, 0.97);
+    padding: 5px 0px;
+    margin: 0px;
+    -webkit-border-radius: 5px;
+    display: none;
+    -webkit-box-shadow: rgba(0, 0, 0, 0.3) 0px 5px 15px;
+
+    li {
+        display: block;
+        list-style: none;
+        cursor: default;
+
+        padding: 0px 20px;
+        margin: 0px;
+
+        color: #000;
+        line-height: 20px;
+        height: 20px;
+        outline: none;
+        font-size: 15px;
+    }
+
+    li:hover {
+        color: #fff;
+        background-color: #597fee;
+    }
+
+    li.disabled {
+        color: #aaa;
+        cursor: default;
+    }
+
+    li:hover.disabled {
+        background-color: transparent;
+    }
+
+    li.separator {
+        border-top: solid 1px #CCC;
+    }
+}
+
+#run-screen {
+    z-index: 1001; /* more than add-screen-button */
+    background: rgba(0, 0, 0, 0.9);
+}
+
+#run-stop-button {
+    cursor: pointer;
+    position: absolute;
+    line-height: 30px;
+    height: 30px;
+    top: 7px;
+    left: 10px;
+    font-size: 12px;
+    font-weight: bold;
+
+    text-decoration: none;
+    text-align: center;
+
+    .silver-bar-button;
+
+    width: auto;
+    padding-left: 7px;
+    padding-right: 7px;
+}
+
+#run-address-label {
+    position: absolute;
+    line-height: 30px;
+    height: 30px;
+    top: 7px;
+    left: 150px;
+    right: 150px;
+    font-size: 12px;
+    font-weight: normal;
+
+    text-decoration: none;
+    text-align: center;
+
+    padding-left: 7px;
+    padding-right: 7px;
+
+    a, a:link, a:visited, a:active {
+        color: #eef;
+        text-decoration: underline;
+        font-weight: bold;
+    }
+    a:hover {
+        color: #fff;
+    }
+
+    color: #eee;
+}
+
+#run-iframe {
+    display: none;
+    position: absolute;
+    width: 320px;
+    height: 480px;
+    margin: 0px;
+    border: none;
+}
+
+.mockko-logo-titlebar {
+    display: inline-block;
+    vertical-align: middle;
+    width: 99px;
+    height: 40px;
+    background: url(/images/designer/mockko-titlebar-logo.png) no-repeat 0px 7px;
+}
+
+#app-name-content {
+    cursor: text;
+    line-height: 1;
+    &:hover {
+        outline: 1px solid rgba(187,0,0,0.3);
+        outline-offset: 3px;
+    }
+}
+
+.jPicker .Icon {
+  display: inline-block;
+  height: 24px; /* change this value if using a different sized color picker icon */
+  position: relative; /* make this element an absolute positioning container */
+  text-align: left; /* make the zero width children position to the left of container */
+  width: 25px; /* change this value if using a different sized color picker icon */
+}
+.jPicker .Icon span.Color, .jPicker .Icon span.Alpha {
+  background-position: 2px 2px;
+  display: block;
+  height: 100%;
+  left: 0px;
+  position: absolute;
+  top: 0px;
+  width: 100%;
+}
+.jPicker .Icon span.Image {
+  background-repeat: no-repeat;
+  cursor: pointer;
+  display: block;
+  height: 100%;
+  left: 0px;
+  position: absolute;
+  top: 0px;
+  width: 100%;
+}
+.jPicker .Container {
+  display: none;
+  z-index: 10; /* make sure container draws above color picker icon in Firefox/Safari/Chrome/Opera/etc. -
+                  IE calculates z-index so this won't work - we will hide all color picker icons placed after the selected one in code when shown in IE */
+}
+table.jPicker {
+  background-color: #efefef;
+  border: 1px outset #666;
+  font-family: Arial, Helvetica, Sans-Serif;
+  font-size: 12px !important;
+  margin: 0px;
+  padding: 5px;
+  width: 545px;
+}
+.jPicker .Move {
+  background-color: #dddddd;
+  border: 1px outset #aaa;
+  cursor: move;
+  height: 12px;
+}
+.jPicker .Title {
+  font-size: 11px !important;
+  font-weight: bold;
+  margin: -2px 0px 0px 0px;
+  padding: 0px;
+  text-align: center;
+  width: 100%;
+}
+.jPicker div.Map {
+  border-bottom: 2px solid #fff;
+  border-left: 2px solid #9a9a9a;
+  border-right: 2px solid #fff;
+  border-top: 2px solid #9a9a9a;
+  cursor: crosshair;
+  height: 260px; /* IE 6 incorrectly draws border inside the width and height instead of outside - We will fix this to 256px later */
+  margin: 0px 5px 0px 5px;
+  overflow: hidden; /* hide the overdraw of the Color Map icon when at edge of viewing box */
+  padding: 0px;
+  position: relative; /* make this element an absolute positioning container */
+  width: 260px; /* IE 6 incorrectly draws border inside the width and height instead of outside - We will fix this to 256px later */
+}
+.jPicker div[class="Map"] {
+  height: 256px; /* correct to 256px for browsers that support the "[class="xxx"]" selector (IE7+,Firefox,Safari,Chrome,Opera,etc.) */
+  width: 256px; /* correct to 256px for browsers that support the "[class="xxx"]" selector (IE7+,Firefox,Safari,Chrome,Opera,etc.) */
+}
+.jPicker div.Bar {
+  border-bottom: 2px solid #fff;
+  border-left: 2px solid #9a9a9a;
+  border-right: 2px solid #fff;
+  border-top: 2px solid #9a9a9a;
+  cursor: n-resize;
+  height: 260px; /* IE 6 incorrectly draws border inside the width and height instead of outside - We will fix this to 256px later */
+  margin: 12px 10px 0px 5px;
+  overflow: hidden;
+  padding: 0px;
+  position: relative;
+  width: 24px; /* IE 6 incorrectly draws border inside the width and height instead of outside - We will fix this to 20px later */
+}
+.jPicker div[class="Bar"] {
+  height: 256px; /* correct to 256px for browsers that support the "[class="xxx"]" selector (IE7+,Firefox,Safari,Chrome,Opera,etc.) */
+  width: 20px; /* correct to 20px for browsers that support the "[class="xxx"]" selector (IE7+,Firefox,Safari,Chrome,Opera,etc.) */
+}
+.jPicker .Map .Map1, .jPicker .Map .Map2, .jPicker .Map .Map3, .jPicker .Bar .Map1, .jPicker .Bar .Map2, .jPicker .Bar .Map3, .jPicker .Bar .Map4, .jPicker .Bar .Map5, .jPicker .Bar .Map6 {
+  background-color: transparent;
+  background-image: none;
+  display: block;
+  left: 0px;
+  position: absolute;
+  top: 0px;
+}
+.jPicker .Map .Map1, .jPicker .Map .Map2, .jPicker .Map .Map3 {
+  height: 2596px;
+  width: 256px; /* must specify pixel width. IE7/8 Quirks mode ignores opacity for an absolutely positioned item in a relative container with "overflow: visible". The marker in the colorBar
+                   would not be drawn if its overflow is set to hidden. */
+}
+.jPicker .Bar .Map1, .jPicker .Bar .Map2, .jPicker .Bar .Map3, .jPicker .Bar .Map4 {
+  height: 3896px;
+  width: 20px; /* must specify pixel width. IE7/8 Quirks mode ignores opacity for an absolutely positioned item in a relative container with "overflow: visible". The marker in the colorBar
+                  would not be drawn if its overflow is set to hidden. */
+}
+.jPicker .Bar .Map5, .jPicker .Bar .Map6 {
+  height: 256px;
+  width: 20px; /* must specify pixel width. IE7/8 Quirks mode ignores opacity for an absolutely positioned item in a relative container with "overflow: visible". The marker in the colorBar
+                  would not be drawn if its overflow is set to hidden. */
+}
+.jPicker .Map .Map1, .jPicker .Map .Map2, .jPicker .Bar .Map6 {
+  background-repeat: no-repeat;
+}
+.jPicker .Map .Map3, .jPicker .Bar .Map5 {
+  background-repeat: repeat;
+}
+.jPicker .Bar .Map1, .jPicker .Bar .Map2, .jPicker .Bar .Map3, .jPicker .Bar .Map4 {
+  background-repeat: repeat-x;
+}
+.jPicker .Map .Arrow {
+  display: block;
+  position: absolute;
+}
+.jPicker .Bar .Arrow {
+  display: block;
+  left: 0px; /* (arrow width / 2) - (element width / 2) - position arrows' center in elements' center */
+  position: absolute;
+}
+.jPicker .Preview {
+  font-size: 9px;
+  text-align: center;
+}
+.jPicker .Preview div {
+  border: 2px inset #eee;
+  height: 62px;
+  margin: 0px auto;
+  padding: 0px;
+  width: 62px;
+}
+.jPicker .Preview div span {
+  border: 1px solid #000;
+  display: block;
+  height: 30px;
+  margin: 0px auto;
+  padding: 0px;
+  width: 60px;
+}
+.jPicker .Preview .Active {
+  border-bottom-width: 0px;
+}
+.jPicker .Preview .Current {
+  border-top-width: 0px;
+  cursor: pointer;
+}
+.jPicker .Button {
+  text-align: center;
+  width: 115px;
+}
+.jPicker .Button input {
+  width: 100px;
+}
+.jPicker .Button .Ok {
+  margin: 12px 0px 5px 0px;
+}
+
+.jPicker td.Radio {
+  margin: 0px;
+  padding: 0px;
+  width: 20px;
+}
+.jPicker td.Radio input {
+  margin: 0px;
+  padding: 0px;
+}
+.jPicker td.Label {
+  margin: 0px;
+  padding: 0px;
+}
+.jPicker td.Text {
+  font-size: 12px !important;
+  height: 22px;
+  margin: 0px;
+  padding: 0px;
+  text-align: left;
+  width: 70px;
+}
+.jPicker tr.Hex td.Text {
+  width: 100px;
+}
+.jPicker td.Text input {
+  background-color: #fff;
+  border: 1px inset #aaa;
+  height: 19px;
+  margin: 0px 0px 0px 5px;
+  text-align: left;
+  width: 30px;
+}
+.jPicker td[class="Text"] input {
+  height: 15px;
+}
+.jPicker tr.Hex td.Text input.Hex {
+  width: 50px;
+}
+.jPicker tr.Hex td.Text input.AHex {
+  width: 20px;
+}
+.jPicker .Grid {
+  text-align: center;
+}
+.jPicker .Grid span.QuickColor {
+  border: 1px inset #aaa;
+  cursor: pointer;
+  display: block;
+  float: left;
+  height: 15px;
+  line-height: 15px;
+  margin: 0px;
+  padding: 0px;
+  width: 19px;
+}
+.jPicker .Grid span[class="QuickColor"] {
+  width: 17px;
+}
+
+.jPicker .Ok, .jPicker .Cancel { display: none; }
+
+
+.overlay {
+    opacity: 0.2;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    z-index: 7000;
+}

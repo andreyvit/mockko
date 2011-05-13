@@ -2,3 +2,5 @@ config/app.json
 /*.js
 /data
 public/javascripts/*.js
+public/css/*.css
+public/js/*.js

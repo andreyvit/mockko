@@ -104,7 +104,8 @@ app.get '/www/', (req, res) ->
     layout: 'marketing'
 
 app.get '/', authenticate, (req, res) ->
-  res.send "Hello, #{req.account.fullName} &lt;#{req.account.email}&gt;!"
+  res.render 'designer', layout: false
+  # res.send "Hello, #{req.account.fullName} &lt;#{req.account.email}&gt;!"
 
 app.get '/user/', authenticate, (req, res) ->
   res.sendJSON
