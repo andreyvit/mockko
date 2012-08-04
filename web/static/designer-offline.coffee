@@ -5,7 +5,7 @@
 # Copyright (C) 2010, Andrey Tarantsov, Mikhail Gusarov
 #
 
-(window.Mockko ||= {}).fakeServer: {
+(window.Mockko ||= {}).fakeServer = {
     supportsImageEffects: no
 
     adjustUI: (userData) ->

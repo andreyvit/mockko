@@ -1730,7 +1730,7 @@ jQuery ($) ->
         app = ser.internalizeApplication(app)
         loadImageGroupsUsedInApplication app
         an = domTemplate('app-template')
-        $('.caption', $(an)).html(app.name)
+        $('.caption', $(an)).html("WOOTkhkhjk")
         renderScreenComponents(app.screens[0], $('.content .rendered', an))
         $(an).appendTo($('#apps-list'))
         app = { id: appId, content: app }
@@ -1866,5 +1866,5 @@ jQuery ($) ->
     serverMode.getUserInfo (userInfo) ->
         loadDesigner userInfo
         updateUserProfile userInfo
-        if not userInfo['profile-created']
-            showUserProfileScreen()
+        # if not userInfo['profile-created']
+        #     showUserProfileScreen()

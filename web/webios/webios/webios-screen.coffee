@@ -31,7 +31,7 @@ Transitions: {
     'immediate':   ($p, $t) -> $t.show(); $p.hide()
 }
 
-window.switchScreen: (targetScreen, transition) ->
+window.switchScreen = (targetScreen, transition) ->
     $targetScreen: $(targetScreen)
     if $targetScreen.length == 0
         console.log "Link target screen does not exist: ${targetScreen}"
@@ -44,7 +44,7 @@ window.switchScreen: (targetScreen, transition) ->
     Transitions[transition]($previousScreen, $targetScreen)
     cleanupScreenStack $targetScreen.attr('id')
 
-handleTransition: (el) ->
+handleTransition = (el) ->
     href: $(el).attr('href')
     if $(el).hasClass('back') or (href and href.match(/^#.*$/))
         transition: 'slide-left'
