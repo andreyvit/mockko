@@ -1730,7 +1730,7 @@ jQuery ($) ->
         app = ser.internalizeApplication(app)
         loadImageGroupsUsedInApplication app
         an = domTemplate('app-template')
-        $('.caption', $(an)).html("WOOTkhkhjk")
+        $('.caption', $(an)).html(app.name)
         renderScreenComponents(app.screens[0], $('.content .rendered', an))
         $(an).appendTo($('#apps-list'))
         app = { id: appId, content: app }
