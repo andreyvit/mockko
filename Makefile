@@ -216,6 +216,9 @@ do-deploy-andreyvit:
 do-deploy-dottedmag:
 	appcfg.py $(VER_ARG) -e dottedmag@dottedmag.net update web
 
+do-deploy-next:
+	appcfg.py $(VER_ARG) -e timofey.vasenin@gmail.com update web
+
 deploy: APP_VERSION=$(shell id -un)-playground
 deploy: optimize do-deploy
 
