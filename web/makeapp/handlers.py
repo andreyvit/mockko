@@ -102,10 +102,10 @@ class GetAppListHandler(RequestHandler):
         app_query = App.all()
         if not users.is_current_user_admin():
             app_query = app_query.filter('editors', account.key())
-        app_query = app_query.fetch(100)
+        apps = app_query.fetch(100)
 
         accounts_by_key = {}
-        for acc in Account.get(set([app._created_by for app in app_query] + [account.key()])):
+        for acc in Account.get(set([app._created_by for app in apps] + [account.key()])):
             accounts_by_key[acc.key()] = acc
 
             users_info[acc.user.user_id()] = {
@@ -115,7 +115,7 @@ class GetAppListHandler(RequestHandler):
                 'created_at': time.mktime(acc.created_at.timetuple()),
             }
 
-        for app in app_query:
+        for app in apps:
             users_info[accounts_by_key[app._created_by].user.user_id()]['apps'].append(
                 { 'id': app.key().id(), 'body': app.body, }
             )
