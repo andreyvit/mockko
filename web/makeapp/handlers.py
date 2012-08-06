@@ -102,7 +102,7 @@ class GetAppListHandler(RequestHandler):
         app_query = App.all()
         if not users.is_current_user_admin():
             app_query = app_query.filter('editors', account.key())
-        app_query = app_query.fetch(1000)
+        app_query = app_query.fetch(100)
 
         accounts_by_key = {}
         for acc in Account.get(set([app._created_by for app in app_query] + [account.key()])):
