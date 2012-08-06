@@ -118,7 +118,7 @@ optimize: ${OPTIMIZED}
 
 %.sum:
 	@echo "  SUM" $@
-	@cat $^ | openssl sha1 > $@ || (rm -f $@; false)
+	@cat $^ | openssl sha1 | perl -ne 'print $$1 if /([0-9a-f]{40})/' > $@ || (rm -f $@; false)
 
 find_images = $(shell find $(1) -name '*.png' -o -name '*.gif' -o -name '*.jpg')
 
