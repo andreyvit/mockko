@@ -1652,7 +1652,7 @@ jQuery ($) ->
             $.getJSON API_URL, null, (data, status, xhr) ->
                 if data.length
                     console.log ["data", data]
-                    top = { title: item['title'], votes: item['vote_count'] } for item in data.slice(0, 3)
+                    top = ({ title: item['title'], votes: item['vote_count'] } for item in data.slice(0, 3))
                     console.log ["top", top]
                     $list = $('#help-voting .features')
                     $list.find('li').remove()
@@ -1750,12 +1750,12 @@ jQuery ($) ->
 
             users = apps['users']
 
-            samples         = appData for appData in Mockko.sampleApplications
+            samples         = (appData for appData in Mockko.sampleApplications)
             myApps          = users[apps['current_user']]['apps']
 
             renderApplicationGroup("My Applications", myApps)
 
-            users = info for userId, info of users when userId isnt apps['current_user']
+            users = (info for userId, info of users when userId isnt apps['current_user'])
             users = (_(users).sortBy (user) -> -user['created_at'])
             for user in users
                 userDisplayName = "#{user['full_name']} <#{user['email']}>"
