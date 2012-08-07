@@ -1209,8 +1209,8 @@ jQuery ($) ->
     ##  Image Upload
 
     uploadImage = (group, file, callback) ->
-        console.log "Uploading #{file.fileName} of size #{file.fileSize}"
-        serverMode.uploadImage group, file.fileName, file, (err) ->
+        console.log "Uploading #{file.name} of size #{file.size}"
+        serverMode.uploadImage group, file.name, file, (err) ->
             updateImages() unless err
             callback(err)
 
@@ -1245,11 +1245,11 @@ jQuery ($) ->
         errors = []
         filesToUpload = []
         for file in files
-            if not file.fileName.match(/\.jpe?g$|\.png$|\.gif$/i)
-                ext = file.fileName.match(/\.[^.\/\\]+$/)[1]
-                errors.push { fileName: file.fileName, reason: "#{ext || 'this'} format is not supported"}
+            if not file.name.match(/\.jpe?g$|\.png$|\.gif$/i)
+                ext = file.name.match(/\.[^.\/\\]+$/)[1]
+                errors.push { fileName: file.name, reason: "#{ext || 'this'} format is not supported"}
             else if file.fileSize > MAX_IMAGE_UPLOAD_SIZE
-                errors.push { fileName: file.fileName, reason: "file too big, maximum size is #{MAX_IMAGE_UPLOAD_SIZE_DESCR}"}
+                errors.push { fileName: file.name, reason: "file too big, maximum size is #{MAX_IMAGE_UPLOAD_SIZE_DESCR}"}
             else
                 filesToUpload.push file
         if errors.length > 0
@@ -1257,7 +1257,7 @@ jQuery ($) ->
                 when 1 then "Cannot upload #{errors[0].fileName}: #{errors[0].reason}.\n"
                 else "Cannot upload the following files:\n" + ("\t* #{e.fileName} (#{e.reason})\n" for e in errors)
             if filesToUpload.length > 0
-                message += "\nThe following files WILL be uploaded: " + _(filesToUpload).map((f) -> f.fileName).join(", ")
+                message += "\nThe following files WILL be uploaded: " + _(filesToUpload).map((f) -> f.name).join(", ")
             alert message
         filesRemaining = filesToUpload.length
         for file in filesToUpload
