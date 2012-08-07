@@ -401,7 +401,7 @@ class RunAppHandler(RequestHandler):
             <meta name="apple-mobile-web-app-capable" content="yes" />
             <meta name="apple-mobile-web-app-status-bar-style" content="default" />
             <link charset='utf-8' href='/static/iphone/iphone.css' media='screen' rel='stylesheet' title='no title' type='text/css' />
-            <script charset='utf-8' src='/static/lib/jquery-1.4.2.js' type='text/javascript'></script>
+            <script charset='utf-8' src='/static/lib/jquery.js' type='text/javascript'></script>
             <style> .c-background { display: none; }</style>
             <script>
                 jQuery(function($) {
