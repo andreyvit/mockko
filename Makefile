@@ -158,8 +158,8 @@ ${OPT_DIR}/theme.min.css: ${THEME_CSS} .theme-images.sum
 		perl -pe "s,(images/[^\"]+),\1?"$$(cat .theme-images.sum)",g" > $@ || (rm -f $@; false)
 
 JS_LIBS = $(addprefix web/static/lib/, \
-	jquery-1.4.2.min.js \
-	jquery-ui-1.8.custom.min.js \
+	jquery-1.7.2.min.js \
+	jquery-ui-1.8.22.custom.min.js \
 	underscore.min.js \
 	jquery.cookie.js)
 
