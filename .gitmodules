@@ -1,6 +1,0 @@
-[submodule "server/vendor/mongoose"]
-	path = server/vendor/mongoose
-	url = git://github.com/LearnBoost/mongoose.git
-[submodule "server/vendor/socket.io"]
-	path = server/vendor/socket.io
-	url = git://github.com/LearnBoost/socket.io.git
