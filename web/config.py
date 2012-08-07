@@ -25,7 +25,7 @@ config['tipfy'] = {
 }
 
 config['tipfy.ext.auth'] = {
-    'user_model': 'makeapp.models:Account',
+    'user_model': 'models:Account',
 }
 
 config['tipfy.ext.i18n'] = {

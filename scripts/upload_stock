@@ -39,7 +39,7 @@ from google.appengine.ext import search
 
 DEFAULT_PATH = '/remote_api'
 
-from makeapp.models import Image, ImageGroup, ImageData
+from models import Image, ImageGroup, ImageData
 
 def auth_func():
     return (raw_input('Email: '), getpass.getpass('Password: '))

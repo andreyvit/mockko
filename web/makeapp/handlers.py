@@ -21,7 +21,7 @@ from google.appengine.ext import db
 from google.appengine.ext.deferred import defer
 from google.appengine.ext.webapp.util import login_required
 
-from makeapp.models import Account, App, ImageGroup, Image, ImageData
+from models import Account, App, ImageGroup, Image, ImageData
 
 def notify_admins_about_new_user_signup(user):
     mail.send_mail_to_admins(sender="Mockko <andreyvit@gmail.com>",

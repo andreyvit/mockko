@@ -1,6 +1,6 @@
 import sys, json
 sys.path.append('.')
-from makeapp.models import App
+from models import App
 
 def update_img(gid, component):
     print '>' + component['type']
