@@ -10,7 +10,7 @@ DEVAPPSERVER_ARGS=--show_mail_body \
 	--port $(DEVAPPSERVER_PORT)
 
 CLOSURE=java -jar scripts/closure-compiler/compiler.jar
-YUI=java -jar scripts/yuicompressor-2.4.2.jar
+YUI=java -jar scripts/yuicompressor-2.4.7.jar
 PREMIN=ruby scripts/preminifier/premin.rb
 
 # Source code
