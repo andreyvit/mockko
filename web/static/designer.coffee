@@ -1647,22 +1647,21 @@ jQuery ($) ->
         { isOpen, open, close, toggle }
 
     initFeedbackButton = (modeEngine, $button, $popup) ->
-        API_URL = 'https://mockko.uservoice.com/forums/54458/suggestions.json?client=qF52dPwrz1KQdEgRmaw&callback=?'
+        API_URL = 'https://mockko.uservoice.com/api/v1/forums/54458/suggestions.json?client=qF52dPwrz1KQdEgRmaw&callback=?'
         retrieveVotes = ->
             $.getJSON API_URL, null, (data, status, xhr) ->
-                if data.length
-                    console.log ["data", data]
-                    top = ({ title: item['title'], votes: item['vote_count'] } for item in data.slice(0, 3))
-                    console.log ["top", top]
-                    $list = $('#help-voting .features')
-                    $list.find('li').remove()
+                console.log ["data", data]
+                top = ({ title: item['title'], votes: item['vote_count'] } for item in data.suggestions.slice(0, 3))
+                console.log ["top", top]
+                $list = $('#help-voting .features')
+                $list.find('li').remove()
 
-                    for item in top
-                        console.log ["item", item]
-                        $("<li/>")
-                            .append($("<div/>", class: 'votes', text: "#{item.votes}"))
-                            .append($("<p/>", text: item.title))
-                            .appendTo($list)
+                for item in top
+                    console.log ["item", item]
+                    $("<li/>")
+                        .append($("<div/>", class: 'votes', text: "#{item.votes}"))
+                        .append($("<p/>", text: item.title))
+                        .appendTo($list)
 
         popup = newPopup $popup,
                     modeEngine: modeEngine
