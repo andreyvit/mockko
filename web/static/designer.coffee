@@ -1651,7 +1651,7 @@ jQuery ($) ->
         retrieveVotes = ->
             $.getJSON API_URL, null, (data, status, xhr) ->
                 console.log ["data", data]
-                top = ({ title: item['title'], votes: item['vote_count'] } for item in data.suggestions.slice(0, 3))
+                top = ({ title: item['title'], votes: item['vote_count'] } for item in data['suggestions'].slice(0, 3))
                 console.log ["top", top]
                 $list = $('#help-voting .features')
                 $list.find('li').remove()
