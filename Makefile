@@ -226,4 +226,4 @@ quick-deploy: APP_VERSION=$(shell id -un)-playground
 quick-deploy: do-deploy
 
 upload-stock:
-	python scripts/upload_stock --no-auth -s localhost:$(DEVAPPSERVER_PORT) mockkodesigner
+	python scripts/upload_stock --no-auth -s localhost:$(DEVAPPSERVER_PORT) mockkodesigner-hrd
