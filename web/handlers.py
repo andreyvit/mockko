@@ -353,8 +353,7 @@ class ServeImageHandler(RequestHandler):
             response_data = img.data.data
             response_type = img.mime_type
         else:
-            square_file = os.path.join(os.path.dirname(__file__), '..',
-                                       'server-images', effect + '.png')
+            square_file = os.path.join(os.path.dirname(__file__), 'server-images', effect + '.png')
 
             f = overlay_png(png.Reader(file=open(square_file, 'rb')),
                             png.Reader(bytes=img.data.data))
