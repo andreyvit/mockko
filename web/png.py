@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# $URL$
-# $Rev$
+# $URL: http://pypng.googlecode.com/svn/trunk/code/png.py $
+# $Rev: 228 $
 
 # png.py - PNG encoder/decoder in pure Python
 #
@@ -165,7 +165,7 @@ And now, my famous members
 # http://www.python.org/doc/2.2.3/whatsnew/node5.html
 from __future__ import generators
 
-__version__ = "$URL$ $Rev$"
+__version__ = "$URL: http://pypng.googlecode.com/svn/trunk/code/png.py $ $Rev: 228 $"
 
 from array import array
 try: # See :pyver:old
@@ -224,7 +224,15 @@ else:
         ``array``.
         """
         return row.tostring()
-        
+
+# Conditionally convert to bytes.  Works on Python 2 and Python 3.
+try:
+    bytes('', 'ascii')
+    def strtobytes(x): return bytes(x, 'iso8859-1')
+    def bytestostr(x): return str(x, 'iso8859-1')
+except:
+    strtobytes = str
+    bytestostr = str
 
 def interleave_planes(ipixels, apixels, ipsize, apsize):
     """
@@ -384,9 +392,9 @@ class Writer:
         `bitdepth` argument into service for this.)
 
         The `palette` option, when specified, causes a colour mapped image
-	to be created: the PNG colour type is set to 3; greyscale
-	must not be set; alpha must not be set; transparent must
-	not be set; the bit depth must be 1,2,4, or 8.  When a colour
+        to be created: the PNG colour type is set to 3; greyscale
+        must not be set; alpha must not be set; transparent must
+        not be set; the bit depth must be 1,2,4, or 8.  When a colour
         mapped image is created, the pixel values are palette indexes
         and the `bitdepth` argument specifies the size of these indexes
         (not the size of the colour values in the palette).
@@ -412,12 +420,12 @@ class Writer:
         the PNG file, they are assumed to have already been converted
         appropriately for the gamma specified.
 
-	The `compression` argument specifies the compression level
-	to be used by the ``zlib`` module.  Higher values are likely
-	to compress better, but will be slower to compress.  The
-	default for this argument is ``None``; this does not mean
-	no compression, rather it means that the default from the
-	``zlib`` module is used (which is generally acceptable).
+        The `compression` argument specifies the compression level
+        to be used by the ``zlib`` module.  Higher values are likely
+        to compress better, but will be slower to compress.  The
+        default for this argument is ``None``; this does not mean
+        no compression, rather it means that the default from the
+        ``zlib`` module is used (which is generally acceptable).
 
         If `interlace` is true then an interlaced image is created
         (using PNG's so far only interace method, *Adam7*).  This does not
@@ -637,16 +645,16 @@ class Writer:
         """
         Write a PNG image to the output file.
 
-	Most users are expected to find the :meth:`write` or
-	:meth:`write_array` method more convenient.
+        Most users are expected to find the :meth:`write` or
+        :meth:`write_array` method more convenient.
         
-	The rows should be given to this method in the order that
-	they appear in the output file.  For straightlaced images,
-	this is the usual top to bottom ordering, but for interlaced
-	images the rows should have already been interlaced before
-	passing them to this function.
+        The rows should be given to this method in the order that
+        they appear in the output file.  For straightlaced images,
+        this is the usual top to bottom ordering, but for interlaced
+        images the rows should have already been interlaced before
+        passing them to this function.
 
-	`rows` should be an iterable that yields each row.  When
+        `rows` should be an iterable that yields each row.  When
         `packed` is ``False`` the rows should be in boxed row flat pixel
         format; when `packed` is ``True`` each row should be a packed
         sequence of bytes.
@@ -948,7 +956,7 @@ class Writer:
                             pixels[offset+i:end_offset:skip]
                     yield row
 
-def write_chunk(outfile, tag, data=''):
+def write_chunk(outfile, tag, data=strtobytes('')):
     """
     Write a PNG chunk to the output file, including length and
     checksum.
@@ -956,11 +964,13 @@ def write_chunk(outfile, tag, data=''):
 
     # http://www.w3.org/TR/PNG/#5Chunk-layout
     outfile.write(struct.pack("!I", len(data)))
+    tag = strtobytes(tag)
     outfile.write(tag)
     outfile.write(data)
     checksum = zlib.crc32(tag)
     checksum = zlib.crc32(data, checksum)
-    outfile.write(struct.pack("!i", checksum))
+    checksum &= 2**32-1
+    outfile.write(struct.pack("!I", checksum))
 
 def write_chunks(out, chunks):
     """Create a PNG file by writing out the chunks."""
@@ -1349,7 +1359,7 @@ class Reader:
                 kw["file"] = _guess
 
         if "filename" in kw:
-            self.file = file(kw["filename"], "rb")
+            self.file = open(kw["filename"], "rb")
         elif "file" in kw:
             self.file = kw["file"]
         elif "bytes" in kw:
@@ -1388,7 +1398,7 @@ class Reader:
                 raise ValueError('Chunk %s too short for checksum.', tag)
             if seek and type != seek:
                 continue
-            verify = zlib.crc32(type)
+            verify = zlib.crc32(strtobytes(type))
             verify = zlib.crc32(data, verify)
             # Whether the output from zlib.crc32 is signed or not varies
             # according to hideous implementation details, see
@@ -1630,7 +1640,7 @@ class Reader:
         shifts = map(self.bitdepth.__mul__, reversed(range(spb)))
         l = width
         for o in bytes:
-            out.extend(map(lambda i: mask&(o>>i), shifts)[:l])
+            out.extend([(mask&(o>>s)) for s in shifts][:l])
             l -= spb
             if l <= 0:
                 l = width
@@ -1709,6 +1719,7 @@ class Reader:
             raise FormatError(
               'End of file whilst reading chunk length and type.')
         length,type = struct.unpack('!I4s', x)
+        type = bytestostr(type)
         if length > 2**31-1:
             raise FormatError('Chunk %s is too large: %d.' % (type,length))
         return length,type
@@ -1871,16 +1882,12 @@ class Reader:
             # routine will do one yield per IDAT chunk.  So not very
             # incremental.
             d = zlib.decompressobj()
-            # The decompression loop:
-            # Decompress an IDAT chunk, then decompress any remaining
-            # unused data until the unused data does not get any
-            # smaller.  Add the unused data to the front of the input
-            # and loop to process the next IDAT chunk.
-            cdata = ''
+            # Each IDAT chunk is passed to the decompressor, then any
+            # remaining state is decompressed out.
             for data in idat:
                 # :todo: add a max_length argument here to limit output
                 # size.
-                yield array('B', d.decompress(cdata + data))
+                yield array('B', d.decompress(data))
             yield array('B', d.flush())
 
         self.preamble()
@@ -2081,15 +2088,15 @@ class Reader:
         return width, height, iterscale(), meta
 
     def asRGB8(self):
-	"""Return the image data as an RGB pixels with 8-bits per
-	sample.  This is like the :meth:`asRGB` method except that
-	this method additionally rescales the values so that they
-	are all between 0 and 255 (8-bit).  In the case where the
-	source image has a bit depth < 8 the transformation preserves
-	all the information; where the source image has bit depth
-	> 8, then rescaling to 8-bit values loses precision.  No
-	dithering is performed.  Like :meth:`asRGB`, an alpha channel
-	in the source image will raise an exception.
+        """Return the image data as an RGB pixels with 8-bits per
+        sample.  This is like the :meth:`asRGB` method except that
+        this method additionally rescales the values so that they
+        are all between 0 and 255 (8-bit).  In the case where the
+        source image has a bit depth < 8 the transformation preserves
+        all the information; where the source image has bit depth
+        > 8, then rescaling to 8-bit values loses precision.  No
+        dithering is performed.  Like :meth:`asRGB`, an alpha channel
+        in the source image will raise an exception.
 
         This function returns a 4-tuple:
         (*width*, *height*, *pixels*, *metadata*).
@@ -2175,7 +2182,7 @@ class Reader:
                     a = newarray()
                     for i in range(3):
                         a[i::4] = row
-                    a[3::4] = array(typecode, maxval) * width
+                    a[3::4] = array(typecode, [maxval]) * width
                     yield a
         else:
             assert not meta['alpha'] and not meta['greyscale']
@@ -2300,7 +2307,12 @@ except:
 # Run the tests from the command line:
 # python -c 'import png;png.test()'
 
-from StringIO import StringIO
+# (For an in-memory binary file IO object) We use BytesIO where
+# available, otherwise we use StringIO, but name it BytesIO.
+try:
+    from io import BytesIO
+except:
+    from StringIO import StringIO as BytesIO
 import tempfile
 # http://www.python.org/doc/2.4.4/lib/module-unittest.html
 import unittest
@@ -2320,7 +2332,7 @@ def topngbytes(name, rows, x, y, **k):
     import os
 
     print name
-    f = StringIO()
+    f = BytesIO()
     w = Writer(x, y, **k)
     w.write(f, rows)
     if os.environ.get('PYPNG_TEST_TMP'):
@@ -2334,6 +2346,9 @@ def testWithIO(inp, out, f):
     and ``sys.stdout`` changed to `out`.  They are restored when `f`
     returns.  This function returns whatever `f` returns.
     """
+
+    import os
+
     try:
         oldin,sys.stdin = sys.stdin,inp
         oldout,sys.stdout = sys.stdout,out
@@ -2341,7 +2356,36 @@ def testWithIO(inp, out, f):
     finally:
         sys.stdin = oldin
         sys.stdout = oldout
+    if os.environ.get('PYPNG_TEST_TMP') and hasattr(out,'getvalue'):
+        name = mycallersname()
+        if name:
+            w = open(name+'.png', 'wb')
+            w.write(out.getvalue())
+            w.close()
     return x
+
+def mycallersname():
+    """Returns the name of the caller of the caller of this function
+    (hence the name of the caller of the function in which
+    "mycallersname()" textually appears).  Returns None if this cannot
+    be determined."""
+
+    # http://docs.python.org/library/inspect.html#the-interpreter-stack
+    import inspect
+
+    frame = inspect.currentframe()
+    if not frame:
+        return None
+    frame_,filename_,lineno_,funname,linelist_,listi_ = (
+      inspect.getouterframes(frame)[2])
+    return funname
+
+def seqtobytes(s):
+    """Convert a sequence of integers to a *bytes* instance.  Good for
+    plastering over Python 2 / Python 3 cracks.
+    """
+
+    return strtobytes(''.join(chr(x) for x in s))
 
 class Test(unittest.TestCase):
     # This member is used by the superclass.  If we don't define a new
@@ -2357,7 +2401,7 @@ class Test(unittest.TestCase):
         # Use small chunk_limit so that multiple chunk writing is
         # tested.  Making it a test for Issue 20.
         w = Writer(15, 17, greyscale=True, bitdepth=n, chunk_limit=99)
-        f = StringIO()
+        f = BytesIO()
         w.write_array(f, array('B', map(mask.__and__, range(1, 256))))
         r = Reader(bytes=f.getvalue())
         x,y,pixels,meta = r.read()
@@ -2372,7 +2416,7 @@ class Test(unittest.TestCase):
     def testL2(self):
         "Also tests asRGB8."
         w = Writer(1, 4, greyscale=True, bitdepth=2)
-        f = StringIO()
+        f = BytesIO()
         w.write_array(f, array('B', range(4)))
         r = Reader(bytes=f.getvalue())
         x,y,pixels,meta = r.asRGB8()
@@ -2387,7 +2431,7 @@ class Test(unittest.TestCase):
         b = (200,120,120)
         c = (50,99,50)
         w = Writer(1, 4, bitdepth=2, palette=[a,b,c])
-        f = StringIO()
+        f = BytesIO()
         w.write_array(f, array('B', (0,1,1,2)))
         r = Reader(bytes=f.getvalue())
         x,y,pixels,meta = r.asRGB8()
@@ -2402,12 +2446,12 @@ class Test(unittest.TestCase):
         d = (200,120,120)
         e = (50,99,50)
         w = Writer(3, 3, bitdepth=4, palette=[a,b,c,d,e])
-        f = StringIO()
+        f = BytesIO()
         w.write_array(f, array('B', (4, 3, 2, 3, 2, 0, 2, 0, 1)))
         r = Reader(bytes=f.getvalue())
         x,y,pixels,meta = r.asRGBA8()
-        self.assertEquals(x, 3)
-        self.assertEquals(y, 3)
+        self.assertEqual(x, 3)
+        self.assertEqual(y, 3)
         c = c+(255,)
         d = d+(255,)
         e = e+(255,)
@@ -2423,6 +2467,14 @@ class Test(unittest.TestCase):
         row9 = list(pixels)[9]
         self.assertEqual(row9[0:8],
                          [0xff, 0xdf, 0xff, 0xff, 0xff, 0xde, 0xff, 0xff])
+    def testLtoRGBA(self):
+        "asRGBA() on grey source."""
+        # Test for Issue 60
+        r = Reader(bytes=_pngsuite['basi0g08'])
+        x,y,pixels,meta = r.asRGBA()
+        row9 = list(list(pixels)[9])
+        self.assertEqual(row9[0:8],
+          [222, 222, 222, 255, 221, 221, 221, 255])
     def testCtrns(self):
         "Test colour type 2 and tRNS chunk."
         # Test for Issue 25
@@ -2485,57 +2537,58 @@ class Test(unittest.TestCase):
         """Test that the command line tool can read PGM files."""
         def do():
             return _main(['testPGMin'])
-        s = StringIO()
-        s.write('P5 2 2 3\n')
-        s.write('\x00\x01\x02\x03')
+        s = BytesIO()
+        s.write(strtobytes('P5 2 2 3\n'))
+        s.write(strtobytes('\x00\x01\x02\x03'))
         s.flush()
         s.seek(0)
-        o = StringIO()
+        o = BytesIO()
         testWithIO(s, o, do)
         r = Reader(bytes=o.getvalue())
         x,y,pixels,meta = r.read()
-        self.assert_(r.greyscale)
+        self.assertTrue(r.greyscale)
         self.assertEqual(r.bitdepth, 2)
     def testPAMin(self):
         """Test that the command line tool can read PAM file."""
         def do():
             return _main(['testPAMin'])
-        s = StringIO()
-        s.write('P7\nWIDTH 3\nHEIGHT 1\nDEPTH 4\nMAXVAL 255\n'
-                'TUPLTYPE RGB_ALPHA\nENDHDR\n')
+        s = BytesIO()
+        s.write(strtobytes('P7\nWIDTH 3\nHEIGHT 1\nDEPTH 4\nMAXVAL 255\n'
+                'TUPLTYPE RGB_ALPHA\nENDHDR\n'))
         # The pixels in flat row flat pixel format
         flat =  [255,0,0,255, 0,255,0,120, 0,0,255,30]
-        s.write(''.join(map(chr, flat)))
+        asbytes = seqtobytes(flat)
+        s.write(asbytes)
         s.flush()
         s.seek(0)
-        o = StringIO()
+        o = BytesIO()
         testWithIO(s, o, do)
         r = Reader(bytes=o.getvalue())
         x,y,pixels,meta = r.read()
-        self.assert_(r.alpha)
-        self.assert_(not r.greyscale)
+        self.assertTrue(r.alpha)
+        self.assertTrue(not r.greyscale)
         self.assertEqual(list(itertools.chain(*pixels)), flat)
     def testLA4(self):
         """Create an LA image with bitdepth 4."""
         bytes = topngbytes('la4.png', [[5, 12]], 1, 1,
           greyscale=True, alpha=True, bitdepth=4)
         sbit = Reader(bytes=bytes).chunk('sBIT')[1]
-        self.assertEqual(sbit, '\x04\x04')
+        self.assertEqual(sbit, strtobytes('\x04\x04'))
     def testPNMsbit(self):
         """Test that PNM files can generates sBIT chunk."""
         def do():
             return _main(['testPNMsbit'])
-        s = StringIO()
-        s.write('P6 8 1 1\n')
+        s = BytesIO()
+        s.write(strtobytes('P6 8 1 1\n'))
         for pixel in range(8):
             s.write(struct.pack('<I', (0x4081*pixel)&0x10101)[:3])
         s.flush()
         s.seek(0)
-        o = StringIO()
+        o = BytesIO()
         testWithIO(s, o, do)
         r = Reader(bytes=o.getvalue())
         sbit = r.chunk('sBIT')[1]
-        self.assertEqual(sbit, '\x01\x01\x01')
+        self.assertEqual(sbit, strtobytes('\x01\x01\x01'))
     def testLtrns0(self):
         """Create greyscale image with tRNS chunk."""
         return self.helperLtrns(0)
@@ -2544,14 +2597,14 @@ class Test(unittest.TestCase):
         return self.helperLtrns((0,))
     def helperLtrns(self, transparent):
         """Helper used by :meth:`testLtrns*`."""
-        pixels = zip(map(ord, '00384c545c403800'.decode('hex')))
-        o = StringIO()
+        pixels = zip([0x00, 0x38, 0x4c, 0x54, 0x5c, 0x40, 0x38, 0x00])
+        o = BytesIO()
         w = Writer(8, 8, greyscale=True, bitdepth=1, transparent=transparent)
         w.write_packed(o, pixels)
         r = Reader(bytes=o.getvalue())
         x,y,pixels,meta = r.asDirect()
-        self.assert_(meta['alpha'])
-        self.assert_(meta['greyscale'])
+        self.assertTrue(meta['alpha'])
+        self.assertTrue(meta['greyscale'])
         self.assertEqual(meta['bitdepth'], 1)
     def testWinfo(self):
         """Test the dictionary returned by a `read` method can be used
@@ -2566,7 +2619,7 @@ class Test(unittest.TestCase):
         Indicative for Issue 47.
         """
         w = Writer(16, 2, greyscale=True, alpha=False, bitdepth=1)
-        o = StringIO()
+        o = BytesIO()
         w.write_packed(o, [itertools.chain([0x0a], [0xaa]),
                            itertools.chain([0x0f], [0xff])])
         r = Reader(bytes=o.getvalue())
@@ -2605,9 +2658,9 @@ class Test(unittest.TestCase):
         def eachchunk(chunk):
             if chunk[0] != 'IDAT':
                 return chunk
-            data = chunk[1].decode('zip')
-            data += '\x00garbage'
-            data = data.encode('zip')
+            data = zlib.decompress(chunk[1])
+            data += strtobytes('\x00garbage')
+            data = zlib.compress(data)
             chunk = (chunk[0], data)
             return chunk
         self.assertRaises(FormatError, self.helperFormat, eachchunk)
@@ -2616,14 +2669,14 @@ class Test(unittest.TestCase):
             if chunk[0] != 'IDAT':
                 return chunk
             # Remove last byte.
-            data = chunk[1].decode('zip')
+            data = zlib.decompress(chunk[1])
             data = data[:-1]
-            data = data.encode('zip')
+            data = zlib.compress(data)
             return (chunk[0], data)
         self.assertRaises(FormatError, self.helperFormat, eachchunk)
     def helperFormat(self, f):
         r = Reader(bytes=_pngsuite['basn0g01'])
-        o = StringIO()
+        o = BytesIO()
         def newchunks():
             for chunk in r.chunks():
                 yield f(chunk)
@@ -2634,10 +2687,10 @@ class Test(unittest.TestCase):
         def eachchunk(chunk):
             if chunk[0] != 'IDAT':
                 return chunk
-            data = chunk[1].decode('zip')
+            data = zlib.decompress(chunk[1])
             # Corrupt the first filter byte
-            data = '\x99' + data[1:]
-            data = data.encode('zip')
+            data = strtobytes('\x99') + data[1:]
+            data = zlib.compress(data)
             return (chunk[0], data)
         self.assertRaises(FormatError, self.helperFormat, eachchunk)
     def testFlat(self):
@@ -2646,8 +2699,8 @@ class Test(unittest.TestCase):
 
         r = Reader(bytes=_pngsuite['basn0g02'])
         x,y,pixel,meta = r.read_flat()
-        d = hashlib.md5(''.join(map(chr, pixel))).digest()
-        self.assertEqual(d.encode('hex'), '255cd971ab8cd9e7275ff906e5041aa0')
+        d = hashlib.md5(seqtobytes(pixel)).digest()
+        self.assertEqual(_enhex(d), '255cd971ab8cd9e7275ff906e5041aa0')
     def testfromarray(self):
         img = from_array([[0, 0x33, 0x66], [0xff, 0xcc, 0x99]], 'L')
         img.save('testfromarray.png')
@@ -2657,7 +2710,7 @@ class Test(unittest.TestCase):
     def testfromarrayRGB(self):
         img = from_array([[0,0,0, 0,0,1, 0,1,0, 0,1,1],
                           [1,0,0, 1,0,1, 1,1,0, 1,1,1]], 'RGB;1')
-        o = StringIO()
+        o = BytesIO()
         img.save(o)
     def testfromarrayIter(self):
         import itertools
@@ -2724,10 +2777,19 @@ class Test(unittest.TestCase):
 def _dehex(s):
     """Liberally convert from hex string to binary string."""
     import re
+    import binascii
 
     # Remove all non-hexadecimal digits
     s = re.sub(r'[^a-fA-F\d]', '', s)
-    return s.decode('hex')
+    # binscii.unhexlify works in Python 2 and Python 3 (unlike
+    # thing.decode('hex')).
+    return binascii.unhexlify(strtobytes(s))
+def _enhex(s):
+    """Convert from binary string (bytes) to hex string (str)."""
+
+    import binascii
+
+    return bytestostr(binascii.hexlify(s))
 
 # Copies of PngSuite test files taken
 # from http://www.schaik.com/pngsuite/pngsuite_bas_png.html
@@ -3403,27 +3465,28 @@ def read_pam_header(infile):
     header = dict()
     while True:
         l = infile.readline().strip()
-        if l == 'ENDHDR':
+        if l == strtobytes('ENDHDR'):
             break
-        if l == '':
+        if not l:
             raise EOFError('PAM ended prematurely')
-        if l[0] == '#':
+        if l[0] == strtobytes('#'):
             continue
         l = l.split(None, 1)
         if l[0] not in header:
             header[l[0]] = l[1]
         else:
-            header[l[0]] += ' ' + l[1]
+            header[l[0]] += strtobytes(' ') + l[1]
 
-    if ('WIDTH' not in header or
-        'HEIGHT' not in header or
-        'DEPTH' not in header or
-        'MAXVAL' not in header):
+    required = ['WIDTH', 'HEIGHT', 'DEPTH', 'MAXVAL']
+    required = [strtobytes(x) for x in required]
+    WIDTH,HEIGHT,DEPTH,MAXVAL = required
+    present = [x for x in required if x in header]
+    if len(present) != len(required):
         raise Error('PAM file must specify WIDTH, HEIGHT, DEPTH, and MAXVAL')
-    width = int(header['WIDTH'])
-    height = int(header['HEIGHT'])
-    depth = int(header['DEPTH'])
-    maxval = int(header['MAXVAL'])
+    width = int(header[WIDTH])
+    height = int(header[HEIGHT])
+    depth = int(header[DEPTH])
+    maxval = int(header[MAXVAL])
     if (width <= 0 or
         height <= 0 or
         depth <= 0 or
@@ -3444,13 +3507,15 @@ def read_pnm_header(infile, supported=('P5','P6')):
     # Generally, see http://netpbm.sourceforge.net/doc/ppm.html
     # and http://netpbm.sourceforge.net/doc/pam.html
 
+    supported = [strtobytes(x) for x in supported]
+
     # Technically 'P7' must be followed by a newline, so by using
     # rstrip() we are being liberal in what we accept.  I think this
     # is acceptable.
     type = infile.read(3).rstrip()
     if type not in supported:
         raise NotImplementedError('file format %s not supported' % type)
-    if type == 'P7':
+    if type == strtobytes('P7'):
         # PAM header parsing is completely different.
         return read_pam_header(infile)
     # Expected number of tokens in header (3 for P4, 4 for P6)
@@ -3467,7 +3532,7 @@ def read_pnm_header(infile, supported=('P5','P6')):
     # readline; but it would be wrong.
     def getc():
         c = infile.read(1)
-        if c == '':
+        if not c:
             raise Error('premature EOF reading PNM header')
         return c
 
@@ -3487,7 +3552,7 @@ def read_pnm_header(infile, supported=('P5','P6')):
         # This is bonkers; I've never seen it; and it's a bit awkward to
         # code good lexers in Python (no goto).  So we break on such
         # cases.
-        token = ''
+        token = strtobytes('')
         while c.isdigit():
             token += c
             c = getc()
@@ -3506,7 +3571,7 @@ def read_pnm_header(infile, supported=('P5','P6')):
     if type in pbm:
         # synthesize a MAXVAL
         header.append(1)
-    depth = (1,3)[type == 'P6']
+    depth = (1,3)[type == strtobytes('P6')]
     return header[0], header[1], header[2], depth, header[3]
 
 def write_pnm(file, width, height, pixels, meta):
