@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 import png
 from StringIO import StringIO
@@ -8,11 +9,13 @@ import re
 import hashlib
 import time
 
-from tipfy import RequestHandler, url_for, redirect, redirect_to, render_json_response, request, BadRequest, NotFound, Response
-from tipfy.ext.jinja2 import render_response
-# from tipfy.ext.user import user_required, get_current_user
+##from tipfy  import RequestHandler, url_for, redirect, redirect_to, render_json_response, request, BadRequest, NotFound, Response
+##from tipfy.ext.jinja2 import render_response
+## from tipfy.ext.user import user_required, get_current_user
 
-from django.utils import simplejson as json
+#from tipfy  import                 redirect, redirect_to, request, BadRequest, NotFound          
+from webapp2 import RequestHandler,                                                       Response
+import json
 
 from google.appengine.api import users
 from google.appengine.api import images, mail
@@ -36,6 +39,7 @@ Say hello to %s!
 -- Your Mockko.
     """ % user.email())
 
+#TODO: check whether python 2.7 already has this function
 def simple_decorator(decorator):
     def new_decorator(f):
         g = decorator(f)
@@ -64,19 +68,29 @@ def auth(func):
     def _auth(self, *args, **kwargs):
         user = users.get_current_user()
         if user is None:
-            return render_json_response({'error': 'signed-out'})
+            return render_json_response(self, {'error': 'signed-out'})
         account = Account.all().filter('user', user).get()
         if account is None:
             account = create_account(user)
         return func(self, user, account, *args, **kwargs)
     return _auth
 
+# TODO: use json wrapper from webapp2
+def render_json_response(self, obj):
+    self.response.headers['Content-Type'] = 'application/json'
+    self.response.write(json.dumps(obj))
+
+class HomeHandler(RequestHandler):
+    pass
+
 class GetUserDataHandler(RequestHandler):
 
     @auth
     def get(self, user, account):
-        return render_json_response({
-            'logout_url': users.create_logout_url(url_for('home')),
+        return render_json_response(self, {
+            'logout_url': users.create_logout_url(self.uri_for('home')),
+#            'logout_url': users.create_logout_url(webapp2.uri_for('home',self)),
+#            'logout_url': users.create_logout_url(webapp2.uri_for('home',self.request)),
             'profile-created': account.profile_created,
             'newsletter': account.newsletter,
             'full-name': account.full_name
@@ -85,13 +99,13 @@ class GetUserDataHandler(RequestHandler):
 class SetUserDataHandler(RequestHandler):
     @auth
     def post(self, user, account):
-        user_info = json.loads(request.data)
+        user_info = json.loads(self.request.body)
         account.profile_created = True
         account.newsletter = user_info['newsletter']
         account.full_name = user_info['full-name']
         account.put()
 
-        return render_json_response({ 'status': 'ok' })
+        return render_json_response(self, { 'status': 'ok' })
 
 class GetAppListHandler(RequestHandler):
 
@@ -120,31 +134,34 @@ class GetAppListHandler(RequestHandler):
                 { 'id': app.key().id(), 'body': app.body, }
             )
 
-        return render_json_response({ 'users': users_info, 'current_user': account.user.user_id() if account else None })
+        return render_json_response(self, { 'users': users_info, 'current_user': account.user.user_id() if account else None })
 
 class SaveAppHandler(RequestHandler):
 
     @auth
     def post(self, user, account, **kwargs):
         app_id = (kwargs['app_id'] if 'app_id' in kwargs else 'new')
-        body_json = request.data
+        body_json = self.request.body
         body = json.loads(body_json)
 
         if 'name' not in body:
-            return BadRequest("Invalid JSON data")
+            logging.exception(exception)
+            self.response.set_status(400)
+            self.response.write('Invalid JSON data')
+#            return BadRequest("Invalid JSON data")
 
         if app_id == 'new':
             app = App(name=body['name'], created_by=account.key(), editors=[account.key()])
         else:
             app = App.get_by_id(int(app_id))
             if app is None:
-                return render_json_response({ 'error': 'app-not-found' })
+                return render_json_response(self, { 'error': 'app-not-found' })
             if account.key() not in app.editors:
-                return render_json_response({ 'error': 'access-denied' })
+                return render_json_response(self, { 'error': 'access-denied' })
         app.name = body['name']
         app.body = db.Text(body_json.decode('utf-8'))
         app.put()
-        return render_json_response({ 'id': app.key().id()    })
+        return render_json_response(self, { 'id': app.key().id()    })
 
 class DeleteAppHandler(RequestHandler):
 
@@ -154,11 +171,11 @@ class DeleteAppHandler(RequestHandler):
 
         app = App.get_by_id(int(app_id))
         if app is None:
-            return render_json_response({ 'error': 'app-not-found' })
+            return render_json_response(self, { 'error': 'app-not-found' })
         if account.key() not in app.editors:
-            return render_json_response({ 'error': 'access-denied' })
+            return render_json_response(self, { 'error': 'access-denied' })
         app.delete()
-        return render_json_response({ 'status': 'ok' })
+        return render_json_response(self, { 'status': 'ok' })
 
 def format_image(image):
     return {
@@ -192,13 +209,14 @@ def format_group(group, read_write):
     group_info['writeable'] = read_write
     return group_info
 
-def get_image_group_or_404(group_id):
+def get_image_group_or_404(self, group_id):
     try:
         group = ImageGroup.get_by_id(int(group_id))
     except ValueError:
         group = ImageGroup.get_by_key_name(group_id)
     if not group:
-        raise NotFound()
+#        raise NotFound()
+        self.abort(404) 
     return group
 
 class GetImageListHandler(RequestHandler):
@@ -210,29 +228,29 @@ class GetImageListHandler(RequestHandler):
             images += [format_group(group, False)]
         for group in account.imagegroup_set.order('priority'):
             images += [format_group(group, True)]
-        return render_json_response(images)
+        return render_json_response(self, images)
 
 class GetImageGroupHandler(RequestHandler):
     @auth
     def get(self, user, account, group_id):
-        group = get_image_group_or_404(group_id)
-        return render_json_response(format_group(group, group.owner == account))
+        group = get_image_group_or_404(self, group_id)
+        return render_json_response(self, format_group(group, group.owner == account))
 
 class SaveImageHandler(RequestHandler):
     @auth
     def post(self, user, account, group_id):
-        group = get_image_group_or_404(group_id)
+        group = get_image_group_or_404(self, group_id)
 
         # FIXME: admins!
         if group.owner.key() != account.key():
-            return render_json_response({ 'error': 'access-denied'})
+            return render_json_response(self, { 'error': 'access-denied'})
 
-        file_name = request.headers['X-File-Name']
-        data = request.data
+        file_name = self.request.headers['X-File-Name']
+        data = self.request.body
 
         mime_type = mimetypes.guess_type(file_name)[0]
         if not mime_type.startswith('image/'):
-            return render_json_response({'error': 'wrong-file-type'})
+            return render_json_response(self, {'error': 'wrong-file-type'})
 
         img = images.Image(data)
 
@@ -250,7 +268,7 @@ class SaveImageHandler(RequestHandler):
 
         memcache.delete(group.memcache_key())
 
-        return render_json_response({ 'name': image.file_name })
+        return render_json_response(self, { 'name': image.file_name })
 
 #
 # UGLY HACK: effect name is embedded to filename
@@ -324,11 +342,12 @@ class ServeImageHandler(RequestHandler):
     def get(self, group_id, image_name):
         filename, effect = parse_image_name(image_name)
 
-        group = get_image_group_or_404(group_id)
+        group = get_image_group_or_404(self, group_id)
 
         img = Image.all().filter('file_name', filename).filter('group', group).get()
         if not img or not img.data:
-            raise NotFound()
+#            raise NotFound()
+            self.abort(404) 
 
         if not effect:
             response_data = img.data.data
@@ -343,22 +362,26 @@ class ServeImageHandler(RequestHandler):
             response_data = f.getvalue()
             response_type = 'image/png' # We know overlay_png returns PNG
 
-        return Response(response=response_data,
-                        mimetype=response_type,
-                        headers={'Cache-Control' : 'private, max-age=31536000'})
+#        return Response(response=response_data,
+#                        content_type=response_type,
+#                        headers={'Cache-Control' : 'private, max-age=31536000'})
+        self.response.headers['Content-Type'] = response_type.encode('utf')
+        self.response.headers['Cache-Control'] = 'private, max-age=31536000'
+        self.response.write(response_data)
 
 class DeleteImageHandler(RequestHandler):
     @auth
     def delete(self, user, account, group_id, image_name):
-        group = get_image_group_or_404(group_id)
+        group = get_image_group_or_404(self, group_id)
 
         # FIXME: admins!
         if group.owner.key() != account.key():
-            return render_json_response({'error': 'access-denied'})
+            return render_json_response(self, {'error': 'access-denied'})
 
         img = group.image_set.filter('file_name', image_name).get()
         if img is None:
-            raise NotFound()
+#            raise NotFound()
+            self.abort(404) 
 
         if img.data:
             img.data.delete()
@@ -366,7 +389,7 @@ class DeleteImageHandler(RequestHandler):
 
         memcache.delete(group.memcache_key())
 
-        return render_json_response({'status': 'ok'})
+        return render_json_response(self, {'status': 'ok'})
 
 class RunAppHandler(RequestHandler):
 
@@ -374,7 +397,7 @@ class RunAppHandler(RequestHandler):
 
         # user = users.get_current_user()
         # if user is None:
-        #     return render_json_response({ 'error': 'signed-out' })
+        #     return render_json_response(self, { 'error': 'signed-out' })
         # else:
         #     account = Account.all().filter('user', user).get()
         #     if account is None:
@@ -382,9 +405,9 @@ class RunAppHandler(RequestHandler):
         #         account.put()
         app = App.get_by_id(int(app_id))
         if app is None:
-            return render_json_response({ 'error': 'app-not-found' })
+            return render_json_response(self, { 'error': 'app-not-found' })
         # if account.key() not in app.editors:
-        #     return render_json_response({ 'error': 'access-denied' })
+        #     return render_json_response(self, { 'error': 'access-denied' })
 
         body_json = app.body
         content = json.loads(body_json)
@@ -428,7 +451,9 @@ class RunAppHandler(RequestHandler):
         </html>
 """ % dict(title=content['name'], content=body)
 
-        return Response(html, mimetype="text/html")
+#        return Response(html, content_type="text/html")
+        self.response.headers['Content-Type'] = 'text/html'
+        self.response.write(html)
 
 class StatusHandler(RequestHandler):
 
@@ -444,7 +469,9 @@ class StatusHandler(RequestHandler):
         Applications:   %(app_count)d
         """ % dict(account_count=account_count, app_count=app_count)
 
-        return Response(html, mimetype="text/html")
+#        return Response(html, content_type="text/html")
+        self.response.headers['Content-Type'] = 'text/html'
+        self.response.write(html)
 
 class UserStatsHandler(RequestHandler):
 
@@ -469,7 +496,9 @@ class UserStatsHandler(RequestHandler):
         </root>
         """ % dict(account_count=account_count, app_count=app_count)
 
-        return Response(html, mimetype="text/xml")
+#        return Response(html, content_type="text/xml")
+        self.response.headers['Content-Type'] = 'text/xml'
+        self.response.write(html)
     post = get
 
 class UserExportHandler(RequestHandler):
@@ -480,4 +509,6 @@ class UserExportHandler(RequestHandler):
         lines.append("email,name")
         for account in accounts:
             lines.append("%s,%s" % (account.user.email(), account.full_name))
-        return Response("\n".join(lines), mimetype="text/csv")
+#        return Response("\n".join(lines), content_type="text/csv")
+        self.response.headers['Content-Type'] = 'text/csv'
+        self.response.write("\n".join(lines))

@@ -1,24 +1,27 @@
 application: mockkodesigner-hrd
-version: v0-9-10
-runtime: python
+version: v0-9-11
+runtime: python27
 api_version: 1
+threadsafe: true
 
 handlers:
 
+# TODO: Validate all commented entries
+
 # Console
 
-- url: /console/static
-  static_dir: console/app/view/static
-  login: admin
+#- url: /console/static
+#  static_dir: console/app/view/static
+#  login: admin
 
-- url: /console.*
-  script: console/app/console.py
-  login: admin
+#- url: /console.*
+#  script: console/app/console.py
+#  login: admin
 
 # REST API for exporting data
 
-- url: /rest/.*
-  script: rest.py
+#- url: /rest/.*
+#  script: rest.py
 
 # Boring stuff
 
@@ -124,27 +127,27 @@ handlers:
 
 # Other boring stuff
 
-- url: /remote_api
-  script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
-  login: admin
+#- url: /remote_api
+#  script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
+#  login: admin
 
-- url: /_ah/queue/deferred
-  script: main.py
-  login: admin
+#- url: /_ah/queue/deferred
+#  script: main.py
+#  login: admin
 
-- url: /admin/stats.*
-  script: $PYTHON_LIB/google/appengine/ext/appstats/ui.py
-  # login: admin <- handled by appstats itself
+#- url: /admin/stats.*
+#  script: $PYTHON_LIB/google/appengine/ext/appstats/ui.py
+#  # login: admin <- handled by appstats itself
 
 # Catch-all
 
 - url: /.*
-  script: main.py
+  script: main.app
 
-admin_console:
-  pages:
-  - name: App Stats
-    url: /admin/stats
+#admin_console:
+#  pages:
+#  - name: App Stats
+#    url: /admin/stats
 
 derived_file_type:
 - python_precompiled
