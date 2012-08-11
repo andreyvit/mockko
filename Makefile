@@ -164,9 +164,11 @@ JS_LIBS = $(addprefix web/static/lib/, \
 	jquery.cookie.js)
 
 ${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.closure.js
-	@echo "  YUI designer.js"
+#	@echo "  YUI designer.js"
+	@echo "  CAT >" $@
 	@mkdir -p $(dir $@)
-	(for i in $(filter %.js,$^); do ${YUI} $$i; done) > $@ || (rm -f $@; false)
+#	(for i in $(filter %.js,$^); do ${YUI} $$i; done) > $@ || (rm -f $@; false)
+	cat $(filter %.js,$^) > $@ || (rm -f $@; false)
 
 %.closure.js: %.premin.js
 	@echo "  CLOSURE" $^
