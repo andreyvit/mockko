@@ -8,16 +8,6 @@ handlers:
 
 # TODO: Validate all commented entries
 
-# Console
-
-#- url: /console/static
-#  static_dir: console/app/view/static
-#  login: admin
-
-#- url: /console.*
-#  script: console/app/console.py
-#  login: admin
-
 # REST API for exporting data
 
 #- url: /rest/.*
