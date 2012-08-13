@@ -83,7 +83,7 @@ def render_json_response(self, obj):
 class HomeHandler(RequestHandler):
     pass
 
-class GetUserDataHandler(RequestHandler):
+class UserDataHandler(RequestHandler):
 
     @auth
     def get(self, user, account):
@@ -96,7 +96,6 @@ class GetUserDataHandler(RequestHandler):
             'full-name': account.full_name
         })
 
-class SetUserDataHandler(RequestHandler):
     @auth
     def post(self, user, account):
         user_info = json.loads(self.request.body)

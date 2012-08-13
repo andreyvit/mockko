@@ -8,8 +8,7 @@ from webapp2 import Route
 
 routes = [
     Route('/',                               name='home',               methods=['GET'],         handler='handlers.HomeHandler'), # for resolving routes to home
-    Route('/user/',                          name='api/get-user-data',  methods=['GET'],         handler='handlers.GetUserDataHandler'),
-    Route('/user/',                          name='api/set-user-data',  methods=['POST'],        handler='handlers.SetUserDataHandler'),
+    Route('/user/',                          name='api/user-data',      methods=['GET','POST'],  handler='handlers.UserDataHandler'),
 
     Route('/apps/',                          name='api/get-app-list',   methods=['GET'],         handler='handlers.GetAppListHandler'),
 #    Route('/R<int:app_id>/',                 name='api/run-app',        methods=['GET'],         handler='handlers.RunAppHandler'),
