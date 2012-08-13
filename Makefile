@@ -9,9 +9,7 @@ DEVAPPSERVER_ARGS=--show_mail_body \
 	--disable_task_running \
 	--port $(DEVAPPSERVER_PORT)
 
-CLOSURE=java -jar scripts/closure-compiler/compiler.jar
 YUI=java -jar scripts/yuicompressor-2.4.7.jar
-PREMIN=ruby scripts/preminifier/premin.rb
 
 # Source code
 COFFEE = $(wildcard web/static/*.coffee) $(wildcard web/webios/webios/*.coffee)
@@ -163,20 +161,16 @@ JS_LIBS = $(addprefix web/static/lib/, \
 	underscore.min.js \
 	jquery.cookie.js)
 
-${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.closure.js
+${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.uglify.js
 #	@echo "  YUI designer.js"
 	@echo "  CAT >" $@
 	@mkdir -p $(dir $@)
 #	(for i in $(filter %.js,$^); do ${YUI} $$i; done) > $@ || (rm -f $@; false)
 	cat $(filter %.js,$^) > $@ || (rm -f $@; false)
 
-%.closure.js: %.premin.js
-	@echo "  CLOSURE" $^
-	${CLOSURE} --compilation_level SIMPLE_OPTIMIZATIONS --js $^ --js_output_file $@
-
-%.premin.js: %.combined.js
-	@echo "  PREMIN" $^
-	${PREMIN} < $^ > $@ || (rm -f $@; false)
+%.uglify.js: %.combined.js
+	@echo "  UGLIFYJS" $^
+	uglifyjs --no-copyright --output $@ $^
 
 ${OPT_DIR}/designer.combined.js: ${JS_SRC}
 	@echo "  CAT >" $@
@@ -185,7 +179,7 @@ ${OPT_DIR}/designer.combined.js: ${JS_SRC}
 
 .INTERMEDIATE: \
 	${OPT_DIR}/designer.combined.js \
-	${OPT_DIR}/designer.closure.js
+	${OPT_DIR}/designer.uglify.js
 
 # Run
 
