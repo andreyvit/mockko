@@ -168,17 +168,12 @@ ${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.uglify.js
 #	(for i in $(filter %.js,$^); do ${YUI} $$i; done) > $@ || (rm -f $@; false)
 	cat $(filter %.js,$^) > $@ || (rm -f $@; false)
 
-%.uglify.js: %.combined.js
-	@echo "  UGLIFYJS" $^
-	uglifyjs --no-copyright --output $@ $^
-
-${OPT_DIR}/designer.combined.js: ${JS_SRC}
-	@echo "  CAT >" $@
+${OPT_DIR}/designer.uglify.js: ${JS_SRC}
+	@echo "  UGLIFYJS-grunt >" $@
 	@mkdir -p $(dir $@)
-	cat $^ > $@ || (rm -f $@; false)
+	@grunt min
 
 .INTERMEDIATE: \
-	${OPT_DIR}/designer.combined.js \
 	${OPT_DIR}/designer.uglify.js
 
 # Run
