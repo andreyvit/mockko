@@ -106,12 +106,6 @@ module.exports = function(grunt) {
         dest: 'web/minified/designer.uglify.js'
       }
     },
-//    test: {
-//      files: ['test/**/*.js']
-//    },
-//    lint: {
-//      files: ['grunt.js', 'lib/**/*.js', 'test/**/*.js']
-//    },
 //    watch: {
 //      files: '<config:lint.files>',
 //      tasks: 'lint test'

@@ -21,14 +21,6 @@ JS = $(patsubst %.coffee,%.js,${COFFEE})
 CSS = $(patsubst %.less,%.css,${LESS})
 HTML = $(patsubst %.haml,%.html,${HAML})
 
-LESS_D = $(foreach f,${LESS},$(dir $(f)).$(notdir $(f)).d)
-
-#-include ${LESS_D}
-
-#.%.less.d: %.less
-#	@echo "  LESSDEPS $^"
-#	@scripts/lessdeps "$^"
-
 # Minification
 JS_SRC = $(addprefix web/static/, \
 	geometry.js \
@@ -82,7 +74,6 @@ all: ${HTML} ${JS} ${CSS}
 %.css: %.less
 	@echo "  LESSC-grunt ALL"
 	@grunt less
-#	@lessc $< $@
 
 %.html: %.haml
 	@echo "  HAML" $^
@@ -90,7 +81,7 @@ all: ${HTML} ${JS} ${CSS}
 
 clean:
 	@echo "  CLEAN"
-	@rm -rf ${JS} ${CSS} ${HTML} ${OPT_DIR} ${SUM_FILES} ${LESS_D}
+	@rm -rf ${JS} ${CSS} ${HTML} ${OPT_DIR} ${SUM_FILES}
 
 # Continuously compile
 
