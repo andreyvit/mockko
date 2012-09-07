@@ -24,15 +24,16 @@ Prerequisites:
 * npm package manager (`brew install npm`)
 * MongoDB (`brew install mongodb`)
 * Redis (`brew install redis`)
-* CoffeeScript (`npm install coffee-script`)
 * express (`npm install express`)
-* Jade (`npm install jade`)
-* less (`npm install less`)
 * step (`npm install step`)
 * fugue (`npm install fugue`)
 * mongodb (`npm install mongodb`)
 * supervisor (`npm install supervisor`)
 * FSSM (`sudo gem install fssm`)
+* grunt (`npm install grunt`)
+* grunt-less (`npm install grunt-less`)
+* grunt-coffee (`npm install grunt-coffee`)
+* grunt-jade (`npm install grunt-jade`)
 
 Note: seems that ideally most npm prerequisites should be bundled as submodules.
 
