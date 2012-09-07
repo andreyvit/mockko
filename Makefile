@@ -23,11 +23,11 @@ HTML = $(patsubst %.haml,%.html,${HAML})
 
 LESS_D = $(foreach f,${LESS},$(dir $(f)).$(notdir $(f)).d)
 
--include ${LESS_D}
+#-include ${LESS_D}
 
-.%.less.d: %.less
-	@echo "  LESSDEPS $^"
-	@scripts/lessdeps "$^"
+#.%.less.d: %.less
+#	@echo "  LESSDEPS $^"
+#	@scripts/lessdeps "$^"
 
 # Minification
 JS_SRC = $(addprefix web/static/, \
@@ -76,12 +76,13 @@ help:
 all: ${HTML} ${JS} ${CSS}
 
 %.js: %.coffee
-	@echo "  COFFEE" $^
-	@coffee -c ${COFFEE_ARGS} $^
+	@echo "  COFFEE-grunt ALL"
+	@grunt coffee
 
 %.css: %.less
-	@echo "  LESSC" $<
-	@lessc $< $@
+	@echo "  LESSC-grunt ALL"
+	@grunt less
+#	@lessc $< $@
 
 %.html: %.haml
 	@echo "  HAML" $^
