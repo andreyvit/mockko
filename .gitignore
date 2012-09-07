@@ -15,3 +15,4 @@
 .*.sum
 .dev_appserver.datastore
 .*.d
+/node_modules
