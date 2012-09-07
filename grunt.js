@@ -1,7 +1,8 @@
 module.exports = function(grunt) {
 
-  grunt.loadNpmTasks('grunt-less');
   grunt.loadNpmTasks('grunt-coffee');
+  grunt.loadNpmTasks('grunt-less');
+  grunt.loadNpmTasks('grunt-jade');
 
   // Project configuration.
   grunt.initConfig({
@@ -14,9 +15,9 @@ module.exports = function(grunt) {
 //                   'web/static/*/*.less',
 //                   'web/webios/webios/*.less'],
 
-      HAML_SRC:   ['web/*.haml',
-                   'web/static/*/*.haml',
-                   'web/webios/*.haml'],
+      JADE_SRC:   ['web/*.jade',
+                   'web/static/*/*.jade',
+                   'web/webios/*.jade'],
 
       JS_SRC:     ['web/static/geometry.js',
                    'web/static/designer-jqueryaddons.js',
@@ -97,6 +98,33 @@ module.exports = function(grunt) {
       webios_screen: {
           src: 'web/webios/webios/webios-screen.less',
           dest: 'web/webios/webios/webios-screen.css'
+      }
+    },
+
+    jade: {
+      designer: {
+        src: "web/designer.jade",
+        dest: "web/",
+        options: {
+          client: false,
+          pretty: true
+        }
+      },
+      home: {
+        src: "web/home.jade",
+        dest: "web/",
+        options: {
+          client: false,
+          pretty: true
+        }
+      },
+      webios_demo: {
+        src: "web/webios/demo.jade",
+        dest: "web/webios",
+        options: {
+          client: false,
+          pretty: true
+        }
       }
     },
 

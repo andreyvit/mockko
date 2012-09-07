@@ -14,12 +14,12 @@ YUI=java -jar scripts/yuicompressor-2.4.7.jar
 # Source code
 COFFEE = $(wildcard web/static/*.coffee) $(wildcard web/webios/webios/*.coffee)
 LESS = $(wildcard web/static/*.less) $(wildcard web/static/*/*.less) $(wildcard web/webios/webios/*.less)
-HAML = $(wildcard web/*.haml) $(wildcard web/static/*/*.haml) $(wildcard web/webios/*.haml)
+JADE = $(wildcard web/*.jade) $(wildcard web/static/*/*.jade) $(wildcard web/webios/*.jade)
 
 # Compiled code
 JS = $(patsubst %.coffee,%.js,${COFFEE})
 CSS = $(patsubst %.less,%.css,${LESS})
-HTML = $(patsubst %.haml,%.html,${HAML})
+HTML = $(patsubst %.jade,%.html,${JADE})
 
 # Minification
 JS_SRC = $(addprefix web/static/, \
@@ -52,7 +52,7 @@ help:
 	@echo "Mockko"
 	@echo
 	@echo "Available targets:"
-	@echo "  make all      -- process HAML, CoffeeScript and Less"
+	@echo "  make all      -- process JADE, CoffeeScript and Less"
 	@echo "  make watch    -- watch and re-process changed files"
 	@echo "  make optimize -- prepare optimized and obfuscated version"
 	@echo "  make run      -- run application using dev. appserver (non-optimized, /dev only)"
@@ -75,9 +75,9 @@ all: ${HTML} ${JS} ${CSS}
 	@echo "  LESSC-grunt ALL"
 	@grunt less
 
-%.html: %.haml
-	@echo "  HAML" $^
-	@haml $^ $@
+%.html: %.jade
+	@echo "  JADE-grunt ALL"
+	@grunt jade
 
 clean:
 	@echo "  CLEAN"
@@ -87,7 +87,7 @@ clean:
 
 watch: all
 	@while true; do \
-		scripts/watchfiles '**/*.coffee' '**/*.haml' '**/*.less'; \
+		scripts/watchfiles '**/*.coffee' '**/*.jade' '**/*.less'; \
 		${MAKE} && ( which growlnotify >/dev/null && growlnotify -n Mockko -p 0 -t "OK" -m "Mockko built." || true ) \
 		    || ( which growlnotify >/dev/null && growlnotify -n Mockko -p 2 -t "Build FAILED" -m "Failed. Dunno which file and line, sorry." || true ); \
 	done
