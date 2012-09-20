@@ -21,32 +21,6 @@ JS = $(patsubst %.coffee,%.js,${COFFEE})
 CSS = $(patsubst %.less,%.css,${LESS})
 HTML = $(patsubst %.jade,%.html,${JADE})
 
-# Minification
-JS_SRC = $(addprefix web/static/, \
-	geometry.js \
-	designer-jqueryaddons.js \
-	designer-components.js \
-	designer-templates.js \
-	designer-online.js \
-	designer-offline.js \
-	designer-actions.js \
-	designer-serialization.js \
-	designer-rendering.js \
-	designer-undo.js \
-	designer-model.js \
-	designer-alignment-detection.js \
-	designer-stacking-legacy.js \
-	designer-hover-panel.js \
-	designer-snapping.js \
-	designer-layouting.js \
-	designer-component-tree.js \
-	designer-effect-live-applicator.js \
-	designer-dragging.js \
-	designer-resizing.js \
-	designer-inspector.js \
-	jpicker.js \
-	designer.js)
-
 help:
 	@echo
 	@echo "Mockko"
@@ -65,19 +39,9 @@ help:
 
 # Rule[sz]
 
-all: ${HTML} ${JS} ${CSS}
-
-%.js: %.coffee
-	@echo "  COFFEE-grunt ALL"
-	@grunt coffee
-
-%.css: %.less
-	@echo "  LESSC-grunt ALL"
-	@grunt less
-
-%.html: %.jade
-	@echo "  JADE-grunt ALL"
-	@grunt jade
+all:
+	@echo "  COFFEE/LESSC/JADE  ALL"
+	@grunt coffee less jade
 
 clean:
 	@echo "  CLEAN"
@@ -102,7 +66,7 @@ OPTIMIZED = $(addprefix ${OPT_DIR}/, \
 	theme.min.css \
 	designer.min.js)
 
-optimize: ${OPTIMIZED}
+optimize: all ${OPTIMIZED}
 
 # --> Checksums
 
@@ -160,7 +124,7 @@ ${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.uglify.js
 #	(for i in $(filter %.js,$^); do ${YUI} $$i; done) > $@ || (rm -f $@; false)
 	cat $(filter %.js,$^) > $@ || (rm -f $@; false)
 
-${OPT_DIR}/designer.uglify.js: ${JS_SRC}
+${OPT_DIR}/designer.uglify.js: all
 	@echo "  UGLIFYJS-grunt >" $@
 	@mkdir -p $(dir $@)
 	@grunt min
