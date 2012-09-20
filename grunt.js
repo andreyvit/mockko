@@ -1,7 +1,7 @@
 module.exports = function(grunt) {
 
   grunt.loadNpmTasks('grunt-coffee');
-  grunt.loadNpmTasks('grunt-less');
+  grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-jade');
 
   // Project configuration.
@@ -68,36 +68,28 @@ module.exports = function(grunt) {
 
     less: {
       home: {
-          src: 'web/static/home.less',
-          dest: 'web/static/home.css'
+        files: {
+          'web/static/home.css': 'web/static/home.less'
+        }
       },
       iphone: {
-          src: 'web/static/iphone/iphone.less',
-          dest: 'web/static/iphone/iphone.css'
+        files: {
+          'web/static/iphone/iphone.css': 'web/static/iphone/iphone.less'
+        }
       },
-      theme_common: {
-          src: 'web/static/theme/theme-common.less',
-          dest: 'web/static/theme/theme-common.css'
+      theme: {
+        files: {
+          'web/static/theme/theme-common.css': 'web/static/theme/theme-common.less',
+          'web/static/theme/theme-dashboard.css': 'web/static/theme/theme-dashboard.less',
+          'web/static/theme/theme-designer.css': 'web/static/theme/theme-designer.less',
+          'web/static/theme/theme-mixins.css': 'web/static/theme/theme-mixins.less',
+        }
       },
-      theme_dashboard: {
-          src: 'web/static/theme/theme-dashboard.less',
-          dest: 'web/static/theme/theme-dashboard.css'
-      },
-      theme_designer: {
-          src: 'web/static/theme/theme-designer.less',
-          dest: 'web/static/theme/theme-designer.css'
-      },
-      theme_mixins: {
-          src: 'web/static/theme/theme-mixins.less',
-          dest: 'web/static/theme/theme-mixins.css'
-      },
-      webios_components: {
-          src: 'web/webios/webios/webios-components.less',
-          dest: 'web/webios/webios/webios-components.css'
-      },
-      webios_screen: {
-          src: 'web/webios/webios/webios-screen.less',
-          dest: 'web/webios/webios/webios-screen.css'
+      webios: {
+        files: {
+          'web/webios/webios/webios-components.css': 'web/webios/webios/webios-components.less',
+          'web/webios/webios/webios-screen.css': 'web/webios/webios/webios-screen.less',
+        }
       }
     },
 
