@@ -49,6 +49,7 @@ module.exports = function(grunt) {
                    'web/static/lib/jquery.cookie.js'],
 
     },
+
     coffee: {
       app: {
         src: '<config:meta.COFFEE_SRC>',
@@ -121,11 +122,19 @@ module.exports = function(grunt) {
     },
 
     min: {
-      dist: {
+      designer: {
         src: '<config:meta.JS_SRC>',
         dest: 'web/minified/designer.uglify.js'
       }
     },
+
+    concat: {
+      dist: {
+        src: ['<config:meta.JS_LIBS>', 'web/minified/designer.uglify.js'],
+        dest: 'web/minified/designer.min.js'
+      }
+    }
+
 //    watch: {
 //      files: '<config:lint.files>',
 //      tasks: 'lint test'

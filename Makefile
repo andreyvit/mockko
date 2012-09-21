@@ -111,23 +111,10 @@ ${OPT_DIR}/theme.min.css: ${THEME_CSS} .theme-images.sum
 	(for i in $(filter %.css,$^); do ${YUI} $$i; done) | \
 		perl -pe "s,(images/[^\"]+),\1?"$$(cat .theme-images.sum)",g" > $@ || (rm -f $@; false)
 
-JS_LIBS = $(addprefix web/static/lib/, \
-	jquery.min.js \
-	jquery-ui.custom.min.js \
-	underscore.min.js \
-	jquery.cookie.js)
-
-${OPT_DIR}/designer.min.js: ${JS_LIBS} ${OPT_DIR}/designer.uglify.js
-#	@echo "  YUI designer.js"
-	@echo "  CAT >" $@
-	@mkdir -p $(dir $@)
-#	(for i in $(filter %.js,$^); do ${YUI} $$i; done) > $@ || (rm -f $@; false)
-	cat $(filter %.js,$^) > $@ || (rm -f $@; false)
+${OPT_DIR}/designer.min.js: ${OPT_DIR}/designer.uglify.js
+	@grunt min concat
 
 ${OPT_DIR}/designer.uglify.js: all
-	@echo "  UGLIFYJS-grunt >" $@
-	@mkdir -p $(dir $@)
-	@grunt min
 
 .INTERMEDIATE: \
 	${OPT_DIR}/designer.uglify.js
@@ -137,7 +124,7 @@ ${OPT_DIR}/designer.uglify.js: all
 run: all
 	dev_appserver.py ${DEVAPPSERVER_ARGS} web
 
-run-opt: all optimize
+run-opt: optimize
 	dev_appserver.py ${DEVAPPSERVER_ARGS} web
 
 # Deployment
