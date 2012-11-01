@@ -130,7 +130,8 @@ module.exports = function(grunt) {
 
     concat: {
       dist: {
-        src: ['<config:meta.JS_LIBS>', 'web/minified/designer.uglify.js'],
+        //src: ['<config:meta.JS_LIBS>', 'web/minified/designer.uglify.js'],
+        src: ['<config:meta.JS_LIBS>', '<config:meta.JS_SRC>'],
         dest: 'web/minified/designer.min.js'
       }
     }
