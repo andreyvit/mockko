@@ -1671,6 +1671,24 @@ jQuery ($) ->
 
     ##########################################################################################################
 
+    initializeIntercom = (userInfo) ->
+        if (location.hostname != 'www.mockko.com') and !location.hostname.match(/\.appspot\.com$/)
+            return
+
+        window.intercomSettings =
+            app_id: '9xrvx4mi'
+            email: userInfo['email']
+            created_at: userInfo['created-at']
+
+        s = document.createElement('script')
+        s.type = 'text/javascript'
+        s.async = true
+        s.src = 'https://api.intercom.io/api/js/library.js'
+        x = document.getElementsByTagName('script')[0]
+        x.parentNode.insertBefore(s, x)
+
+    ##########################################################################################################
+
     initComponentTypes = ->
         for typeName, ct of Types
             ct.name = typeName
@@ -1865,5 +1883,6 @@ jQuery ($) ->
     serverMode.getUserInfo (userInfo) ->
         loadDesigner userInfo
         updateUserProfile userInfo
+        initializeIntercom(userInfo)
         # if not userInfo['profile-created']
         #     showUserProfileScreen()

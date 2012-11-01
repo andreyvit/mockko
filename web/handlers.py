@@ -13,7 +13,7 @@ import time
 ##from tipfy.ext.jinja2 import render_response
 ## from tipfy.ext.user import user_required, get_current_user
 
-#from tipfy  import                 redirect, redirect_to, request, BadRequest, NotFound          
+#from tipfy  import                 redirect, redirect_to, request, BadRequest, NotFound
 from webapp2 import RequestHandler,                                                       Response
 import json
 
@@ -93,7 +93,9 @@ class UserDataHandler(RequestHandler):
 #            'logout_url': users.create_logout_url(webapp2.uri_for('home',self.request)),
             'profile-created': account.profile_created,
             'newsletter': account.newsletter,
-            'full-name': account.full_name
+            'email': users.get_current_user().email(),
+            'full-name': account.full_name,
+            'created-at': int(time.mktime(account.created_at.timetuple()))
         })
 
     @auth
@@ -215,7 +217,7 @@ def get_image_group_or_404(self, group_id):
         group = ImageGroup.get_by_key_name(group_id)
     if not group:
 #        raise NotFound()
-        self.abort(404) 
+        self.abort(404)
     return group
 
 class GetImageListHandler(RequestHandler):
@@ -346,7 +348,7 @@ class ServeImageHandler(RequestHandler):
         img = Image.all().filter('file_name', filename).filter('group', group).get()
         if not img or not img.data:
 #            raise NotFound()
-            self.abort(404) 
+            self.abort(404)
 
         if not effect:
             response_data = img.data.data
@@ -379,7 +381,7 @@ class DeleteImageHandler(RequestHandler):
         img = group.image_set.filter('file_name', image_name).get()
         if img is None:
 #            raise NotFound()
-            self.abort(404) 
+            self.abort(404)
 
         if img.data:
             img.data.delete()
