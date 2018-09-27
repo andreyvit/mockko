@@ -1,6 +1,8 @@
 Prerequisites
 -------------
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/andreyvit/mockko.svg)](https://greenkeeper.io/)
+
 * GNU make
 * Python >= 2.5
 * ruby-haml
