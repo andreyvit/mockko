@@ -8,8 +8,8 @@
   },
   "dependencies": {
     "grunt-coffee": "0.0.6",
-    "grunt-contrib-less": "~0.3.2",
-    "grunt-jade": "~0.3.7"
+    "grunt-contrib-less": "~2.0.0",
+    "grunt-jade": "~0.5.1"
   },
   "devDependencies": {},
   "optionalDependencies": {},
